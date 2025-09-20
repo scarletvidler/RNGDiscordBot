@@ -15,6 +15,9 @@
     "@remix-run/node": "^2.15.2",
     "@remix-run/react": "^2.15.2",
     "@remix-run/serve": "^2.15.2",
+    "discord-api-types": "^0.38.26",
+    "discord.js": "^14.22.1",
+    "elevenlabs-js": "^1.2.6",
     "isbot": "^4.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
