@@ -5,7 +5,7 @@ import * as build from "./build/server/index.js"; // 👈 explicit file + extens
 import http from "http";
 import { startBot } from "./bot/bot.server.js"; // use .ts in dev with ts-node, .js in prod
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 startBot().catch(console.error);
 

@@ -18,9 +18,12 @@
     "discord-api-types": "^0.38.26",
     "discord.js": "^14.22.1",
     "elevenlabs-js": "^1.2.6",
+    "fs": "^0.0.1-security",
     "isbot": "^4.1.0",
+    "path": "^0.12.7",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "url": "^0.11.4"
   },
   "devDependencies": {
     "@remix-run/dev": "^2.15.2",
