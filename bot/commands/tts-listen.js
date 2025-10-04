@@ -1,12 +1,10 @@
 import "dotenv/config";
 import {
   joinVoiceChannel,
-  createAudioPlayer,
-  createAudioResource,
   VoiceConnectionStatus,
   entersState,
 } from "@discordjs/voice";
-import { MessageActivityType } from "discord-api-types/v9";
+import VoicePlayer from "../modules/voicePlayer.js";
 
 /**
  * Join a voice channel and speak a message.
@@ -20,22 +18,18 @@ export async function joinAndPlay(channel, message) {
   });
 
   // Wait until fully connected
-  await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
+  await entersState(connection, VoiceConnectionStatus.Ready, 60_000);
 
-  // Create a player
-  const player = createAudioPlayer();
+  const player = VoicePlayer;
+  connection.subscribe(player.audioInstance);
 
+  // If sound queue is empty, play a ping sound first
+  if (player.soundQueue.length === 0 && !player.isPlaying) {
+    player.playSoundFile(player.getSoundAsset("ping.ogg"));
+  }
   // Generate speech stream from ElevenLabs
   const resourceStream = await convertMessageToSpeech(message);
-
-  // Wrap it for Discord
-  const resource = createAudioResource(resourceStream);
-
-  console.log("🗣️ Playing TTS message...");
-  console.log(resource);
-
-  player.play(resource);
-  connection.subscribe(player);
+  player.playSoundFile(resourceStream);
 }
 
 function getCleanName(user) {
@@ -89,6 +83,7 @@ async function convertMessageToSpeech(message) {
   console.log("Final message to speak:", message);
 
   // Stream speech (POST /v1/text-to-speech/:voice_id/stream)
+
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voice_id}/stream?output_format=mp3_44100_128`,
     {
@@ -106,7 +101,6 @@ async function convertMessageToSpeech(message) {
       }),
     }
   );
-  console.log(response.body);
   const body = response.body;
 
   if (response.status !== 200) {
