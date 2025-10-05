@@ -4,7 +4,7 @@ import {
   VoiceConnectionStatus,
   entersState,
 } from "@discordjs/voice";
-import VoicePlayer from "../modules/voicePlayer.js";
+import VoicePlayer from "./voicePlayer.js";
 
 /**
  * Join a voice channel and speak a message.
@@ -75,7 +75,8 @@ async function convertMessageToSpeech(message) {
   if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
 
   // const voice_id = "bl0TUn2b06BCzwDpiLlg";
-  const voice_id = "cgSgspJ2msm6clMCkdW9";
+  const voice_id = "cgSgspJ2msm6clMCkdW9"; // Lerche
+  // const voice_id = "z7B9WFCZUlsrvlit0TTj"; // me
   console.log("Generating speech...");
 
   message = validateMessageContent(message);
@@ -84,6 +85,7 @@ async function convertMessageToSpeech(message) {
 
   // Stream speech (POST /v1/text-to-speech/:voice_id/stream)
 
+  console.log("Downloading speech from ElevenLabs...");
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voice_id}/stream?output_format=mp3_44100_128`,
     {
@@ -102,6 +104,8 @@ async function convertMessageToSpeech(message) {
     }
   );
   const body = response.body;
+
+  console.log("ElevenLabs response status:", response.status);
 
   if (response.status !== 200) {
     const errorText = await response.text();
