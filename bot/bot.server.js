@@ -101,7 +101,7 @@ export function startBot() {
     registerSlashCommands(
       client,
       process.env.CLIENT_ID,
-      process.env.GUILD_ID1,
+      [process.env.GUILD_ID1, process.env.GUILD_ID2],
       process.env.BOT_TOKEN
     );
 

@@ -1,16 +1,18 @@
 import { Events, MessageFlags, REST, Routes } from "discord.js";
 
-export async function registerSlashCommands(client, clientId, guildId, token) {
+export async function registerSlashCommands(client, clientId, guildIds, token) {
   try {
     const rest = new REST({ version: "10" }).setToken(token);
     const commandsJson = client.commands.map((cmd) => cmd.data.toJSON());
-    const data = await rest.put(
-      Routes.applicationGuildCommands(clientId, guildId),
-      { body: commandsJson }
-    );
-    console.log(
-      `✅ Successfully registered ${data.length} commands for guild ${guildId}.`
-    );
+    for (const guildId of guildIds) {
+      const data = await rest.put(
+        Routes.applicationGuildCommands(clientId, guildId),
+        { body: commandsJson }
+      );
+      console.log(
+        `✅ Successfully registered ${data.length} commands for guild ${guildId}.`
+      );
+    }
   } catch (error) {
     console.error("❌ Error registering slash commands:", error);
   }
