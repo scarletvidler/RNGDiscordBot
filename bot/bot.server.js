@@ -48,6 +48,8 @@ async function loadCommands(dir) {
       const cmd = module.default || module;
       if (cmd && cmd.data && cmd.execute) {
         console.log(`Registering command: ${cmd.data.name}`);
+        console.log(cmd.data);
+        console.log(cmd.execute);
         client.commands.set(cmd.data.name, cmd);
       } else {
         console.warn(

@@ -11,13 +11,7 @@ export default {
     const convertedAmount = await conversion.convert(100);
     const data = await convertedAmount;
     await interaction.editReply({
-      embeds: [
-        {
-          title: "Currency Conversion",
-          description: `100 USD is approximately ${data} EUR.`,
-          color: 0x0099ff,
-        },
-      ],
+      content: `100 USD is approximately ${data} EUR.`,
     });
   },
 };
