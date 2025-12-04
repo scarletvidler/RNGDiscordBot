@@ -61,7 +61,10 @@ async function loadCommands(dir) {
   }
 }
 
-loadCommands(commandsDir).catch(console.error);
+await loadCommands(commandsDir);
+console.log(`Loaded ${client.commands.size} commands:`, [
+  ...client.commands.keys(),
+]);
 
 const eventsDirectory = getDirectoryRoot();
 const eventsDir = path.join(eventsDirectory, "events");
