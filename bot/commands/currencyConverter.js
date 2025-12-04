@@ -33,7 +33,7 @@ export default {
     const convertedAmount = await conversion.convert(amount);
     const data = await convertedAmount;
     await interaction.editReply({
-      content: `100 USD is approximately ${data} EUR.`,
+      content: `${amount} ${fromCurrency} is approximately ${data} ${toCurrency}.`,
     });
   },
 };

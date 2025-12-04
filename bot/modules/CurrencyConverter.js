@@ -8,7 +8,7 @@ class CurrencyConverter {
   async convert(amount) {
     try {
       const response = await fetch(
-        `https://v6.exchangerate-api.com/v6/YOUR-API-KEY/pair/${this.fromCurrency}/${this.toCurrency}`
+        `https://v6.exchangerate-api.com/v6/21498dca16e786c432c72dd7/pair/${this.fromCurrency}/${this.toCurrency}`
       );
       const data = await response.json();
       console.log(data);
