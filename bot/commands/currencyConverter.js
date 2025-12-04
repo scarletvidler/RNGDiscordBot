@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import CurrencyConverter from "../modules/CurrencyConvert";
+import CurrencyConverter from "../modules/CurrencyConverter.js";
 
 export default {
   data: new SlashCommandBuilder()
