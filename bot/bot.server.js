@@ -1,10 +1,5 @@
 // app/bot.server.ts
-import {
-  ActivityType,
-  Client,
-  Collection,
-  GatewayIntentBits,
-} from "discord.js";
+import { Client, Collection, GatewayIntentBits } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { registerSlashCommands } from "./slash-commands.js";
@@ -52,6 +47,9 @@ async function loadCommands(dir) {
       console.log(`Loaded command module from ${moduleUrl}`);
       const cmd = module.default || module;
       if (cmd && cmd.data && cmd.execute) {
+        console.log(`Registering command: ${cmd.data.name}`);
+        console.log(cmd.data);
+        console.log(cmd.execute);
         client.commands.set(cmd.data.name, cmd);
       } else {
         console.warn(
@@ -103,8 +101,8 @@ export function startBot() {
     client.user.setPresence({
       activities: [
         {
-          type: ActivityType.Watching,
-          name: "over RNG",
+          type: 3,
+          name: "Watching over RNG",
         },
       ],
       status: "online",
