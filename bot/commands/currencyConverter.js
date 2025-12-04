@@ -11,13 +11,13 @@ export default {
         .setDescription("The amount of currency to convert")
         .setRequired(true)
     )
-    .addNumberOption((option) =>
+    .addStringOption((option) =>
       option
         .setName("from")
         .setDescription("The currency code to convert from (e.g., USD)")
         .setRequired(true)
     )
-    .addNumberOption((option) =>
+    .addStringOption((option) =>
       option
         .setName("to")
         .setDescription("The currency code to convert to (e.g., EUR)")
