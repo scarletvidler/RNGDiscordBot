@@ -4,7 +4,7 @@ import {
   VoiceConnectionStatus,
   entersState,
 } from "@discordjs/voice";
-import VoicePlayer from "./voicePlayer.js";
+import VoicePlayer from "./VoicePlayer.js";
 
 /**
  * Join a voice channel and speak a message.
