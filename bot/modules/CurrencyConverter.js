@@ -11,6 +11,7 @@ class CurrencyConverter {
         `https://v6.exchangerate-api.com/v6/YOUR-API-KEY/pair/${this.fromCurrency}/${this.toCurrency}`
       );
       const data = await response.json();
+      console.log(data);
       const conversionAmount = data.conversion_rate * amount;
       return new Intl.NumberFormat("en-GB", {
         style: "currency",
