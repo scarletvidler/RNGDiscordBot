@@ -16,7 +16,7 @@ RUN apk update && \
 COPY package*.json ./
 
 # Install production deps only
-RUN npm install --omit=dev
+RUN npm install
 
 # -----------------------------------------------------
 # 4) Copy the rest of the project
