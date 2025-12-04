@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@discordjs/voice": "^0.18.0",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@remix-run/node": "^2.15.2",
     "@remix-run/react": "^2.15.2",
     "@remix-run/serve": "^2.15.2",

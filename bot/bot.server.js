@@ -11,6 +11,10 @@ import { registerSlashCommands } from "./slash-commands.js";
 import "dotenv/config";
 import getDirectoryRoot from "./helpers/getDirectoryRoot.js";
 import { pathToFileURL } from "url";
+import { path as ffmpegPath } from "@ffmpeg-installer/ffmpeg";
+
+process.env.FFMPEG_PATH = ffmpegPath;
+
 class ExtendedClient extends Client {
   guildChatId;
   ttsChatId;
