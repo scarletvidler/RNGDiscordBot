@@ -50,7 +50,8 @@ async function loadCommands(dir) {
         console.log(`Registering command: ${cmd.data.name}`);
         console.log(cmd.data);
         console.log(cmd.execute);
-        client.commands.set(cmd.data.name, cmd);
+        const setting = client.commands.set(cmd.data.name, cmd);
+        console.log(`Command set result: ${setting}`);
       } else {
         console.warn(
           `Invalid command module at ${moduleUrl}. Missing required properties.`
