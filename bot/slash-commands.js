@@ -2,9 +2,6 @@ import { Events, MessageFlags, REST, Routes } from "discord.js";
 
 export async function registerSlashCommands(client, clientId, guildId, token) {
   try {
-    console.log(
-      `📡 Registering ${commandsJson.length} commands for guild ${guildId}...`
-    );
     const rest = new REST({ version: "10" }).setToken(token);
     const commandsJson = client.commands.map((cmd) => cmd.data.toJSON());
     const data = await rest.put(
