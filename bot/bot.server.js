@@ -25,6 +25,7 @@ const client = new ExtendedClient({
 client.guildChatId = "832181235031867484";
 client.ttsChatId = "1419004262431592559";
 client.scarletId = "122548971737579520";
+client.polishId = "443041213113958400";
 client.prefix = "rng:";
 
 client.commands = new Collection();
