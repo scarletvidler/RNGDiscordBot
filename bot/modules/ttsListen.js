@@ -83,7 +83,7 @@ async function convertMessageToSpeech(message) {
   }
   if (message.author.id === "895008854759333908") {
     console.log("Using default voice for Lydia.");
-    voice_id = "SAz9YHcvj6GT2YYXdXww"; // Lydia
+    voice_id = "pFZP5JQG7iQjIQuC4Bku"; // Lydia
   }
   // const voice_id = "z7B9WFCZUlsrvlit0TTj"; // me
   console.log("Generating speech...");
