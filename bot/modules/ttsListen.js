@@ -75,7 +75,12 @@ async function convertMessageToSpeech(message) {
   if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
 
   // const voice_id = "bl0TUn2b06BCzwDpiLlg";
-  const voice_id = "cgSgspJ2msm6clMCkdW9"; // Lerche
+  let voice_id = "cgSgspJ2msm6clMCkdW9"; // Lerche
+  const voice_polish = "8jMNCczgLGJQ3uVTkRhG"; // Polish
+  if (message.author.id === "443041213113958400") {
+    console.log("Using Polish voice for Lerche.");
+    voice_id = voice_polish;
+  }
   // const voice_id = "z7B9WFCZUlsrvlit0TTj"; // me
   console.log("Generating speech...");
 
