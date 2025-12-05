@@ -4,7 +4,7 @@ import {
   VoiceConnectionStatus,
   entersState,
 } from "@discordjs/voice";
-import VoicePlayer from "./VoicePlayer.js";
+import VoicePlayerClass from "./VoicePlayer.js";
 
 /**
  * Join a voice channel and speak a message.
@@ -20,7 +20,7 @@ export async function joinAndPlay(channel, message) {
   // Wait until fully connected
   await entersState(connection, VoiceConnectionStatus.Ready, 60_000);
 
-  const player = VoicePlayer;
+  const player = new VoicePlayerClass(connection);
   connection.subscribe(player.audioInstance);
 
   // If sound queue is empty, play a ping sound first
@@ -82,8 +82,6 @@ async function convertMessageToSpeech(message) {
   message = validateMessageContent(message);
 
   console.log("Final message to speak:", message);
-
-  // Stream speech (POST /v1/text-to-speech/:voice_id/stream)
 
   console.log("Downloading speech from ElevenLabs...");
   const response = await fetch(

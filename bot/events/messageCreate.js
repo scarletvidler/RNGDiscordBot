@@ -1,4 +1,4 @@
-import { joinAndPlay } from "../modules/tts-listen.js";
+import { joinAndPlay } from "../modules/ttsListen.js";
 
 export default {
   type: "messageCreate",

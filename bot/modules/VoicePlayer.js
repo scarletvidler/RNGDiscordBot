@@ -14,16 +14,32 @@ import fs from "fs";
 
 class VoicePlayerClass {
   static _instance;
-  constructor() {
+  constructor(connection) {
     this.timeOfCreation = Date.now();
-
+    this.idleTimeout = 300000; // 5 minutes
+    this.idleTimer = this.timeOfCreation;
     this.audioInstance = null;
-    this.connection = null;
+    this.connection = connection;
     this.soundQueue = [];
 
+    this._monitorIdleState();
     this._createPlayer();
     this._handleEvents();
   }
+
+  _monitorIdleState() {
+    setInterval(() => {
+      if (this.hasIdledTooLong && this.isStopped) {
+        console.log("Audio player has idled too long ... disconnecting.");
+        this.playSoundFile(this.getSoundAsset("disconnect.ogg"));
+        if (this.connection) {
+          this.connection.destroy();
+          this.connection = null;
+        }
+      }
+    }, 60000); // Check every minute
+  }
+
   _createPlayer() {
     this.audioInstance = createAudioPlayer();
   }
@@ -33,6 +49,7 @@ class VoicePlayerClass {
       const nextSound = this.soundQueue.shift();
       this.audioInstance.play(nextSound);
     } else {
+      this.audioInstance.stop();
       console.log("Sound queue is empty.");
     }
   }
@@ -45,7 +62,14 @@ class VoicePlayerClass {
       console.error("Player error:", err.message);
     });
 
+    this.audioInstance.on(AudioPlayerStatus.Playing, () => {
+      console.log("Audio player is now playing.");
+      this.idleTimer = Date.now();
+    });
+
     this.audioInstance.on(AudioPlayerStatus.Idle, () => {
+      console.log("Audio player is now idle.");
+      this.idleTimer = Date.now();
       this._playNextInQueue();
     });
   }
@@ -63,6 +87,14 @@ class VoicePlayerClass {
 
   get isPaused() {
     return this.audioInstance.state.status === AudioPlayerStatus.Paused;
+  }
+
+  get isStopped() {
+    return this.audioInstance.state.status === AudioPlayerStatus.Idle;
+  }
+
+  get hasIdledTooLong() {
+    return Date.now() - this.idleTimer > this.idleTimeout;
   }
 
   getSoundAsset(name) {
@@ -85,6 +117,4 @@ class VoicePlayerClass {
   }
 }
 
-// Export the singleton instance
-const VoicePlayer = new VoicePlayerClass();
-export default VoicePlayer;
+export default VoicePlayerClass;
