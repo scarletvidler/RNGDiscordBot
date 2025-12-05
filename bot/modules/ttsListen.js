@@ -81,7 +81,7 @@ async function convertMessageToSpeech(message) {
     console.log("Using Polish voice for Lerche.");
     voice_id = voice_polish;
   }
-  if (message.author.id === "ZF6FPAbjXT4488VcRRnw") {
+  if (message.author.id === "895008854759333908") {
     console.log("Using default voice for Lydia.");
     voice_id = "ZF6FPAbjXT4488VcRRnw"; // Lydia
   }
