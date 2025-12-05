@@ -31,7 +31,7 @@ class VoicePlayerClass {
     setInterval(() => {
       if (this.hasIdledTooLong && this.isStopped) {
         console.log("Audio player has idled too long ... disconnecting.");
-        this.playSoundFile(this.getSoundAsset("disconnect.ogg"));
+        this.playSoundFileDirect(this.getSoundAsset("disconnect.ogg"));
         if (this.connection) {
           this.connection.destroy();
           this.connection = null;
@@ -114,6 +114,12 @@ class VoicePlayerClass {
   playSoundFile(sound) {
     const soundResource = createAudioResource(sound);
     this._addToQueue(soundResource);
+  }
+
+  // Bypass the queue and play immediately
+  playSoundFileDirect(sound) {
+    const soundResource = createAudioResource(sound);
+    this.audioInstance.play(soundResource);
   }
 }
 

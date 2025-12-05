@@ -13,7 +13,8 @@ export default {
       if (
         (message.channelId === client.ttsChatId ||
           message.channel.name === "tts") &&
-        message.author.id === client.scarletId
+        (message.author.id === client.scarletId ||
+          message.member?.roles.cache.has(client.lercheRoleId))
       ) {
         const channel = message.channel;
         if (!channel.isTextBased()) return;
