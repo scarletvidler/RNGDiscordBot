@@ -76,10 +76,14 @@ async function convertMessageToSpeech(message) {
 
   // const voice_id = "bl0TUn2b06BCzwDpiLlg";
   let voice_id = "cgSgspJ2msm6clMCkdW9"; // Lerche
-  const voice_polish = "8jMNCczgLGJQ3uVTkRhG"; // Polish
+  const voice_polish = "hIssydxXZ1WuDorjx6Ic"; // Polish
   if (message.author.id === "443041213113958400") {
     console.log("Using Polish voice for Lerche.");
     voice_id = voice_polish;
+  }
+  if (message.author.id === "895008854759333908") {
+    console.log("Using default voice for Lydia.");
+    voice_id = "SAz9YHcvj6GT2YYXdXww"; // Lydia
   }
   // const voice_id = "z7B9WFCZUlsrvlit0TTj"; // me
   console.log("Generating speech...");
