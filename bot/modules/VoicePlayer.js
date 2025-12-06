@@ -37,7 +37,7 @@ class VoicePlayerClass {
       if (this.hasIdledTooLong && this.isStopped) {
         this.playSoundFileDirect(this.getSoundAsset("disconnect.ogg")).then(
           () => {
-            if (this.connection != null && this.isPlaying === false) {
+            if (this.connection != null) {
               this.connection.destroy();
               this.connection = null;
             }

@@ -76,7 +76,7 @@ async function convertMessageToSpeech(message) {
   if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
 
   // const voiceId = "bl0TUn2b06BCzwDpiLlg";
-  let voiceId = "cgSgspJ2msm6clMCkdW9"; // Lerche
+  let voiceId = "cgSgspJ2msm6clMCkdW9"; // Lerche (Jessica)
   const voicePolish = "rU18Fk3uSDhmg5Xh41o4"; // Polish
   if (message.author.id === "443041213113958400") {
     console.log("Using Polish voice for Lerche.");
