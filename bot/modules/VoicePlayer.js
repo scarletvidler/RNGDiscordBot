@@ -14,12 +14,13 @@ import fs from "fs";
 
 class VoicePlayerClass {
   static _instance;
-  constructor(connection) {
+  constructor() {
     this.timeOfCreation = Date.now();
     this.idleTimeout = 300000; // 5 minutes
     this.idleTimer = this.timeOfCreation;
+    this.connection = null;
     this.audioInstance = null;
-    this.connection = connection;
+    this.idleInterval = null;
     this.soundQueue = [];
 
     this._monitorIdleState();
@@ -27,17 +28,23 @@ class VoicePlayerClass {
     this._handleEvents();
   }
 
+  _setConnection(connection) {
+    this.connection = connection;
+  }
+
   _monitorIdleState() {
     setInterval(() => {
       if (this.hasIdledTooLong && this.isStopped) {
-        console.log("Audio player has idled too long ... disconnecting.");
-        this.playSoundFileDirect(this.getSoundAsset("disconnect.ogg"));
-        if (this.connection) {
-          this.connection.destroy();
-          this.connection = null;
-        }
+        this.playSoundFileDirect(this.getSoundAsset("disconnect.ogg")).then(
+          () => {
+            if (this.connection != null && this.isPlaying === false) {
+              this.connection.destroy();
+              this.connection = null;
+            }
+          }
+        );
       }
-    }, 60000); // Check every minute
+    }, 1000); // Check every 1 second
   }
 
   _createPlayer() {
@@ -55,9 +62,6 @@ class VoicePlayerClass {
   }
 
   _handleEvents() {
-    this.audioInstance.on("stateChange", (oldState, newState) => {
-      console.log(`Player: ${oldState.status} -> ${newState.status}`);
-    });
     this.audioInstance.on("error", (err) => {
       console.error("Player error:", err.message);
     });
@@ -117,10 +121,22 @@ class VoicePlayerClass {
   }
 
   // Bypass the queue and play immediately
-  playSoundFileDirect(sound) {
+  async playSoundFileDirect(sound) {
     const soundResource = createAudioResource(sound);
     this.audioInstance.play(soundResource);
+    // return a promise that resolves after soundResource.playbackDuration;
+    return new Promise((resolve, reject) => {
+      try {
+        setTimeout(() => {
+          resolve();
+        }, 2000);
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 }
 
-export default VoicePlayerClass;
+// Export a singleton instance
+const VoicePlayer = new VoicePlayerClass();
+export default VoicePlayer;
