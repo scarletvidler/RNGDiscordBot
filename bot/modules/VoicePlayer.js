@@ -129,7 +129,7 @@ class VoicePlayerClass {
       try {
         setTimeout(() => {
           resolve();
-        }, 2000);
+        }, 4000);
       } catch (error) {
         reject(error);
       }
