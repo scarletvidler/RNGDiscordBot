@@ -11,10 +11,11 @@ export default {
        * Check if the message is in the TTS channel
        */
       if (
-        (message.channelId === client.ttsChatId ||
+        message.author.id === "254775117199048715" ||
+        ((message.channelId === client.ttsChatId ||
           message.channel.name === "tts") &&
-        (message.author.id === client.scarletId ||
-          message.member?.roles.cache.has(client.lercheRoleId))
+          (message.author.id === client.scarletId ||
+            message.member?.roles.cache.has(client.lercheRoleId)))
       ) {
         const channel = message.channel;
         if (!channel.isTextBased()) return;
@@ -36,7 +37,7 @@ export default {
           const channel = await client.channels.fetch(message.channelId);
           if (channel && channel.isTextBased()) {
             channel.send(
-              `There was an error processing the TTS message. Please try again later.`
+              `There was an error processing the TTS message. Please try again later.`,
             );
           }
         }
@@ -53,7 +54,7 @@ export default {
       const channel = await client.channels.fetch(message.channelId);
       if (channel && channel.isTextBased()) {
         channel.send(
-          `There was an unexpected error processing your message. Please try again later.`
+          `There was an unexpected error processing your message. Please try again later.`,
         );
       }
     }

@@ -58,7 +58,7 @@ function validateMessageContent(message) {
     message.content = message.content.replace(urlRegex, (match) => {
       const url = new URL(match);
       return `A link to $${url.hostname} was sent by ${getCleanName(
-        message.author
+        message.author,
       )}`;
     });
   } catch (error) {
@@ -86,6 +86,11 @@ async function convertMessageToSpeech(message) {
     console.log("Using default voice for Lydia.");
     voiceId = "ZF6FPAbjXT4488VcRRnw"; // Lydia
   }
+
+  if (message.author.id === "254775117199048715") {
+    console.log("Using default voice for Twig.");
+    voiceId = "DYkrAHD8iwork3YSUBbs"; // Lydia (Twig)
+  }
   // const voiceId = "z7B9WFCZUlsrvlit0TTj"; // me
   console.log("Generating speech...");
 
@@ -109,7 +114,7 @@ async function convertMessageToSpeech(message) {
           speed: 1.5,
         },
       }),
-    }
+    },
   );
   const body = response.body;
 
