@@ -82,15 +82,7 @@ async function convertMessageToSpeech(message) {
     console.log("Using Polish voice for Lerche.");
     voiceId = voicePolish;
   }
-  if (message.author.id === "895008854759333908") {
-    console.log("Using default voice for Lydia.");
-    voiceId = "ZF6FPAbjXT4488VcRRnw"; // Lydia
-  }
 
-  if (message.author.id === "254775117199048715") {
-    console.log("Using default voice for Twig.");
-    voiceId = "DYkrAHD8iwork3YSUBbs"; // Lydia (Twig)
-  }
   // const voiceId = "z7B9WFCZUlsrvlit0TTj"; // me
   console.log("Generating speech...");
 
