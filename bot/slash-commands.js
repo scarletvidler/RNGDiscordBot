@@ -5,12 +5,13 @@ export async function registerSlashCommands(client, clientId, guildIds, token) {
     const rest = new REST({ version: "10" }).setToken(token);
     const commandsJson = client.commands.map((cmd) => cmd.data.toJSON());
     for (const guildId of guildIds) {
+      console.log(`Registering slash commands for guild ${guildId}...`);
       const data = await rest.put(
         Routes.applicationGuildCommands(clientId, guildId),
-        { body: commandsJson }
+        { body: commandsJson },
       );
       console.log(
-        `✅ Successfully registered ${data.length} commands for guild ${guildId}.`
+        `✅ Successfully registered ${data.length} commands for guild ${guildId}.`,
       );
     }
   } catch (error) {
@@ -23,7 +24,7 @@ export async function registerSlashCommands(client, clientId, guildIds, token) {
 
     if (!command) {
       console.error(
-        `No command matching ${interaction.commandName} was found.`
+        `No command matching ${interaction.commandName} was found.`,
       );
       return;
     }

@@ -3,6 +3,8 @@ import {
   joinVoiceChannel,
   VoiceConnectionStatus,
   entersState,
+  getVoiceConnection,
+  getVoiceConnections,
 } from "@discordjs/voice";
 import VoicePlayer from "./VoicePlayer.js";
 
@@ -10,28 +12,45 @@ import VoicePlayer from "./VoicePlayer.js";
  * Join a voice channel and speak a message.
  */
 export async function joinAndPlay(channel, message) {
-  // Connect to the channel
-  const connection = joinVoiceChannel({
-    channelId: channel.id,
-    guildId: channel.guild.id,
-    adapterCreator: channel.guild.voiceAdapterCreator,
-  });
+  try {
+    let connection = getVoiceConnection(channel.guild.id);
 
-  // Wait until fully connected
-  await entersState(connection, VoiceConnectionStatus.Ready, 60_000);
+    // Connect to the channel
+    if (!connection) {
+      connection = joinVoiceChannel({
+        debug: true,
+        channelId: channel.id,
+        guildId: channel.guild.id,
+        adapterCreator: channel.guild.voiceAdapterCreator,
+        selfDeaf: true,
+      });
+      connection.on("stateChange", (oldState, newState) => {
+        console.log(`[voice] ${oldState.status} -> ${newState.status}`);
+      });
+    }
 
-  const player = VoicePlayer;
-  player._setConnection(connection);
+    console.log(channel.guild.id, channel.id);
 
-  connection.subscribe(player.audioInstance);
+    // Wait until fully connected
+    await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
 
-  // If sound queue is empty, play a ping sound first
-  if (player.soundQueue.length === 0 && !player.isPlaying) {
-    player.playSoundFile(player.getSoundAsset("ping.ogg"));
+    const player = VoicePlayer;
+    player._setConnection(connection);
+
+    connection.subscribe(player.audioInstance);
+
+    // If sound queue is empty, play a ping sound first
+    if (player.soundQueue.length === 0 && !player.isPlaying) {
+      player.playSoundFile(player.getSoundAsset("ping.ogg"));
+    }
+    // Generate speech stream from ElevenLabs
+    const resourceStream = await convertMessageToSpeech(message);
+    player.playSoundFile(resourceStream);
+    return true;
+  } catch (error) {
+    console.error("Error in joinAndPlay:", error);
+    throw error; // re-throw to be caught by caller
   }
-  // Generate speech stream from ElevenLabs
-  const resourceStream = await convertMessageToSpeech(message);
-  player.playSoundFile(resourceStream);
 }
 
 function getCleanName(user) {
@@ -111,6 +130,8 @@ async function convertMessageToSpeech(message) {
   const body = response.body;
 
   console.log("ElevenLabs response status:", response.status);
+  console.log("ElevenLabs response headers:", response.headers);
+  console.log("ElevenLabs response body:", body);
 
   if (response.status !== 200) {
     const errorText = await response.text();

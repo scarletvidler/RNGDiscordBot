@@ -1,29 +1,24 @@
+import { getVoiceConnection } from "@discordjs/voice";
 import { joinAndPlay } from "../modules/ttsListen.js";
 
 export default {
   type: "messageCreate",
   execute: async (message, client) => {
     let reply;
+    const channel = message.channel;
     try {
       if (message.author.bot) return;
 
-      /*
-       * Check if the message is in the TTS channel
-       */
+      /* Check if the message is in the TTS channel */
       if (
-        message.author.id === "254775117199048715" ||
-        ((message.channelId === client.ttsChatId ||
-          message.channel.name === "tts") &&
-          (message.author.id === client.scarletId ||
-            message.member?.roles.cache.has(client.lercheRoleId)))
+        message.channel.name === "tts" &&
+        (message.author.id === client.scarletId ||
+          message.member?.roles.cache.has(client.lercheRoleId))
       ) {
-        const channel = message.channel;
         if (!channel.isTextBased()) return;
         reply = await channel.send("Listening for TTS messages...");
 
-        /*
-         * Handle TTS message
-         */
+        /*  Handle TTS message */
         try {
           if (message.member?.voice.channel) {
             await joinAndPlay(message.member.voice.channel, message);
@@ -31,10 +26,13 @@ export default {
             await reply?.edit("Message played in voice channel.");
           }
         } catch (error) {
-          console.error("Error handling TTS message:", error);
+          const failedConnection = getVoiceConnection(message.guild.id);
+          if (failedConnection) {
+            failedConnection.destroy();
+          }
+          console.error("Error handling TTS message:", error.message);
           message.react("❌");
           // Send a message to the same channel
-          const channel = await client.channels.fetch(message.channelId);
           if (channel && channel.isTextBased()) {
             channel.send(
               `There was an error processing the TTS message. Please try again later.`,
@@ -42,16 +40,13 @@ export default {
           }
         }
       } else {
-        /*
-         * Not a TTS message, ignore
-         */
+        /* Not a TTS message, ignore */
         return;
       }
     } catch (error) {
       console.error("Error in messageCreate event:", error);
       message.react("❌");
       // Send a message to the same channel
-      const channel = await client.channels.fetch(message.channelId);
       if (channel && channel.isTextBased()) {
         channel.send(
           `There was an unexpected error processing your message. Please try again later.`,

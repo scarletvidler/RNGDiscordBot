@@ -9,7 +9,11 @@ import { pathToFileURL } from "url";
 
 class ExtendedClient extends Client {
   guildChatId;
-  ttsChatId;
+  ttsChatChannelId;
+  scarletId;
+  polishId;
+  lercheRoleId;
+  prefix;
 }
 
 const client = new ExtendedClient({
@@ -23,7 +27,7 @@ const client = new ExtendedClient({
 
 //  Make this a config folder later
 client.guildChatId = "832181235031867484";
-client.ttsChatId = "1419004262431592559";
+client.ttsChatChannelId = "1419004262431592559";
 client.scarletId = "122548971737579520";
 client.polishId = "443041213113958400";
 client.lercheRoleId = "1446619757762707557";
@@ -50,13 +54,9 @@ async function loadCommands(dir) {
       const cmd = module.default || module;
       if (cmd && cmd.data && cmd.execute) {
         console.log(`Registering command: ${cmd.data.name}`);
-        console.log(cmd.data);
-        console.log(cmd.execute);
-        const setting = client.commands.set(cmd.data.name, cmd);
-        console.log(setting);
       } else {
         console.warn(
-          `Invalid command module at ${moduleUrl}. Missing required properties.`
+          `Invalid command module at ${moduleUrl}. Missing required properties.`,
         );
       }
     }
@@ -89,7 +89,7 @@ async function loadEvents(dir) {
         client.on(event.type, (...args) => event.execute(...args, client));
       } else {
         console.warn(
-          `Invalid events module at ${moduleUrl}. Missing required properties.`
+          `Invalid events module at ${moduleUrl}. Missing required properties.`,
         );
       }
     }
@@ -103,8 +103,8 @@ export function startBot() {
     registerSlashCommands(
       client,
       process.env.CLIENT_ID,
-      [process.env.GUILD_ID1, process.env.GUILD_ID2],
-      process.env.BOT_TOKEN
+      [process.env.GUILD_ID2],
+      process.env.BOT_TOKEN,
     );
 
     console.log(`🤖 Logged in as ${client.user?.tag}`);
