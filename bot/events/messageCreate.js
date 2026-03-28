@@ -5,6 +5,7 @@ export default {
   type: "messageCreate",
   execute: async (message, client) => {
     let reply;
+
     const channel = message.channel;
     try {
       if (message.author.bot) return;

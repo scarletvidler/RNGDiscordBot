@@ -4,52 +4,57 @@ import {
   VoiceConnectionStatus,
   entersState,
   getVoiceConnection,
-  getVoiceConnections,
 } from "@discordjs/voice";
 import VoicePlayer from "./VoicePlayer.js";
 
-/**
- * Join a voice channel and speak a message.
- */
 export async function joinAndPlay(channel, message) {
   try {
     let connection = getVoiceConnection(channel.guild.id);
 
-    // Connect to the channel
     if (!connection) {
       connection = joinVoiceChannel({
-        debug: true,
         channelId: channel.id,
         guildId: channel.guild.id,
         adapterCreator: channel.guild.voiceAdapterCreator,
         selfDeaf: true,
       });
+
       connection.on("stateChange", (oldState, newState) => {
-        console.log(`[voice] ${oldState.status} -> ${newState.status}`);
+        console.debug(`[voice] ${oldState.status} -> ${newState.status}`);
+      });
+
+      // Only attach disconnect handler AFTER we've reached Ready
+      connection.once(VoiceConnectionStatus.Ready, () => {
+        connection.on(VoiceConnectionStatus.Disconnected, async () => {
+          try {
+            await Promise.race([
+              entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+              entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+            ]);
+          } catch {
+            connection.destroy();
+          }
+        });
       });
     }
 
-    console.log(channel.guild.id, channel.id);
-
     // Wait until fully connected
-    await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+    await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
 
     const player = VoicePlayer;
     player._setConnection(connection);
-
     connection.subscribe(player.audioInstance);
 
-    // If sound queue is empty, play a ping sound first
     if (player.soundQueue.length === 0 && !player.isPlaying) {
       player.playSoundFile(player.getSoundAsset("ping.ogg"));
     }
-    // Generate speech stream from ElevenLabs
+
     const resourceStream = await convertMessageToSpeech(message);
     player.playSoundFile(resourceStream);
     return true;
   } catch (error) {
     console.error("Error in joinAndPlay:", error);
-    throw error; // re-throw to be caught by caller
+    throw error;
   }
 }
 
