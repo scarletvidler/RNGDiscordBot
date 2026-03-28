@@ -11,7 +11,6 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@discordjs/opus": "^0.10.0",
     "@discordjs/voice": "^0.19.2",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@remix-run/node": "^2.15.2",
@@ -24,6 +23,7 @@
     "ffmpeg-static": "^5.3.0",
     "fs": "^0.0.1-security",
     "isbot": "^4.1.0",
+    "opusscript": "^0.0.8",
     "path": "^0.12.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
