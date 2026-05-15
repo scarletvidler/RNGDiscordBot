@@ -14,7 +14,8 @@ export default {
       if (
         message.channel.name === "tts" &&
         (message.author.id === client.scarletId ||
-          message.member?.roles.cache.has(client.lercheRoleId))
+          message.member?.roles.cache.has(client.lercheRoleId) ||
+          message.member?.roles.cache.has(client.ameliaRoleId))
       ) {
         if (!channel.isTextBased()) return;
         reply = await channel.send("Listening for TTS messages...");

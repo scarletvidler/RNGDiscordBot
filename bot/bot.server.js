@@ -29,8 +29,10 @@ const client = new ExtendedClient({
 client.guildChatId = "832181235031867484";
 client.ttsChatChannelId = "1419004262431592559";
 client.scarletId = "122548971737579520";
+client.mochiId = "498267543501537280";
 client.polishId = "443041213113958400";
 client.lercheRoleId = "1446619757762707557";
+client.ameliaRoleId = "1504948220499988632";
 client.prefix = "rng:";
 
 client.commands = new Collection();
