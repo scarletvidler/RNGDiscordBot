@@ -102,7 +102,7 @@ async function convertMessageToSpeech(message) {
   // const voiceId = "bl0TUn2b06BCzwDpiLlg";
   let voiceId = "cgSgspJ2msm6clMCkdW9"; // Lerche (Jessica)
   const voicePolish = "rU18Fk3uSDhmg5Xh41o4"; // Polish
-  if (message.author.id === "443041213113958400") {
+  if (message.author.id === "498267543501537280") {
     console.log("Using Polish voice for Lerche.");
     voiceId = voicePolish;
   }
