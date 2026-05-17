@@ -88,11 +88,18 @@ async function loadEvents(dir: string): Promise<void> {
 loadEvents(eventsDir).catch(console.error);
 
 export async function startBot(): Promise<void> {
-  client.once("clientReady", () => {
+  client.once("clientReady", async () => {
+
+  const guilds: Guild[] = await getGuilds(process.env.BOT_TOKEN!) as Guild[];
+  const guildIds: string[] = guilds.map(guild => guild.id);
+    guilds.map((guild) => {
+      console.log(`Connected to guild: ${guild.name} (ID: ${guild.id})`);
+    });
+
     registerSlashCommands(
       client,
       process.env.CLIENT_ID!,
-      [process.env.GUILD_ID1!, process.env.GUILD_ID2!, process.env.GUILD_ID3!],
+      guildIds,
       process.env.BOT_TOKEN!,
     );
 
@@ -108,16 +115,16 @@ export async function startBot(): Promise<void> {
       ],
       status: "online",
     });
+
+  
+
     client.user!.setStatus("online");
   });
 
 
   client.login(process.env.BOT_TOKEN!);
 
-  const guilds: Guild[] = await getGuilds(process.env.BOT_TOKEN!) as Guild[];
-  guilds.map((guild) => {
-    console.log(`Connected to guild: ${guild.name} (ID: ${guild.id})`);
-  });
+
 
 
   return Promise.resolve();
