@@ -1,4 +1,5 @@
-import { apiConnect } from "./apiConnect";
+import { apiConnect } from "./apiConnect.ts";
+
 
 
 export async function getGuilds(token: string) {

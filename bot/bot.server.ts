@@ -98,7 +98,7 @@ export async function startBot(): Promise<void> {
     registerSlashCommands(
       client,
       process.env.CLIENT_ID!,
-      [process.env.GUILD_ID1!, process.env.GUILD_ID2!, process.env.GUILD_ID3!, process.env.GUILD_ID4!],
+      [process.env.GUILD_ID1!, process.env.GUILD_ID2!, process.env.GUILD_ID3!],
       process.env.BOT_TOKEN!,
     );
 
