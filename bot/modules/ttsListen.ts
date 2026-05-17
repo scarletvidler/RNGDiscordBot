@@ -8,7 +8,7 @@ import {
 } from "@discordjs/voice";
 import { type Message, type User, type VoiceBasedChannel } from "discord.js";
 import { Readable } from "stream";
-import VoicePlayer from "./VoicePlayer.js";
+import VoicePlayer from "./VoicePlayer.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,

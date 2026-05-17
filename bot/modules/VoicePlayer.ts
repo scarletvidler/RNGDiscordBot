@@ -7,7 +7,7 @@ import {
   createAudioResource,
 } from "@discordjs/voice";
 import { Readable } from "stream";
-import getDirectoryRoot from "../helpers/getDirectoryRoot.js";
+import getDirectoryRoot from "../helpers/getDirectoryRoot.ts";
 import path from "path";
 import fs from "fs";
 

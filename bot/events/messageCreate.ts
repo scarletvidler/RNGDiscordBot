@@ -1,7 +1,7 @@
 import { getVoiceConnection } from "@discordjs/voice";
 import { type Message } from "discord.js";
-import { joinAndPlay } from "../modules/ttsListen.js";
-import type { BotEvent, ExtendedClient } from "../types.js";
+import { joinAndPlay } from "../modules/ttsListen.ts";
+import type { BotEvent, ExtendedClient } from "../types.ts";
 
 const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
   type: "messageCreate",

@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import CurrencyConverter from "../modules/CurrencyConverter.js";
+import CurrencyConverter from "../modules/CurrencyConverter.ts";
 import type { BotCommand } from "../types.js";
 
 const command: BotCommand = {

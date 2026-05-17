@@ -1,9 +1,9 @@
 import { GatewayIntentBits } from "discord.js";
 import fs from "fs";
 import path from "path";
-import { registerSlashCommands } from "./slash-commands.js";
+import { registerSlashCommands } from "./slash-commands.ts";
 import "dotenv/config";
-import getDirectoryRoot from "./helpers/getDirectoryRoot.js";
+import getDirectoryRoot from "./helpers/getDirectoryRoot.ts";
 import { pathToFileURL } from "url";
 import { ExtendedClient, type BotCommand, type BotEvent } from "./types.js";
 
