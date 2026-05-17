@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import type { BotCommand } from "../types.js";
+import type { BotCommand } from "../types.ts";
 
 interface PokemonData {
   name: string;

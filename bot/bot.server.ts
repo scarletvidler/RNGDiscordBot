@@ -5,7 +5,7 @@ import { registerSlashCommands } from "./slash-commands.ts";
 import "dotenv/config";
 import getDirectoryRoot from "./helpers/getDirectoryRoot.ts";
 import { pathToFileURL } from "url";
-import { ExtendedClient, type BotCommand, type BotEvent } from "./types.js";
+import { ExtendedClient, type BotCommand, type BotEvent } from "./types.ts";
 
 const client = new ExtendedClient({
   intents: [

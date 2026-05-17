@@ -1,5 +1,5 @@
 import { Events, MessageFlags, REST, Routes } from "discord.js";
-import type { ExtendedClient } from "./types.js";
+import type { ExtendedClient } from "./types.ts";
 
 export async function registerSlashCommands(
   client: ExtendedClient,
