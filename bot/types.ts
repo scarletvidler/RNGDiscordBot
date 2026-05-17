@@ -1,4 +1,4 @@
-import { Client, ClientOptions, Collection } from "discord.js";
+import { Client, Collection } from "discord.js";
 import type { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
 export interface BotCommand {
@@ -21,7 +21,7 @@ export class ExtendedClient extends Client {
   prefix!: string;
   commands: Collection<string, BotCommand>;
 
-  constructor(options: ClientOptions) {
+  constructor(options: any) {
     super(options);
     this.commands = new Collection();
   }
