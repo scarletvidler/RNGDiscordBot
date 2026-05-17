@@ -8,7 +8,9 @@ import {
 } from "@discordjs/voice";
 import { type Message, type User, type VoiceBasedChannel } from "discord.js";
 import { Readable } from "stream";
-import VoicePlayer from "./VoicePlayer.ts";
+import VoicePlayerClass from "./VoicePlayer.ts";
+import clientInstance from "./client.ts";
+
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
@@ -18,6 +20,14 @@ export async function joinAndPlay(
     let voiceConn: VoiceConnection | undefined = getVoiceConnection(
       channel.guild.id,
     );
+    
+    // TODO: Refactor this to use a better state management system for voice connections and players, rather than relying on the channel's player property and fetching the channel every time. This is a band-aid to avoid multiple connections being created when multiple messages are sent in quick succession before the first connection is fully established.
+    // get the channel from the cache to avoid creating multiple connections to the same guild
+    const currentChannel = await clientInstance.channels.fetch(channel.id).catch((err) => {
+      console.error(`Error fetching channel ${channel.id}:`, err);
+    });
+
+    currentChannel.player = currentChannel.player || new VoicePlayerClass();
 
     if (!voiceConn) {
       const newConn = joinVoiceChannel({
@@ -53,7 +63,7 @@ export async function joinAndPlay(
     // Wait until fully connected
     await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
 
-    const player = VoicePlayer;
+    const player = currentChannel.player;
     player._setConnection(connection);
     connection.subscribe(player.audioInstance);
 
@@ -133,7 +143,7 @@ async function convertMessageToSpeech(message: Message<true>): Promise<Readable>
   );
 
   console.log("ElevenLabs response status:", response.status);
-  console.log("ElevenLabs response headers:", response.headers);
+
 
   if (response.status !== 200) {
     const errorText = await response.text();

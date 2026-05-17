@@ -11,7 +11,7 @@ import getDirectoryRoot from "../helpers/getDirectoryRoot.ts";
 import path from "path";
 import fs from "fs";
 
-class VoicePlayerClass {
+export default class VoicePlayerClass {
   timeOfCreation: number;
   idleTimeout: number;
   idleTimer: number;
@@ -133,6 +133,3 @@ class VoicePlayerClass {
   }
 }
 
-// Export a singleton instance
-const VoicePlayer = new VoicePlayerClass();
-export default VoicePlayer;

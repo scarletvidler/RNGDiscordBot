@@ -1,21 +1,15 @@
-import { GatewayIntentBits, Guild } from "discord.js";
+import { Guild } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { registerSlashCommands } from "./slash-commands.ts";
 import "dotenv/config";
 import getDirectoryRoot from "./helpers/getDirectoryRoot.ts";
 import { pathToFileURL } from "url";
-import { ExtendedClient, type BotCommand, type BotEvent } from "./types.ts";
+import { type BotCommand, type BotEvent } from "./types.ts";
 import { getGuilds } from "./api/getGuilds.ts";
+import clientInstance from "./modules/client.ts";
 
-const client = new ExtendedClient({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.MessageContent,
-  ],
-});
+const client = clientInstance;
 
 //  Make this a config folder later
 client.guildChatId = "832181235031867484";
@@ -121,7 +115,10 @@ export async function startBot(): Promise<void> {
   client.login(process.env.BOT_TOKEN!);
 
   const guilds: Guild[] = await getGuilds(process.env.BOT_TOKEN!) as Guild[];
-  console.log("Guilds the bot is in:", guilds.map((g) => g.name).join(", "));
+  guilds.map((guild) => {
+    console.log(`Connected to guild: ${guild.name} (ID: ${guild.id})`);
+  });
+
 
   return Promise.resolve();
 }
