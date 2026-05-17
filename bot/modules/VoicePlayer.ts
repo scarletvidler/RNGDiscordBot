@@ -1,59 +1,59 @@
-// AudioPlayerBufferingState
-// AudioPlayerIdleState
-// AudioPlayerPausedState
-// AudioPlayerPlayingState
-
 import {
+  AudioPlayer,
   AudioPlayerStatus,
+  AudioResource,
+  VoiceConnection,
   createAudioPlayer,
   createAudioResource,
 } from "@discordjs/voice";
+import { Readable } from "stream";
 import getDirectoryRoot from "../helpers/getDirectoryRoot.js";
 import path from "path";
 import fs from "fs";
 
 class VoicePlayerClass {
-  static _instance;
+  timeOfCreation: number;
+  idleTimeout: number;
+  idleTimer: number;
+  connection: VoiceConnection | null;
+  audioInstance: AudioPlayer;
+  soundQueue: AudioResource[];
+
   constructor() {
     this.timeOfCreation = Date.now();
     this.idleTimeout = 300000; // 5 minutes
     this.idleTimer = this.timeOfCreation;
     this.connection = null;
-    this.audioInstance = null;
-    this.idleInterval = null;
     this.soundQueue = [];
+    this.audioInstance = createAudioPlayer();
 
     this._monitorIdleState();
-    this._createPlayer();
     this._handleEvents();
   }
 
-  _setConnection(connection) {
+  _setConnection(connection: VoiceConnection){
     this.connection = connection;
   }
 
-  _monitorIdleState() {
+  _monitorIdleState(){
     setInterval(() => {
       if (this.hasIdledTooLong && this.isStopped) {
-        this.playSoundFileDirect(this.getSoundAsset("disconnect.ogg")).then(
-          () => {
+        const asset = this.getSoundAsset("disconnect.ogg");
+        if (asset) {
+          this.playSoundFileDirect(asset).then(() => {
             if (this.connection != null) {
               this.connection.destroy();
               this.connection = null;
             }
-          }
-        );
+          });
+        }
       }
-    }, 1000); // Check every 1 second
+    }, 1000);
   }
 
-  _createPlayer() {
-    this.audioInstance = createAudioPlayer();
-  }
-
-  _playNextInQueue() {
+  _playNextInQueue(){
     if (this.soundQueue.length > 0) {
-      const nextSound = this.soundQueue.shift();
+      const nextSound = this.soundQueue.shift()!;
       this.audioInstance.play(nextSound);
     } else {
       this.audioInstance.stop();
@@ -61,7 +61,7 @@ class VoicePlayerClass {
     }
   }
 
-  _handleEvents() {
+  _handleEvents(){
     this.audioInstance.on("error", (err) => {
       console.error("Player error:", err.message);
     });
@@ -78,30 +78,30 @@ class VoicePlayerClass {
     });
   }
 
-  _addToQueue(sound) {
+  _addToQueue(sound: AudioResource) {
     this.soundQueue.push(sound);
     if (!this.isPlaying) {
       this._playNextInQueue();
     }
   }
 
-  get isPlaying() {
+  get isPlaying(): boolean {
     return this.audioInstance.state.status === AudioPlayerStatus.Playing;
   }
 
-  get isPaused() {
+  get isPaused(): boolean {
     return this.audioInstance.state.status === AudioPlayerStatus.Paused;
   }
 
-  get isStopped() {
+  get isStopped(): boolean {
     return this.audioInstance.state.status === AudioPlayerStatus.Idle;
   }
 
-  get hasIdledTooLong() {
+  get hasIdledTooLong(): boolean {
     return Date.now() - this.idleTimer > this.idleTimeout;
   }
 
-  getSoundAsset(name) {
+  getSoundAsset(name: string): string | null {
     try {
       const soundsDir = getDirectoryRoot();
       const soundAsset = path.resolve(soundsDir, "assets", "sounds", name);
@@ -115,21 +115,17 @@ class VoicePlayerClass {
     }
   }
 
-  playSoundFile(sound) {
+  playSoundFile(sound: string | Readable) {
     const soundResource = createAudioResource(sound);
     this._addToQueue(soundResource);
   }
 
-  // Bypass the queue and play immediately
-  async playSoundFileDirect(sound) {
+  async playSoundFileDirect(sound: string): Promise<void> {
     const soundResource = createAudioResource(sound);
     this.audioInstance.play(soundResource);
-    // return a promise that resolves after soundResource.playbackDuration;
     return new Promise((resolve, reject) => {
       try {
-        setTimeout(() => {
-          resolve();
-        }, 7000);
+        setTimeout(() => resolve(), 7000);
       } catch (error) {
         reject(error);
       }

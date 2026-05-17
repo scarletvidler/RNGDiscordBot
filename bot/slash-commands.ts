@@ -1,15 +1,21 @@
 import { Events, MessageFlags, REST, Routes } from "discord.js";
+import type { ExtendedClient } from "./types.js";
 
-export async function registerSlashCommands(client, clientId, guildIds, token) {
+export async function registerSlashCommands(
+  client: ExtendedClient,
+  clientId: string,
+  guildIds: string[],
+  token: string,
+): Promise<void> {
   try {
     const rest = new REST({ version: "10" }).setToken(token);
     const commandsJson = client.commands.map((cmd) => cmd.data.toJSON());
     for (const guildId of guildIds) {
       console.log(`Registering slash commands for guild ${guildId}...`);
-      const data = await rest.put(
+      const data = (await rest.put(
         Routes.applicationGuildCommands(clientId, guildId),
         { body: commandsJson },
-      );
+      )) as unknown[];
       console.log(
         `✅ Successfully registered ${data.length} commands for guild ${guildId}.`,
       );

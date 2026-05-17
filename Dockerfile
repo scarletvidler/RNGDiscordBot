@@ -39,4 +39,4 @@ RUN npm run build
 # but "bash -c" will run both in background properly).
 # -----------------------------------------------------
 
-CMD ["bash", "-c", "node server.js & node bot/bot.server.js"]
+CMD ["bash", "-c", "npm run start:server"]

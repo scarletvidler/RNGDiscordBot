@@ -1,20 +1,11 @@
-// app/bot.server.ts
-import { Client, Collection, GatewayIntentBits } from "discord.js";
+import { GatewayIntentBits } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { registerSlashCommands } from "./slash-commands.js";
 import "dotenv/config";
 import getDirectoryRoot from "./helpers/getDirectoryRoot.js";
 import { pathToFileURL } from "url";
-
-class ExtendedClient extends Client {
-  guildChatId;
-  ttsChatChannelId;
-  scarletId;
-  polishId;
-  lercheRoleId;
-  prefix;
-}
+import { ExtendedClient, type BotCommand, type BotEvent } from "./types.js";
 
 const client = new ExtendedClient({
   intents: [
@@ -30,17 +21,14 @@ client.guildChatId = "832181235031867484";
 client.ttsChatChannelId = "1419004262431592559";
 client.scarletId = "122548971737579520";
 client.mochiId = "498267543501537280";
-client.polishId = "443041213113958400";
 client.lercheRoleId = "1446619757762707557";
 client.ameliaRoleId = "1504948220499988632";
 client.prefix = "rng:";
 
-client.commands = new Collection();
-
 const commandsDirectory = getDirectoryRoot();
 const commandsDir = path.join(commandsDirectory, "commands");
 
-async function loadCommands(dir) {
+async function loadCommands(dir: string): Promise<void> {
   const dirents = fs.readdirSync(dir, { withFileTypes: true });
   for (const dirent of dirents) {
     const fullPath = path.join(dir, dirent.name);
@@ -53,9 +41,10 @@ async function loadCommands(dir) {
       const moduleUrl = pathToFileURL(fullPath).href;
       const module = await import(moduleUrl);
       console.log(`Loaded command module from ${moduleUrl}`);
-      const cmd = module.default || module;
-      if (cmd && cmd.data && cmd.execute) {
-        console.log(`Registering command: ${cmd.data.name}`);
+      const raw = module.default ?? module;
+      if (raw?.data?.name && typeof raw.execute === "function") {
+        client.commands.set((raw as BotCommand).data.name, raw as BotCommand);
+        console.log(`Registering command: ${(raw as BotCommand).data.name}`);
       } else {
         console.warn(
           `Invalid command module at ${moduleUrl}. Missing required properties.`,
@@ -73,7 +62,7 @@ console.log(`Loaded ${client.commands.size} commands:`, [
 const eventsDirectory = getDirectoryRoot();
 const eventsDir = path.join(eventsDirectory, "events");
 
-async function loadEvents(dir) {
+async function loadEvents(dir: string): Promise<void> {
   const dirents = fs.readdirSync(dir, { withFileTypes: true });
   for (const dirent of dirents) {
     const fullPath = path.join(dir, dirent.name);
@@ -86,9 +75,12 @@ async function loadEvents(dir) {
       const moduleUrl = pathToFileURL(fullPath).href;
       const module = await import(moduleUrl);
       console.log(`Loaded events module from ${moduleUrl}`);
-      const event = module.default || module;
-      if (event && event.type && event.execute) {
-        client.on(event.type, (...args) => event.execute(...args, client));
+      const raw = module.default ?? module;
+      if (typeof raw?.type === "string" && typeof raw.execute === "function") {
+        const event = raw as BotEvent;
+        client.on(event.type, (...args: unknown[]) =>
+          (event.execute as (...a: unknown[]) => void)(...args, client),
+        );
       } else {
         console.warn(
           `Invalid events module at ${moduleUrl}. Missing required properties.`,
@@ -100,18 +92,18 @@ async function loadEvents(dir) {
 
 loadEvents(eventsDir).catch(console.error);
 
-export function startBot() {
+export function startBot(): Promise<void> {
   client.once("clientReady", () => {
     registerSlashCommands(
       client,
-      process.env.CLIENT_ID,
-      [process.env.GUILD_ID2],
-      process.env.BOT_TOKEN,
+      process.env.CLIENT_ID!,
+      [process.env.GUILD_ID1!, process.env.GUILD_ID2!],
+      process.env.BOT_TOKEN!,
     );
 
     console.log(`🤖 Logged in as ${client.user?.tag}`);
 
-    client.user.setPresence({
+    client.user!.setPresence({
       activities: [
         {
           type: 3,
@@ -120,14 +112,10 @@ export function startBot() {
       ],
       status: "online",
     });
-    client.user.setStatus("online");
-
-    // client.user.setBanner(
-    //   "https://i.pinimg.com/736x/f6/25/4a/f6254a9454e8712548a65cf824fc859f.jpg"
-    // );
+    client.user!.setStatus("online");
   });
 
-  client.login(process.env.BOT_TOKEN);
+  client.login(process.env.BOT_TOKEN!);
 
   return Promise.resolve();
 }

@@ -4,39 +4,51 @@ import {
   VoiceConnectionStatus,
   entersState,
   getVoiceConnection,
+  VoiceConnection,
 } from "@discordjs/voice";
+import { type Message, type User, type VoiceBasedChannel } from "discord.js";
+import { Readable } from "stream";
 import VoicePlayer from "./VoicePlayer.js";
 
-export async function joinAndPlay(channel, message) {
+export async function joinAndPlay(
+  channel: VoiceBasedChannel,
+  message: Message<true>,
+): Promise<boolean> {
   try {
-    let connection = getVoiceConnection(channel.guild.id);
+    let voiceConn: VoiceConnection | undefined = getVoiceConnection(
+      channel.guild.id,
+    );
 
-    if (!connection) {
-      connection = joinVoiceChannel({
+    if (!voiceConn) {
+      const newConn = joinVoiceChannel({
         channelId: channel.id,
         guildId: channel.guild.id,
         adapterCreator: channel.guild.voiceAdapterCreator,
         selfDeaf: true,
       });
 
-      connection.on("stateChange", (oldState, newState) => {
+      newConn.on("stateChange", (oldState, newState) => {
         console.debug(`[voice] ${oldState.status} -> ${newState.status}`);
       });
 
       // Only attach disconnect handler AFTER we've reached Ready
-      connection.once(VoiceConnectionStatus.Ready, () => {
-        connection.on(VoiceConnectionStatus.Disconnected, async () => {
+      newConn.once(VoiceConnectionStatus.Ready, () => {
+        newConn.on(VoiceConnectionStatus.Disconnected, async () => {
           try {
             await Promise.race([
-              entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
-              entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+              entersState(newConn, VoiceConnectionStatus.Signalling, 5_000),
+              entersState(newConn, VoiceConnectionStatus.Connecting, 5_000),
             ]);
           } catch {
-            connection.destroy();
+            newConn.destroy();
           }
         });
       });
+
+      voiceConn = newConn;
     }
+
+    const connection = voiceConn;
 
     // Wait until fully connected
     await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
@@ -46,7 +58,8 @@ export async function joinAndPlay(channel, message) {
     connection.subscribe(player.audioInstance);
 
     if (player.soundQueue.length === 0 && !player.isPlaying) {
-      player.playSoundFile(player.getSoundAsset("ping.ogg"));
+      const pingAsset = player.getSoundAsset("ping.ogg");
+      if (pingAsset) player.playSoundFile(pingAsset);
     }
 
     const resourceStream = await convertMessageToSpeech(message);
@@ -58,56 +71,47 @@ export async function joinAndPlay(channel, message) {
   }
 }
 
-function getCleanName(user) {
+function getCleanName(user: User): string {
   return user.globalName && /^[\x00-\x7F]+$/.test(user.globalName)
     ? user.globalName
     : user.username;
 }
 
-function validateMessageContent(message) {
+function validateMessageContent(message: Message<true>): string {
   try {
-    message.content = message.content.trim(); // no leading/trailing spaces
-    message.content = message.content.replace(/\n/g, " "); // no new lines
+    let content = message.content.trim();
+    content = content.replace(/\n/g, " ");
 
-    // Find and replace mentions with the username
-    if (message.mentions.users.size > 0)
-      message.mentions.users.forEach((user) => {
-        console.log(user.globalName.match(/^[\x00-\x7F]+$/));
-        const name = getCleanName(user);
-        message.content = message.content.replace(`<@${user.id}>`, name);
-      });
-
-    // Don't read out URLs and just read out the domain
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    message.content = message.content.replace(urlRegex, (match) => {
-      const url = new URL(match);
-      return `A link to $${url.hostname} was sent by ${getCleanName(
-        message.author,
-      )}`;
+    message.mentions.users.forEach((user) => {
+      console.log(user.globalName?.match(/^[\x00-\x7F]+$/));
+      const name = getCleanName(user);
+      content = content.replace(`<@${user.id}>`, name);
     });
+
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    content = content.replace(urlRegex, (match) => {
+      const url = new URL(match);
+      return `A link to $${url.hostname} was sent by ${getCleanName(message.author)}`;
+    });
+
+    return content;
   } catch (error) {
-    console.error("Error processing message content:", error);
-    message.content = `Sorry, I couldn't process that message. Here is why: ${error.message}`;
+    const err = error as Error;
+    console.error("Error processing message content:", err);
+    return `Sorry, I couldn't process that message. Here is why: ${err.message}`;
   }
-  return message.content;
 }
 
-/**
- * Generate TTS audio as a stream (no file saving).
- */
-async function convertMessageToSpeech(message) {
+async function convertMessageToSpeech(message: Message<true>): Promise<Readable> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
 
-  // const voiceId = "bl0TUn2b06BCzwDpiLlg";
-  let voiceId = "cgSgspJ2msm6clMCkdW9"; // Lerche (Jessica)
+  const voiceId = "cgSgspJ2msm6clMCkdW9"; // Lerche (Jessica)
 
-  // const voiceId = "z7B9WFCZUlsrvlit0TTj"; // me
   console.log("Generating speech...");
 
-  message = validateMessageContent(message);
-
-  console.log("Final message to speak:", message);
+  const text = validateMessageContent(message);
+  console.log("Final message to speak:", text);
 
   console.log("Downloading speech from ElevenLabs...");
   const response = await fetch(
@@ -119,7 +123,7 @@ async function convertMessageToSpeech(message) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        text: message,
+        text,
         model_id: "eleven_v3",
         voice_settings: {
           speed: 1.5,
@@ -127,19 +131,18 @@ async function convertMessageToSpeech(message) {
       }),
     },
   );
-  const body = response.body;
 
   console.log("ElevenLabs response status:", response.status);
   console.log("ElevenLabs response headers:", response.headers);
-  console.log("ElevenLabs response body:", body);
 
   if (response.status !== 200) {
     const errorText = await response.text();
     throw new Error(`❌ ElevenLabs TTS error: ${response.status} ${errorText}`);
   }
 
+  const body = response.body;
   if (!body) throw new Error("❌ ElevenLabs returned no body");
 
-  // Now `pass` is a proper Readable stream you can return
-  return body;
+  // Convert Web ReadableStream → Node Readable for @discordjs/voice compatibility
+  return Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0]);
 }
