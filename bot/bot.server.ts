@@ -1,4 +1,4 @@
-import { GatewayIntentBits } from "discord.js";
+import { GatewayIntentBits, Guild } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { registerSlashCommands } from "./slash-commands.ts";
@@ -6,6 +6,7 @@ import "dotenv/config";
 import getDirectoryRoot from "./helpers/getDirectoryRoot.ts";
 import { pathToFileURL } from "url";
 import { ExtendedClient, type BotCommand, type BotEvent } from "./types.ts";
+import { getGuilds } from "./api/getGuilds.ts";
 
 const client = new ExtendedClient({
   intents: [
@@ -92,14 +93,15 @@ async function loadEvents(dir: string): Promise<void> {
 
 loadEvents(eventsDir).catch(console.error);
 
-export function startBot(): Promise<void> {
+export async function startBot(): Promise<void> {
   client.once("clientReady", () => {
     registerSlashCommands(
       client,
       process.env.CLIENT_ID!,
-      [process.env.GUILD_ID1!, process.env.GUILD_ID2!],
+      [process.env.GUILD_ID1!, process.env.GUILD_ID2!, process.env.GUILD_ID3!, process.env.GUILD_ID4!],
       process.env.BOT_TOKEN!,
     );
+
 
     console.log(`🤖 Logged in as ${client.user?.tag}`);
 
@@ -115,7 +117,11 @@ export function startBot(): Promise<void> {
     client.user!.setStatus("online");
   });
 
+
   client.login(process.env.BOT_TOKEN!);
+
+  const guilds: Guild[] = await getGuilds(process.env.BOT_TOKEN!) as Guild[];
+  console.log("Guilds the bot is in:", guilds.map((g) => g.name).join(", "));
 
   return Promise.resolve();
 }
