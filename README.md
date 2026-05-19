@@ -11,9 +11,6 @@ Create a `.env` file at the project root with the following:
 ```env
 BOT_TOKEN=your_discord_bot_token
 CLIENT_ID=your_discord_application_client_id
-GUILD_ID1=guild_id_1
-GUILD_ID2=guild_id_2
-GUILD_ID3=guild_id_3
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
 ```
 
@@ -84,6 +81,10 @@ const event: BotEvent = {
 
 export default event;
 ```
+
+## TODO
+
+- [ ] **Guild class** — create a `Guild` class that attaches to the `clientInstance` for each server found via the `getGuild` request, used to store per-guild preferences.
 
 ## Commands
 

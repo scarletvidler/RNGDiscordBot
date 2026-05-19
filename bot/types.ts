@@ -18,6 +18,7 @@ export class ExtendedClient extends Client {
   ameliaRoleId!: string;
   femaleRoleId!: string;
   maleRoleId!: string;
+  ttsChannelName!: string;
   prefix!: string;
   commands: Collection<string, BotCommand>;
 

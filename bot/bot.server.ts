@@ -11,14 +11,7 @@ import clientInstance from "./modules/client.ts";
 
 const client = clientInstance;
 
-//  Make this a config folder later
-client.scarletId = "122548971737579520";
-client.mochiId = "498267543501537280";
-client.lercheRoleId = "1446619757762707557";
-client.ameliaRoleId = "1504948220499988632";
-client.femaleRoleId = "cgSgspJ2msm6clMCkdW9"; 
-client.maleRoleId = "goT3UYdM9bhm0n2lmKQx"; 
-client.prefix = "rng:";
+
 
 const commandsDirectory = getDirectoryRoot();
 const commandsDir = path.join(commandsDirectory, "commands");
@@ -110,7 +103,7 @@ export async function startBot(): Promise<void> {
       activities: [
         {
           type: 3,
-          name: "Watching over RNG",
+          name: process.env.BOT_DESCRIPTION! || "Watching over RNG",
         },
       ],
       status: "online",

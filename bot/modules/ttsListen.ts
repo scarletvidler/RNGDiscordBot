@@ -14,7 +14,7 @@ import clientInstance from "./client.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
-  message: Message<true>,
+  message: Message<boolean>,
 ): Promise<boolean> {
   try {
     let voiceConn: VoiceConnection | undefined = getVoiceConnection(
@@ -87,7 +87,7 @@ function getCleanName(user: User): string {
     : user.username;
 }
 
-function validateMessageContent(message: Message<true>): string {
+function validateMessageContent(message: Message<boolean>): string {
   try {
     let content = message.content.trim();
     content = content.replace(/\n/g, " ");
@@ -112,13 +112,11 @@ function validateMessageContent(message: Message<true>): string {
   }
 }
 
-async function convertMessageToSpeech(message: Message<true>): Promise<Readable> {
+async function convertMessageToSpeech(message: Message<boolean>): Promise<Readable> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
 
   let voiceId = clientInstance.femaleRoleId
-
-
   // if the user has a role called "male" change to using the male voice (Adam - 21mL7)
   const member = message.member;
   if (member) {
