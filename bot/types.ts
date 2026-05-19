@@ -19,6 +19,12 @@ export class ExtendedClient extends Client {
   femaleRoleId!: string;
   maleRoleId!: string;
   prefix!: string;
+  commands: Collection<string, BotCommand>;
+
+  constructor(options: any) {
+    super(options);
+    this.commands = new Collection();
+  }
 }
 
 declare module "discord.js" {

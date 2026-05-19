@@ -12,7 +12,6 @@ import clientInstance from "./modules/client.ts";
 const client = clientInstance;
 
 //  Make this a config folder later
-client.ttsChatChannelId = "1419004262431592559";
 client.scarletId = "122548971737579520";
 client.mochiId = "498267543501537280";
 client.lercheRoleId = "1446619757762707557";
