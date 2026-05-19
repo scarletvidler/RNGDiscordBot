@@ -12,13 +12,13 @@ import clientInstance from "./modules/client.ts";
 const client = clientInstance;
 
 //  Make this a config folder later
-client.guildChatId = "832181235031867484";
 client.ttsChatChannelId = "1419004262431592559";
 client.scarletId = "122548971737579520";
 client.mochiId = "498267543501537280";
 client.lercheRoleId = "1446619757762707557";
 client.ameliaRoleId = "1504948220499988632";
-client.maleRoleId = "goT3UYdM9bhm0n2lmKQx"; // Replace with the actual male role ID
+client.femaleRoleId = "cgSgspJ2msm6clMCkdW9"; 
+client.maleRoleId = "goT3UYdM9bhm0n2lmKQx"; 
 client.prefix = "rng:";
 
 const commandsDirectory = getDirectoryRoot();

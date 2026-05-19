@@ -1,4 +1,4 @@
-# RNG Discord Bot
+# RNG Discord Bot / Lerche
 
 A Discord bot built with [discord.js](https://discord.js.org/) and TypeScript. Commands and events are loaded dynamically at startup, and slash commands are registered per-guild on login.
 
@@ -20,6 +20,9 @@ ELEVENLABS_API_KEY=your_elevenlabs_api_key
 ### Run
 
 ```sh
+# Install Dependancies 
+npm i 
+# Start the Bot
 npm run dev
 ```
 

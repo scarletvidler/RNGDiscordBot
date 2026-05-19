@@ -12,20 +12,13 @@ export interface BotEvent<TArgs extends unknown[] = unknown[]> {
 }
 
 export class ExtendedClient extends Client {
-  guildChatId!: string;
-  ttsChatChannelId!: string;
   scarletId!: string;
   mochiId!: string;
   lercheRoleId!: string;
   ameliaRoleId!: string;
+  femaleRoleId!: string;
   maleRoleId!: string;
   prefix!: string;
-  commands: Collection<string, BotCommand>;
-
-  constructor(options: any) {
-    super(options);
-    this.commands = new Collection();
-  }
 }
 
 declare module "discord.js" {
