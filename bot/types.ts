@@ -19,6 +19,7 @@ export class ExtendedClient extends Client {
   femaleRoleId!: string;
   maleRoleId!: string;
   ttsChannelName!: string;
+  defaultVoiceId!: string;
   prefix!: string;
   commands: Collection<string, BotCommand>;
 
