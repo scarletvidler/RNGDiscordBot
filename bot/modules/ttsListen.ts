@@ -117,7 +117,7 @@ async function convertMessageToSpeech(message: Message<true>): Promise<Readable>
   if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
 
   let voiceId = "cgSgspJ2msm6clMCkdW9"; // Lerche (Jessica)
-  const maleVoiceId = "21mL7"; // Adam
+
 
   // if the user has a role called "male" change to using the male voice (Adam - 21mL7)
   const member = message.member;
@@ -126,7 +126,7 @@ async function convertMessageToSpeech(message: Message<true>): Promise<Readable>
       (role) => role.name.toLowerCase() === "male",
     );
     if (hasMaleRole) {
-      voiceId = maleVoiceId;
+      voiceId = clientInstance.maleRoleId; 
     }
   }
 

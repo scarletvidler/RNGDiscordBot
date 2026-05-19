@@ -18,6 +18,7 @@ client.scarletId = "122548971737579520";
 client.mochiId = "498267543501537280";
 client.lercheRoleId = "1446619757762707557";
 client.ameliaRoleId = "1504948220499988632";
+client.maleRoleId = "goT3UYdM9bhm0n2lmKQx"; // Replace with the actual male role ID
 client.prefix = "rng:";
 
 const commandsDirectory = getDirectoryRoot();

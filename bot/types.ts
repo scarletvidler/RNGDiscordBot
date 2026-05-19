@@ -18,6 +18,7 @@ export class ExtendedClient extends Client {
   mochiId!: string;
   lercheRoleId!: string;
   ameliaRoleId!: string;
+  maleRoleId!: string;
   prefix!: string;
   commands: Collection<string, BotCommand>;
 
