@@ -13,8 +13,11 @@ export default function isValidTTS(message: Message): boolean {
     const memberRoles = message.member?.roles.cache;
     const hasLercheRole = memberRoles?.has(clientInstance.lercheRoleId);
     const hasAmeliaRole = memberRoles?.has(clientInstance.ameliaRoleId);
+    // also test if any of the users has a role named "Lerche  Listens or Amelia Listens, to allow for more flexible role management
+    const hasLercheListensRole = memberRoles?.some(role => role.name === "Lerche Listens");
+    const hasAmeliaListensRole = memberRoles?.some(role => role.name === "Amelia Listens");
 
-    if (!hasLercheRole && !hasAmeliaRole) {
+    if (!hasLercheRole && !hasAmeliaRole && !hasLercheListensRole && !hasAmeliaListensRole) {
         throw new Error("User does not have permission to use TTS. Must have either Lerche or Amelia role.");
     }
 
