@@ -12,7 +12,7 @@ const clientInstance = new ExtendedClient({
 
 //  TODO: Refactor to be less manual, do we use a sqlLite 
 // database or something else? Maybe just a json file for now?
-clientInstance.scarletId = "122548971737579520";
+clientInstance.ownerId = "122548971737579520";
 clientInstance.mochiId = "498267543501537280";
 clientInstance.lercheRoleId = "1446619757762707557";
 clientInstance.ameliaRoleId = "1504948220499988632";
