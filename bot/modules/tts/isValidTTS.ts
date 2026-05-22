@@ -17,12 +17,12 @@ export default function isValidTTS(message: Message): boolean {
     const hasLercheListensRole = memberRoles?.some((role: Role) => role.name === "Lerche Listens");
     const hasAmeliaListensRole = memberRoles?.some((role: Role) => role.name === "Amelia Listens");
 
-    if ((!hasLercheRole && !hasAmeliaRole && !hasLercheListensRole && !hasAmeliaListensRole) && !message.member?.permissions.has("Administrator")) {
+    if ((!hasLercheRole && !hasAmeliaRole && !hasLercheListensRole && !hasAmeliaListensRole)) {
         throw new Error("User does not have permission to use TTS. Must have either Lerche or Amelia role.");
     }
 
     if (message.content.length === 0) throw new Error("TTS message cannot be empty.");
-    if (message.content.length > maxLength) throw new Error(`TTS message exceeds maximum length of ${maxLength} characters.`);
+    if (message.content.length > maxLength && message.member?.id !== clientInstance.ownerId) throw new Error(`TTS message exceeds maximum length of ${maxLength} characters.`);
 
 
     return true;
