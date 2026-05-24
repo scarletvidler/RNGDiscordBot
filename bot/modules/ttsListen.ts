@@ -27,7 +27,7 @@ export async function joinAndPlay(
       console.error(`Error fetching channel ${channel.id}:`, err);
     });
 
-    currentChannel.player = currentChannel.player || new VoicePlayerClass();
+    currentChannel.player = currentChannel.player || new VoicePlayerClass({ idleTimeout: clientInstance.idleTimeout });
 
     if (!voiceConn) {
       const newConn = joinVoiceChannel({

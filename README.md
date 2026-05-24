@@ -22,7 +22,7 @@ npm i
 # Start the Web Server (Remix)
 npm run dev
 # Start the dev Bot (Chisato)
-npm run dev:server:development
+npm run start:bot:dev
 ```
 
 ## Architecture

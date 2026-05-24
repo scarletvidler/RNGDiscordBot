@@ -19,9 +19,9 @@ export default class VoicePlayerClass {
   audioInstance: AudioPlayer;
   soundQueue: AudioResource[];
 
-  constructor() {
+  constructor(options: { idleTimeout?: number } = {}) {
     this.timeOfCreation = Date.now();
-    this.idleTimeout = 300000; // 5 minutes
+    this.idleTimeout = options.idleTimeout || 600000; // default to 10 minutes if not provided
     this.idleTimer = this.timeOfCreation;
     this.connection = null;
     this.soundQueue = [];
