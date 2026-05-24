@@ -6,8 +6,8 @@
   "scripts": {
     "build": "remix vite:build",
     "dev": "remix vite:dev",
-    "dev:server": "tsx watch server.js",
-    "dev:server:development": "tsx watch --env-file=.env.development server.js",
+    "start:bot": "tsx watch server.js",
+    "start:bot:dev": "tsx watch --env-file=.env.development server.js",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "remix-serve ./build/server/index.js",
     "start:server": "tsx server.js",
