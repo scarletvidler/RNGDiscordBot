@@ -12,7 +12,7 @@ export interface BotEvent<TArgs extends unknown[] = unknown[]> {
 }
 
 export class ExtendedClient extends Client {
-  scarletId!: string;
+  ownerId!: string;
   mochiId!: string;
   lercheRoleId!: string;
   ameliaRoleId!: string;
