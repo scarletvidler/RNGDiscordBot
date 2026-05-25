@@ -19,8 +19,10 @@ ELEVENLABS_API_KEY=your_elevenlabs_api_key
 ```sh
 # Install Dependancies 
 npm i 
-# Start the Bot
+# Start the Web Server (Remix)
 npm run dev
+# Start the dev Bot (Chisato)
+npm run start:bot:dev
 ```
 
 ## Architecture
