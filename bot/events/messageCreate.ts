@@ -9,19 +9,19 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
     if (message.author.bot) return;
     if (!message.inGuild()) return;
     try {
-    if (isValidTTS(message)) {
-      try {
-        const ttsInstance = new TTSInstance(message);
-        await ttsInstance.run();
+      if (isValidTTS(message)) {
+        try {
+          const ttsInstance = new TTSInstance(message);
+        } catch (error) {
+          console.error("Error processing TTS message:", error);
+          await message.channel.send(
+            "There was an error processing your TTS message. Please try again later.",
+          );
+        }
       }
-      catch (error) {
-        console.error("Error processing TTS message:", error);
-        await message.channel.send("There was an error processing your TTS message. Please try again later.");
-      }
-    }
     } catch (error) {
-        console.error("TTS validation error:", error);
-        await message.channel.send(`TTS validation failed: ${error.message}`);
+      console.error("TTS validation error:", error);
+      await message.channel.send(`TTS validation failed: ${error.message}`);
     }
   },
 };

@@ -15,6 +15,7 @@ export class TTSInstance {
 
   private async init() {
     this.reply = await this.sendMessage("Listening for TTS messages...");
+    await this.run();
   }
 
   async sendMessage(messageToSet: string) {
