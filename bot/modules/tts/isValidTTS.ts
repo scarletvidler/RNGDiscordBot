@@ -1,4 +1,4 @@
-import { Message } from "discord.js";
+import { Message, Role } from "discord.js";
 import clientInstance from "../client.ts";
 
 export default function isValidTTS(message: Message): boolean {
@@ -13,13 +13,16 @@ export default function isValidTTS(message: Message): boolean {
     const memberRoles = message.member?.roles.cache;
     const hasLercheRole = memberRoles?.has(clientInstance.lercheRoleId);
     const hasAmeliaRole = memberRoles?.has(clientInstance.ameliaRoleId);
+    // also test if any of the users has a role named "Lerche  Listens or Amelia Listens, to allow for more flexible role management
+    const hasLercheListensRole = memberRoles?.some((role: Role) => role.name === "Lerche Listens");
+    const hasAmeliaListensRole = memberRoles?.some((role: Role) => role.name === "Amelia Listens");
 
-    if (!hasLercheRole && !hasAmeliaRole) {
+    if ((!hasLercheRole && !hasAmeliaRole && !hasLercheListensRole && !hasAmeliaListensRole)) {
         throw new Error("User does not have permission to use TTS. Must have either Lerche or Amelia role.");
     }
 
     if (message.content.length === 0) throw new Error("TTS message cannot be empty.");
-    if (message.content.length > maxLength) throw new Error(`TTS message exceeds maximum length of ${maxLength} characters.`);
+    if (message.content.length > maxLength && message.member?.id !== clientInstance.ownerId) throw new Error(`TTS message exceeds maximum length of ${maxLength} characters.`);
 
 
     return true;
