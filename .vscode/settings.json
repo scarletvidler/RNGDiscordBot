@@ -1,0 +1,5 @@
+{
+  "conventionalCommits.scopes": [
+    "Used static instead to keep async working and not have an antipattern"
+  ]
+}

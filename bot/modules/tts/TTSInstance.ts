@@ -10,12 +10,14 @@ export class TTSInstance {
     this.message = message;
     this.channel = message.channel as TextChannel;
     console.log("TTS module initialized.");
-    this.init();
   }
 
-  private async init() {
-    this.reply = await this.sendMessage("Listening for TTS messages...");
-    await this.run();
+  static async create(message: Message<boolean>): Promise<TTSInstance> {
+    const instance = new TTSInstance(message);
+    instance.reply = await instance.sendMessage(
+      "Listening for TTS messages...",
+    );
+    return instance;
   }
 
   async sendMessage(messageToSet: string) {

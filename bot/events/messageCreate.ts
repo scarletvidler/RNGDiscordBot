@@ -11,7 +11,8 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
     try {
       if (isValidTTS(message)) {
         try {
-          const ttsInstance = new TTSInstance(message);
+          const tts = await TTSInstance.create(message);
+          await tts.run();
         } catch (error) {
           console.error("Error processing TTS message:", error);
           await message.channel.send(
