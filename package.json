@@ -20,6 +20,7 @@
     "@remix-run/node": "2.17.4",
     "@remix-run/react": "2.17.4",
     "@remix-run/serve": "2.17.4",
+    "@supabase/supabase-js": "^2.107.0",
     "discord-api-types": "^0.38.47",
     "discord.js": "^14.22.1",
     "elevenlabs-js": "^1.2.6",
