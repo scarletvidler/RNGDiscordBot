@@ -1,4 +1,4 @@
-import { BotCommand } from "../types.ts";
+import type { BotCommand } from "../types.ts";
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
 const command: BotCommand = {
