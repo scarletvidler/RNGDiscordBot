@@ -11,7 +11,6 @@ import { Readable } from "stream";
 import VoicePlayerClass from "./VoicePlayer.ts";
 import clientInstance from "./client.ts";
 
-
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
   message: Message<boolean>,
@@ -20,14 +19,18 @@ export async function joinAndPlay(
     let voiceConn: VoiceConnection | undefined = getVoiceConnection(
       channel.guild.id,
     );
-    
+
     // TODO: Refactor this to use a better state management system for voice connections and players, rather than relying on the channel's player property and fetching the channel every time. This is a band-aid to avoid multiple connections being created when multiple messages are sent in quick succession before the first connection is fully established.
     // get the channel from the cache to avoid creating multiple connections to the same guild
-    const currentChannel = await clientInstance.channels.fetch(channel.id).catch((err) => {
-      console.error(`Error fetching channel ${channel.id}:`, err);
-    });
+    const currentChannel = await clientInstance.channels
+      .fetch(channel.id)
+      .catch((err) => {
+        console.error(`Error fetching channel ${channel.id}:`, err);
+      });
 
-    currentChannel.player = currentChannel.player || new VoicePlayerClass({ idleTimeout: clientInstance.idleTimeout });
+    currentChannel.player =
+      currentChannel.player ||
+      new VoicePlayerClass({ idleTimeout: clientInstance.idleTimeout });
 
     if (!voiceConn) {
       const newConn = joinVoiceChannel({
@@ -101,7 +104,9 @@ function validateMessageContent(message: Message<boolean>): string {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     content = content.replace(urlRegex, (match) => {
       const url = new URL(match);
-      return `A link to $${url.hostname} was sent by ${getCleanName(message.author)}`;
+      return `A link to $${url.hostname} was sent by ${getCleanName(
+        message.author,
+      )}`;
     });
 
     return content;
@@ -112,11 +117,13 @@ function validateMessageContent(message: Message<boolean>): string {
   }
 }
 
-async function convertMessageToSpeech(message: Message<boolean>): Promise<Readable> {
+async function convertMessageToSpeech(
+  message: Message<boolean>,
+): Promise<Readable> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
 
-  let voiceId = clientInstance.femaleRoleId
+  let voiceId = clientInstance.femaleRoleId;
   // if the user has a role called "male" change to using the male voice (Adam - 21mL7)
   const member = message.member;
   if (member) {
@@ -124,11 +131,14 @@ async function convertMessageToSpeech(message: Message<boolean>): Promise<Readab
       (role) => role.name.toLowerCase() === "male",
     );
     if (hasMaleRole) {
-      voiceId = clientInstance.maleRoleId; 
-      
+      voiceId = clientInstance.maleRoleId;
     }
   }
-  console.log(`Using voice ID: ${voiceId} for message from ${getCleanName(message.author)}`); 
+  console.log(
+    `Using voice ID: ${voiceId} for message from ${getCleanName(
+      message.author,
+    )}`,
+  );
 
   console.log("Generating speech...");
 
@@ -148,14 +158,13 @@ async function convertMessageToSpeech(message: Message<boolean>): Promise<Readab
         text,
         model_id: "eleven_v3",
         voice_settings: {
-          speed: 1.5,
+          speed: 1.2,
         },
       }),
     },
   );
 
   console.log("ElevenLabs response status:", response.status);
-
 
   if (response.status !== 200) {
     const errorText = await response.text();
