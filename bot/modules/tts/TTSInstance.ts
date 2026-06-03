@@ -1,25 +1,25 @@
-import { Message } from "discord.js";
+import { Message, TextChannel } from "discord.js";
 import { joinAndPlay } from "../ttsListen.ts";
-
 
 export class TTSInstance {
   private message: Message<boolean>;
-  public channel: Message["channel"];
+  public channel: TextChannel;
   public reply?: Message;
 
   constructor(message: Message<boolean>) {
     this.message = message;
-    this.channel = message.channel;
+    this.channel = message.channel as TextChannel;
     console.log("TTS module initialized.");
     this.init();
   }
 
   private async init() {
-      this.reply = await this.sendMessage('Listening for TTS messages...');
+    this.reply = await this.sendMessage("Listening for TTS messages...");
   }
 
   async sendMessage(messageToSet: string) {
     try {
+      // Create an ephemeral reply to the user to confirm that their TTS message is being processed
       return await this.channel.send(messageToSet);
     } catch (error) {
       console.error("Error sending TTS message:", error);
@@ -38,12 +38,13 @@ export class TTSInstance {
         }
       } else {
         console.warn("User is not in a voice channel. Cannot play TTS.");
-        this.reply = await this.channel.send("Please join a voice channel to hear the TTS message.");
+        this.reply?.edit(
+          "Please join a voice channel to hear the TTS message.",
+        );
       }
     } catch (error) {
       console.error("Error running TTS:", error);
       throw new Error("Failed to run TTS.");
     }
   }
-
 }
