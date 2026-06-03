@@ -17,8 +17,8 @@ ELEVENLABS_API_KEY=your_elevenlabs_api_key
 ### Run
 
 ```sh
-# Install Dependancies 
-npm i 
+# Install Dependancies
+npm i
 # Start the Web Server (Remix)
 npm run dev
 # Start the dev Bot (Chisato)
@@ -90,10 +90,10 @@ export default event;
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| `/poki` | Fetches a random Pokémon (1–505) from PokéAPI and displays its name, height, weight, and sprite in an embed. |
-| `/convert <amount> <from> <to>` | Converts a currency amount between two ISO currency codes using the ExchangeRate API. |
+| Command                         | Description                                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `/roll`                         | Fetches a random Pokémon (1–505) from PokéAPI and displays its name, height, weight, and sprite in an embed. |
+| `/convert <amount> <from> <to>` | Converts a currency amount between two ISO currency codes using the ExchangeRate API.                        |
 
 ## TTS (Text-to-Speech)
 
@@ -102,6 +102,7 @@ Messages posted in the `#tts` channel by authorised users are spoken aloud in th
 **Authorised users:** the configured Scarlet user ID, or any member with the Lerche or Amelia roles.
 
 **Flow:**
+
 1. `messageCreate` event fires and checks the channel name and author permissions.
 2. `joinAndPlay` (in `ttsListen.ts`) joins the sender's voice channel (or reuses an existing connection).
 3. The message is sanitised — newlines flattened, `@mentions` replaced with display names, URLs described in plain English.
