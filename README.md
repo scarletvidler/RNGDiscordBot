@@ -129,3 +129,11 @@ Messages posted in the configured TTS channel (default `#tts`, overridable via `
 `bot/modules/VoicePlayer.ts` manages a single `AudioPlayer` and a sound queue per voice channel. Sounds play sequentially. A ping sound (`ping.ogg`) plays when the bot first joins a channel. After 10 minutes of silence (configurable via `clientInstance.idleTimeout`) the bot plays `disconnect.ogg` and leaves the channel.
 
 `forceStop()` clears the queue and stops playback immediately — called by `/tts-stop`.
+
+
+
+### TODO
+
+- Add Database routing for advanced operations and per server customisation
+- Add direct logging 
+- Add connection to Larken
