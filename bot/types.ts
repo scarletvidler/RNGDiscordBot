@@ -1,8 +1,13 @@
 import { Client, Collection } from "discord.js";
-import type { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import type {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+} from "discord.js";
 
 export interface BotCommand {
-  data: SlashCommandBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
+  data:
+    | SlashCommandBuilder
+    | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
   execute(interaction: ChatInputCommandInteraction): Promise<void>;
 }
 
@@ -14,8 +19,6 @@ export interface BotEvent<TArgs extends unknown[] = unknown[]> {
 export class ExtendedClient extends Client {
   ownerId!: string;
   mochiId!: string;
-  lercheRoleId!: string;
-  ameliaRoleId!: string;
   femaleRoleId!: string;
   maleRoleId!: string;
   ttsChannelName!: string;
