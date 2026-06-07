@@ -1,5 +1,5 @@
 {
-  "name": "rngdiscordbot",
+  "name": "Lerche Discord Bot",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -7,8 +7,8 @@
     "start:bot": "tsx watch server.js",
     "start:bot:dev": "tsx watch --env-file=.env.development server.js",
     "start:server": "tsx server.js",
-    "typecheck": "tsc && tsc -p tsconfig.bot.json --noEmit",
-    "typecheck:bot": "tsc -p tsconfig.bot.json --noEmit"
+    "typecheck": "tsc && tsc -p tsconfig.json --noEmit",
+    "typecheck:bot": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.2",

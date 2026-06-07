@@ -15,8 +15,8 @@ RUN apk update && \
 # -----------------------------------------------------
 COPY package*.json ./
 
-# Install production deps only
-RUN npm install
+# Install deps from lockfile (mirrors local environment exactly)
+RUN npm ci
 
 # -----------------------------------------------------
 # 4) Copy the rest of the project

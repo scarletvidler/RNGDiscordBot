@@ -12,8 +12,7 @@ import VoicePlayerClass from "./VoicePlayer.ts";
 import clientInstance from "./client.ts";
 import getCleanName from "../helpers/getCleanName.ts";
 import invariant from "tiny-invariant";
-
-type channelWithPlayer = Channel & { player?: VoicePlayerClass };
+import { channelWithPlayer } from "../types.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,

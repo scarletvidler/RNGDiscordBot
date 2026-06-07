@@ -6,6 +6,7 @@ import type {
 } from "discord.js";
 import VoicePlayerClass from "./modules/VoicePlayer.ts";
 
+export type channelWithPlayer = Channel & { player?: VoicePlayerClass };
 export interface BotCommand {
   data:
     | SlashCommandBuilder
