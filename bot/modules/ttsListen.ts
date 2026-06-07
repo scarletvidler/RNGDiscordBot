@@ -6,13 +6,14 @@ import {
   getVoiceConnection,
   VoiceConnection,
 } from "@discordjs/voice";
-import { type Message, type VoiceBasedChannel } from "discord.js";
+import { Channel, type Message, type VoiceBasedChannel } from "discord.js";
 import { Readable } from "stream";
 import VoicePlayerClass from "./VoicePlayer.ts";
 import clientInstance from "./client.ts";
 import getCleanName from "../helpers/getCleanName.ts";
 import invariant from "tiny-invariant";
-import { channelWithPlayer } from "../types.ts";
+
+type channelWithPlayer = Channel & { player?: VoicePlayerClass };
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,

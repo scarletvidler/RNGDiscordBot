@@ -34,8 +34,6 @@ export class ExtendedClient extends Client {
   }
 }
 
-export type channelWithPlayer = Channel & { player?: VoicePlayerClass };
-
 declare module "discord.js" {
   interface Client {
     commands: Collection<string, BotCommand>;
