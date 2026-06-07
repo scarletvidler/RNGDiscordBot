@@ -1,8 +1,10 @@
 import { Client, Collection } from "discord.js";
 import type {
+  Channel,
   ChatInputCommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
+import VoicePlayerClass from "./modules/VoicePlayer";
 
 export interface BotCommand {
   data:
@@ -32,6 +34,8 @@ export class ExtendedClient extends Client {
     this.commands = new Collection();
   }
 }
+
+export type channelWithPlayer = Channel & { player?: VoicePlayerClass };
 
 declare module "discord.js" {
   interface Client {
