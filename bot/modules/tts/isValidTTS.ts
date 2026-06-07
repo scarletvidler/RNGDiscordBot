@@ -2,7 +2,6 @@ import { Message, Role, TextChannel } from "discord.js";
 import clientInstance from "../client.ts";
 
 export default function isValidTTS(message: Message<true>): boolean {
-  /* TODO: Refactor this to use the guild class system from the TODO */
   const ttsChannel = clientInstance.ttsChannelName || "tts";
   const maxLength = 400;
 

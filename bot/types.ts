@@ -4,7 +4,7 @@ import type {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
-import VoicePlayerClass from "./modules/VoicePlayer";
+import VoicePlayerClass from "./modules/VoicePlayer.ts";
 
 export interface BotCommand {
   data:
@@ -20,7 +20,6 @@ export interface BotEvent<TArgs extends unknown[] = unknown[]> {
 
 export class ExtendedClient extends Client {
   ownerId!: string;
-  mochiId!: string;
   femaleRoleId!: string;
   maleRoleId!: string;
   ttsChannelName!: string;
