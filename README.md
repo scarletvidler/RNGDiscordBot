@@ -12,6 +12,10 @@ Create a `.env` file at the project root with the following:
 BOT_TOKEN=your_discord_bot_token
 CLIENT_ID=your_discord_application_client_id
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
+
+# Optional — defaults shown
+TTS_CHANNEL_NAME=tts
+default_voice_id=cgSgspJ2msm6clMCkdW9
 ```
 
 ### Run
@@ -35,6 +39,9 @@ bot/
 ├── commands/              # Slash command modules (auto-loaded)
 ├── events/                # Event handler modules (auto-loaded)
 ├── modules/               # Shared logic (TTS, voice player, currency converter)
+│   └── tts/
+│       ├── TTSInstance.ts # Wraps a single TTS message lifecycle (send status reply, play)
+│       └── isValidTTS.ts  # Validates channel, permissions, and message length
 ├── api/                   # Discord REST wrappers
 ├── helpers/               # Utility functions
 └── assets/sounds/         # Audio files used by the voice player
@@ -94,21 +101,39 @@ export default event;
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `/roll`                         | Fetches a random Pokémon (1–505) from PokéAPI and displays its name, height, weight, and sprite in an embed. |
 | `/convert <amount> <from> <to>` | Converts a currency amount between two ISO currency codes using the ExchangeRate API.                        |
+| `/tts-stop`                     | Stops TTS playback and clears the queue. Requires the invoker to be in a voice channel. Reply is ephemeral.  |
 
 ## TTS (Text-to-Speech)
 
-Messages posted in the `#tts` channel by authorised users are spoken aloud in the sender's current voice channel via [ElevenLabs](https://elevenlabs.io/).
+Messages posted in the configured TTS channel (default `#tts`, overridable via `TTS_CHANNEL_NAME`) by authorised users are spoken aloud in the sender's current voice channel via [ElevenLabs](https://elevenlabs.io/).
 
-**Authorised users:** the configured Scarlet user ID, or any member with the Lerche or Amelia roles.
+**Authorised users:** any member with the Lerche or Amelia role IDs, or anyone with a role named `Lerche Listens` or `Amelia Listens` (for flexible per-server role management).
+
+**Validation (`isValidTTS`):**
+
+- Pinned messages are silently ignored.
+- Messages over 400 characters are rejected (the bot owner bypasses this limit).
+- Messages from users lacking any of the authorised roles throw a permission error posted back to the channel.
+
+**Voice selection:** users with a role named `male` are spoken with the configured male voice (Adam); everyone else uses the default female voice. Both voices are configurable via environment variables.
 
 **Flow:**
 
-1. `messageCreate` event fires and checks the channel name and author permissions.
-2. `joinAndPlay` (in `ttsListen.ts`) joins the sender's voice channel (or reuses an existing connection).
-3. The message is sanitised — newlines flattened, `@mentions` replaced with display names, URLs described in plain English.
-4. The sanitised text is sent to ElevenLabs (`eleven_v3` model, Lerche voice, 1.5× speed) and streamed back as MP3.
-5. `VoicePlayer` queues and plays the audio.
+1. `messageCreate` event calls `isValidTTS` to validate channel, permissions, and length.
+2. `TTSInstance.create()` sends a `"Listening for TTS messages..."` status message to the channel.
+3. `joinAndPlay` (in `ttsListen.ts`) joins the sender's voice channel (or reuses an existing connection).
+4. The message is sanitised — newlines flattened, `@mentions` replaced with display names, URLs described in plain English.
+5. The sanitised text is sent to ElevenLabs (`eleven_v3` model, 1.2× speed) and streamed back as MP3.
+6. `VoicePlayer` queues and plays the audio. The status message is edited to `"Message played in voice channel."`.
 
 ### VoicePlayer
 
-A singleton (`bot/modules/VoicePlayer.ts`) that manages a single `AudioPlayer` and a sound queue. Sounds play sequentially. A ping sound (`ping.ogg`) plays when the bot first joins a channel. After 5 minutes of silence the bot plays `disconnect.ogg` and leaves the channel.
+`bot/modules/VoicePlayer.ts` manages a single `AudioPlayer` and a sound queue per voice channel. Sounds play sequentially. A ping sound (`ping.ogg`) plays when the bot first joins a channel. After 10 minutes of silence (configurable via `clientInstance.idleTimeout`) the bot plays `disconnect.ogg` and leaves the channel.
+
+`forceStop()` clears the queue and stops playback immediately — called by `/tts-stop`.
+
+### TODO
+
+- Add Database routing for advanced operations and per server customisation
+- Add direct logging
+- Add connection to Larken

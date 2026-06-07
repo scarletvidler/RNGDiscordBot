@@ -6,10 +6,13 @@ import {
   getVoiceConnection,
   VoiceConnection,
 } from "@discordjs/voice";
-import { type Message, type User, type VoiceBasedChannel } from "discord.js";
+import { Channel, type Message, type VoiceBasedChannel } from "discord.js";
 import { Readable } from "stream";
 import VoicePlayerClass from "./VoicePlayer.ts";
 import clientInstance from "./client.ts";
+import getCleanName from "../helpers/getCleanName.ts";
+import invariant from "tiny-invariant";
+import { channelWithPlayer } from "../types.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
@@ -20,13 +23,20 @@ export async function joinAndPlay(
       channel.guild.id,
     );
 
-    // TODO: Refactor this to use a better state management system for voice connections and players, rather than relying on the channel's player property and fetching the channel every time. This is a band-aid to avoid multiple connections being created when multiple messages are sent in quick succession before the first connection is fully established.
-    // get the channel from the cache to avoid creating multiple connections to the same guild
-    const currentChannel = await clientInstance.channels
-      .fetch(channel.id)
-      .catch((err) => {
+    /*  TODO: 
+     - Refactor this to use a better state management system for
+     - voice connections and players, rather than relying on the channel's player property
+     - and fetching the channel every time. This is a band-aid to avoid multiple connections
+     - being created when multiple messages are sent in quick succession before the first connection is fully established.
+     - get the channel from the cache to avoid creating multiple connections to the same guild
+     */
+
+    const currentChannel: channelWithPlayer | false =
+      (await clientInstance.channels.fetch(channel.id).catch((err) => {
         console.error(`Error fetching channel ${channel.id}:`, err);
-      });
+      })) || false;
+
+    invariant(currentChannel, "Channel not found in cache");
 
     currentChannel.player =
       currentChannel.player ||
@@ -84,12 +94,6 @@ export async function joinAndPlay(
   }
 }
 
-function getCleanName(user: User): string {
-  return user.globalName && /^[\x00-\x7F]+$/.test(user.globalName)
-    ? user.globalName
-    : user.username;
-}
-
 function validateMessageContent(message: Message<boolean>): string {
   try {
     let content = message.content.trim();
@@ -134,16 +138,13 @@ async function convertMessageToSpeech(
       voiceId = clientInstance.maleRoleId;
     }
   }
-  console.log(
-    `Using voice ID: ${voiceId} for message from ${getCleanName(
-      message.author,
-    )}`,
-  );
-
-  console.log("Generating speech...");
 
   const text = validateMessageContent(message);
-  console.log("Final message to speak:", text);
+  console.log(
+    `User: ${getCleanName(message.author)}`,
+    `Voice ID: ${voiceId}`,
+    `Message: ${text}`,
+  );
 
   console.log("Downloading speech from ElevenLabs...");
   const response = await fetch(
