@@ -31,11 +31,11 @@ export default class VoicePlayerClass {
     this._handleEvents();
   }
 
-  _setConnection(connection: VoiceConnection){
+  _setConnection(connection: VoiceConnection) {
     this.connection = connection;
   }
 
-  _monitorIdleState(){
+  _monitorIdleState() {
     setInterval(() => {
       if (this.hasIdledTooLong && this.isStopped) {
         const asset = this.getSoundAsset("disconnect.ogg");
@@ -51,7 +51,7 @@ export default class VoicePlayerClass {
     }, 1000);
   }
 
-  _playNextInQueue(){
+  _playNextInQueue() {
     if (this.soundQueue.length > 0) {
       const nextSound = this.soundQueue.shift()!;
       this.audioInstance.play(nextSound);
@@ -61,7 +61,7 @@ export default class VoicePlayerClass {
     }
   }
 
-  _handleEvents(){
+  _handleEvents() {
     this.audioInstance.on("error", (err) => {
       console.error("Player error:", err.message);
     });
@@ -131,5 +131,9 @@ export default class VoicePlayerClass {
       }
     });
   }
-}
 
+  forceStop() {
+    this.soundQueue = [];
+    this.audioInstance.stop();
+  }
+}
