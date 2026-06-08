@@ -32,7 +32,6 @@ export class TTSInstance {
   async run() {
     try {
       // Placeholder for TTS logic, e.g., converting text to speech and playing it in a voice channel
-      console.log("Running TTS for message:", this.message.content);
       if (this.message.member && this.message.member.voice.channel) {
         await joinAndPlay(this.message.member.voice.channel, this.message);
         if (this.reply) {
