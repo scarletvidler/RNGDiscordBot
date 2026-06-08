@@ -1,7 +1,7 @@
 import { Guild } from "discord.js";
 import fs from "fs";
 import path from "path";
-import { registerSlashCommands } from "./slash-commands.ts";
+import { registerSlashCommands } from "./modules/registerSlashCommands.ts";
 import "dotenv/config";
 import getDirectoryRoot from "./helpers/getDirectoryRoot.ts";
 import { pathToFileURL } from "url";
@@ -10,8 +10,6 @@ import { getGuilds } from "./api/getGuilds.ts";
 import clientInstance from "./modules/client.ts";
 
 const client = clientInstance;
-
-
 
 const commandsDirectory = getDirectoryRoot();
 const commandsDir = path.join(commandsDirectory, "commands");
@@ -28,11 +26,10 @@ async function loadCommands(dir: string): Promise<void> {
     ) {
       const moduleUrl = pathToFileURL(fullPath).href;
       const module = await import(moduleUrl);
-      console.log(`Loaded command module from ${moduleUrl}`);
       const raw = module.default ?? module;
       if (raw?.data?.name && typeof raw.execute === "function") {
         client.commands.set((raw as BotCommand).data.name, raw as BotCommand);
-        console.log(`Registering command: ${(raw as BotCommand).data.name}`);
+        console.log(`Registering command: ⚡ ${(raw as BotCommand).data.name}`);
       } else {
         console.warn(
           `Invalid command module at ${moduleUrl}. Missing required properties.`,
@@ -43,9 +40,6 @@ async function loadCommands(dir: string): Promise<void> {
 }
 
 await loadCommands(commandsDir);
-console.log(`Loaded ${client.commands.size} commands:`, [
-  ...client.commands.keys(),
-]);
 
 const eventsDirectory = getDirectoryRoot();
 const eventsDir = path.join(eventsDirectory, "events");
@@ -62,7 +56,9 @@ async function loadEvents(dir: string): Promise<void> {
     ) {
       const moduleUrl = pathToFileURL(fullPath).href;
       const module = await import(moduleUrl);
-      console.log(`Loaded events module from ${moduleUrl}`);
+      console.log(
+        `Registering event: 📒 ${dirent.name.replace(/\.(js|ts)$/, "")}`,
+      );
       const raw = module.default ?? module;
       if (typeof raw?.type === "string" && typeof raw.execute === "function") {
         const event = raw as BotEvent;
@@ -82,11 +78,13 @@ loadEvents(eventsDir).catch(console.error);
 
 export async function startBot(): Promise<void> {
   client.once("clientReady", async () => {
-
-  const guilds: Guild[] = await getGuilds(process.env.BOT_TOKEN!) as Guild[];
-  const guildIds: string[] = guilds.map(guild => guild.id);
+    console.log(`🤖 Logged in as ${client.user?.tag}`);
+    const guilds: Guild[] = (await getGuilds(
+      process.env.BOT_TOKEN!,
+    )) as Guild[];
+    const guildIds: string[] = guilds.map((guild) => guild.id);
     guilds.map((guild) => {
-      console.log(`Connected to guild: ${guild.name} (ID: ${guild.id})`);
+      console.log(`Connected to guild: 🏯 ${guild.name} (ID: ${guild.id})`);
     });
 
     registerSlashCommands(
@@ -95,9 +93,6 @@ export async function startBot(): Promise<void> {
       guildIds,
       process.env.BOT_TOKEN!,
     );
-
-
-    console.log(`🤖 Logged in as ${client.user?.tag}`);
 
     client.user!.setPresence({
       activities: [
@@ -109,16 +104,10 @@ export async function startBot(): Promise<void> {
       status: "online",
     });
 
-  
-
     client.user!.setStatus("online");
   });
 
-
   client.login(process.env.BOT_TOKEN!);
-
-
-
 
   return Promise.resolve();
 }
