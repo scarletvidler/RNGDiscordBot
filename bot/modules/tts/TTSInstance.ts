@@ -9,7 +9,6 @@ export class TTSInstance {
   constructor(message: Message<boolean>) {
     this.message = message;
     this.channel = message.channel as TextChannel;
-    console.log("TTS module initialized.");
   }
 
   static async create(message: Message<boolean>): Promise<TTSInstance> {

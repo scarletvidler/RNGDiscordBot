@@ -51,7 +51,7 @@ export async function joinAndPlay(
       });
 
       newConn.on("stateChange", (oldState, newState) => {
-        console.debug(`[voice] ${oldState.status} -> ${newState.status}`);
+        // console.debug(`[voice] ${oldState.status} -> ${newState.status}`);
       });
 
       // Only attach disconnect handler AFTER we've reached Ready
@@ -140,13 +140,8 @@ async function convertMessageToSpeech(
   }
 
   const text = validateMessageContent(message);
-  console.log(
-    `User: ${getCleanName(message.author)}`,
-    `Voice ID: ${voiceId}`,
-    `Message: ${text}`,
-  );
+  console.log(`User: ${getCleanName(message.author)}`, `Message: ${text}`);
 
-  console.log("Downloading speech from ElevenLabs...");
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=mp3_44100_128`,
     {

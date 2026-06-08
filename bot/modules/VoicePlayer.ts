@@ -57,7 +57,7 @@ export default class VoicePlayerClass {
       this.audioInstance.play(nextSound);
     } else {
       this.audioInstance.stop();
-      console.log("Sound queue is empty.");
+      // console.log("Sound queue is empty.");
     }
   }
 
@@ -67,12 +67,12 @@ export default class VoicePlayerClass {
     });
 
     this.audioInstance.on(AudioPlayerStatus.Playing, () => {
-      console.log("Audio player is now playing.");
+      // console.log("Audio player is now playing.");
       this.idleTimer = Date.now();
     });
 
     this.audioInstance.on(AudioPlayerStatus.Idle, () => {
-      console.log("Audio player is now idle.");
+      // console.log("Audio player is now idle.");
       this.idleTimer = Date.now();
       this._playNextInQueue();
     });
