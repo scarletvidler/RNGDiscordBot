@@ -35,7 +35,7 @@ const command: BotCommand = {
       return;
     }
 
-    if (!pokemon) {
+    if (!pokemon || typeof pokemon === "boolean") {
       await interaction.editReply("Something went wrong. Please try again.");
       return;
     }
@@ -74,24 +74,23 @@ const command: BotCommand = {
       });
     }
 
-    const embed = [
-      {
-        title: `${prefix} **${formattedName}** appeared!`,
-        thumbnail: {
-          url: pokemon.sprite,
-        },
-        description:
-          pokemon.flavor_text || "*No Pokédex entry found for this species.*",
-        color: embedColor,
-        fields: fields,
-        footer: {
-          text: `#${String(pokemon.pokedex_id).padStart(3, "0")}`,
-        },
+    const embed: any = {
+      title: `${prefix} **${formattedName}** appeared!`,
+      description:
+        pokemon.flavor_text || "*No Pokédex entry found for this species.*",
+      color: embedColor,
+      fields: fields,
+      footer: {
+        text: `#${String(pokemon.pokedex_id).padStart(3, "0")}`,
       },
-    ];
+    };
+
+    if (pokemon.sprite) {
+      embed.thumbnail = { url: pokemon.sprite };
+    }
 
     await interaction.editReply({
-      embeds: embed,
+      embeds: [embed],
     });
   },
 };
