@@ -4,8 +4,8 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import type { BotCommand } from "../types.ts";
-import { rollPokemon } from "../../supabase/pokemon.js";
-import { getUserProfile } from "../../supabase/profiles.js";
+import { rollPokemon } from "../../supabase/pokemon.ts";
+import { getUserProfile } from "../../supabase/profiles.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -69,7 +69,7 @@ const command: BotCommand = {
     if (pokemon.capture_rate !== null) {
       fields.push({
         name: "Capture Rate",
-        value: String(pokemon.capture_rate),
+        value: `${String(pokemon.capture_rate)} (0-255)`,
         inline: true,
       });
     }
