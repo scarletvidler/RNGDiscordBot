@@ -29,10 +29,14 @@ export const rollPokemon = async (profile) => {
       };
     }
   }
+
+  const isShiny = Math.random() < SHINY_CHANCE;
+
   const { data: ownedPokemon, error: ownedPokemonError } = await supabase
     .from("user_pokemon")
     .select("pokemon_id")
-    .eq("profile_id", profile.id);
+    .eq("profile_id", profile.id)
+    .eq("shiny", isShiny);
 
   if (ownedPokemonError) return { data: null, error: ownedPokemonError };
 
@@ -40,7 +44,9 @@ export const rollPokemon = async (profile) => {
 
   const query = supabase
     .from("pokemon")
-    .select("id,name,sprite,sprite_shiny,pokedex_id");
+    .select(
+      "id,name,sprites,pokedex_id,height,weight,flavor_text,capture_rate,legendary,mythical",
+    );
 
   const { data: available, error: availableError } =
     await (ownedPokemonIds.length > 0
@@ -55,20 +61,34 @@ export const rollPokemon = async (profile) => {
       error: "You caught them all!",
     };
 
-  const randomPokemon = available[Math.floor(Math.random() * available.length)];
+  const totalWeight = available.reduce(
+    (sum, pokemon) => sum + (pokemon.capture_rate ?? 45),
+    0,
+  );
 
-  const isShiny = Math.random() < SHINY_CHANCE;
+  let randomValue = Math.random() * totalWeight;
+  let randomPokemon = null;
+  for (const pokemon of available) {
+    const weight = pokemon.capture_rate ?? 45;
+    randomValue -= weight;
+    if (randomValue <= 0) {
+      randomPokemon = pokemon;
+      break;
+    }
+  }
 
-  const { data, error: insertError } = await supabase
-    .from("user_pokemon")
-    .insert({
-      profile_id: profile.id,
-      pokemon_id: randomPokemon.id,
-      shiny: isShiny,
-    })
-    .select("*");
+  if (!randomPokemon) {
+    randomPokemon = available[available.length - 1];
+  }
+
+  const { error: insertError } = await supabase.from("user_pokemon").insert({
+    profile_id: profile.id,
+    pokemon_id: randomPokemon.id,
+    shiny: isShiny,
+  });
 
   if (insertError) return { data: null, error: insertError };
+
   const { error: updateError } = await supabase
     .from("profiles")
     .update({ last_rolled_at: new Date().toISOString() })
@@ -76,11 +96,23 @@ export const rollPokemon = async (profile) => {
 
   if (updateError) return { data: null, error: updateError };
 
+  const spriteUrl = isShiny
+    ? randomPokemon.sprites?.front_shiny
+    : randomPokemon.sprites?.front_default;
+
   return {
     data: {
-      ...randomPokemon,
-      sprite: isShiny ? randomPokemon.sprite_shiny : randomPokemon.sprite,
+      id: randomPokemon.id,
+      name: randomPokemon.name,
+      pokedex_id: randomPokemon.pokedex_id,
+      sprite: spriteUrl,
       isShiny,
+      height: randomPokemon.height,
+      weight: randomPokemon.weight,
+      flavor_text: randomPokemon.flavor_text,
+      capture_rate: randomPokemon.capture_rate,
+      legendary: randomPokemon.legendary,
+      mythical: randomPokemon.mythical,
     },
     error: null,
   };
@@ -89,18 +121,28 @@ export const rollPokemon = async (profile) => {
 export const getUserPokemon = async (profile) => {
   const { data, error } = await supabase
     .from("user_pokemon")
-    .select("id, shiny, pokemon(name,sprite,sprite_shiny,pokedex_id)")
+    .select("id, shiny, pokemon(name,sprites,pokedex_id)")
     .eq("profile_id", profile.id);
 
   if (error) return { data: null, error };
 
-  const formattedData = data.map((item) => ({
-    id: item.id,
-    name: item.pokemon?.name,
-    sprite: item.shiny ? item.pokemon?.sprite_shiny : item.pokemon?.sprite,
-    pokedex_id: item.pokemon?.pokedex_id,
-    isShiny: item.shiny,
-  }));
+  const formattedData = data.map((item) => {
+    const spriteUrl = item.shiny
+      ? item.pokemon?.sprites?.front_shiny
+      : item.pokemon?.sprites?.front_default;
+
+    return {
+      id: item.id,
+      name: item.pokemon?.name,
+      sprite: spriteUrl,
+      pokedex_id: item.pokemon?.pokedex_id,
+      isShiny: item.shiny,
+    };
+  });
 
   return { data: formattedData, error: null };
 };
+
+// logic to keep rolling/being able to roll the shiny version of what you have - sort of done maybe?
+// roster - ehh
+// differentiate and show both or one (most likely shiny) on the roster - ehh

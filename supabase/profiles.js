@@ -1,9 +1,17 @@
 import { supabase } from "./client";
 
-export const getUserProfile = async (discordUserId, discordServerId) => {
+export const getUserProfile = async (
+  discordUserId,
+  username,
+  discordServerId,
+  serverName,
+) => {
   const { data: user, error: userError } = await supabase
     .from("users")
-    .upsert({ discord_id: discordUserId }, { onConflict: "discord_id" })
+    .upsert(
+      { discord_id: discordUserId, username: username },
+      { onConflict: "discord_id" },
+    )
     .select("id")
     .single();
 
@@ -12,7 +20,7 @@ export const getUserProfile = async (discordUserId, discordServerId) => {
   const { data: server, error: serverError } = await supabase
     .from("servers")
     .upsert(
-      { discord_server_id: discordServerId },
+      { discord_server_id: discordServerId, server_name: serverName },
       { onConflict: "discord_server_id" },
     )
     .select("id")
@@ -28,6 +36,7 @@ export const getUserProfile = async (discordUserId, discordServerId) => {
     )
     .select("*")
     .single();
+
   if (profileError || !profile) return { data: null, error: profileError };
 
   return { data: profile, error: null };
