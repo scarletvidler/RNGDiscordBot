@@ -19,7 +19,7 @@ const event: BotEvent<[Guild, ExtendedClient]> = {
           "Hello! Thanks for inviting me to your server! Please make a channel named 'Lerche Updates' for me to send updates in. " +
             "Also, make sure to set up the roles and permissions for me to work properly. Lerche is updating constantly and this message is just a placeholder. " +
             "Sorry for spaming your sever! " +
-            "If you need help, feel free to reach out to the support server!" +
+            "If you need help, feel free to reach out to the support server! " +
             "https://discord.gg/NZWJvdsMKn",
         );
       }
