@@ -13,6 +13,9 @@ import clientInstance from "./client.ts";
 import getCleanName from "../helpers/getCleanName.ts";
 import invariant from "tiny-invariant";
 import { channelWithPlayer } from "../types.ts";
+import { ElevenLabsClient, play } from "@elevenlabs/elevenlabs-js";
+import { createWriteStream, createReadStream } from "fs";
+import fs from "node:fs";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
@@ -142,34 +145,44 @@ async function convertMessageToSpeech(
   const text = validateMessageContent(message);
   console.log(`User: ${getCleanName(message.author)}`, `Message: ${text}`);
 
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=mp3_44100_128`,
-    {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text,
-        model_id: "eleven_v3",
-        voice_settings: {
-          speed: 1.0,
-        },
-      }),
-    },
+  console.log(
+    `Using voice ID: ${voiceId} for user: ${getCleanName(message.author)}`,
   );
 
-  console.log("ElevenLabs response status:", response.status);
+  const elevenlabs = new ElevenLabsClient({
+    apiKey,
+  });
 
-  if (response.status !== 200) {
-    const errorText = await response.text();
-    throw new Error(`❌ ElevenLabs TTS error: ${response.status} ${errorText}`);
+  const pronunciationDictionary =
+    await elevenlabs.pronunciationDictionaries.createFromFile({
+      file: fs.createReadStream("bot/pronunciation/dictionary.pls"),
+      name: "default",
+    });
+
+  try {
+    const audioStream = await elevenlabs.textToSpeech.convert(voiceId, {
+      text,
+      modelId: "eleven_v3",
+      outputFormat: "mp3_44100_128",
+      pronunciationDictionaryLocators: [
+        {
+          pronunciationDictionaryId: pronunciationDictionary.id,
+          versionId: pronunciationDictionary.versionId,
+        },
+      ],
+    });
+
+    const chunks: Buffer[] = [];
+    for await (const chunk of audioStream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const content = Buffer.concat(chunks);
+
+    // convert the buffer to a Readable stream
+    const audio = Readable.from(content);
+    return audio;
+  } catch (error) {
+    console.error("❌ Error converting text to speech:", error);
+    throw error;
   }
-
-  const body = response.body;
-  if (!body) throw new Error("❌ ElevenLabs returned no body");
-
-  // Convert Web ReadableStream → Node Readable for @discordjs/voice compatibility
-  return Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0]);
 }
