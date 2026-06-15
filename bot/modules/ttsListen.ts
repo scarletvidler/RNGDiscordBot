@@ -154,7 +154,7 @@ async function convertMessageToSpeech(
         text,
         model_id: "eleven_v3",
         voice_settings: {
-          speed: 1.2,
+          speed: 1.0,
         },
       }),
     },
