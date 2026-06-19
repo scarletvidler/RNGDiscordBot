@@ -15,7 +15,6 @@ export class TTSInstance {
   }
 
   checkIfRepliesAreEnabled(): boolean {
-    console.log(this.guild.settings);
     return this.guild.settings.tts.repliesEnabled ?? true; // Default to true if not set
   }
 
