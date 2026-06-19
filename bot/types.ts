@@ -1,4 +1,4 @@
-import { Client, Collection } from "discord.js";
+import { Client, Collection, Guild } from "discord.js";
 import type {
   Channel,
   ChatInputCommandInteraction,
@@ -11,7 +11,10 @@ export interface BotCommand {
   data:
     | SlashCommandBuilder
     | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
-  execute(interaction: ChatInputCommandInteraction): Promise<void>;
+  execute(
+    interaction: ChatInputCommandInteraction,
+    client: ExtendedClient,
+  ): Promise<void>;
 }
 
 export interface BotEvent<TArgs extends unknown[] = unknown[]> {
@@ -28,11 +31,24 @@ export class ExtendedClient extends Client {
   idleTimeout!: number;
   prefix!: string;
   commands: Collection<string, BotCommand>;
+  installedGuilds!: ExtendedGuild[];
 
   constructor(options: any) {
     super(options);
     this.commands = new Collection();
   }
+}
+
+export interface ExtendedGuild extends Guild {
+  settings: {
+    tts: {
+      repliesEnabled: boolean;
+      femaleVoiceId: string;
+      maleVoiceId: string;
+      ttsChannelName: string;
+      idleTimeout: number;
+    };
+  };
 }
 
 declare module "discord.js" {

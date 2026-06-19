@@ -5,9 +5,10 @@ import { registerSlashCommands } from "./modules/registerSlashCommands.ts";
 import "dotenv/config";
 import getDirectoryRoot from "./helpers/getDirectoryRoot.ts";
 import { pathToFileURL } from "url";
-import { type BotCommand, type BotEvent } from "./types.ts";
+import { ExtendedGuild, type BotCommand, type BotEvent } from "./types.ts";
 import { getGuilds } from "./api/getGuilds.ts";
 import clientInstance from "./modules/client.ts";
+import setUpGuilds from "./modules/setUpGuilds.ts";
 
 const client = clientInstance;
 
@@ -79,14 +80,8 @@ loadEvents(eventsDir).catch(console.error);
 export async function startBot(): Promise<void> {
   client.once("clientReady", async () => {
     console.log(`🤖 Logged in as ${client.user?.tag}`);
-    const guilds: Guild[] = (await getGuilds(
-      process.env.BOT_TOKEN!,
-    )) as Guild[];
-    const guildIds: string[] = guilds.map((guild) => guild.id);
-    guilds.map((guild) => {
-      console.log(`Connected to guild: 🏯 ${guild.name} (ID: ${guild.id})`);
-    });
 
+    const guildIds = await setUpGuilds(client);
     registerSlashCommands(
       client,
       process.env.CLIENT_ID!,

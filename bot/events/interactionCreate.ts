@@ -3,7 +3,7 @@ import { BotEvent, ExtendedClient } from "../types.ts";
 
 const event: BotEvent<[Interaction, ExtendedClient]> = {
   type: "interactionCreate",
-  execute: async (interaction) => {
+  execute: async (interaction, client) => {
     if (!interaction.isChatInputCommand()) return;
     const command = interaction.client.commands.get(interaction.commandName);
 
@@ -15,7 +15,7 @@ const event: BotEvent<[Interaction, ExtendedClient]> = {
     }
 
     try {
-      await command.execute(interaction);
+      await command.execute(interaction, client);
     } catch (error) {
       console.error(error);
       if (interaction.replied || interaction.deferred) {

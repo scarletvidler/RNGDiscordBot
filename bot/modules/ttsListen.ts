@@ -43,7 +43,11 @@ export async function joinAndPlay(
 
     currentChannel.player =
       currentChannel.player ||
-      new VoicePlayerClass({ idleTimeout: clientInstance.idleTimeout });
+      new VoicePlayerClass({
+        idleTimeout: clientInstance.installedGuilds.find(
+          (g) => g.id === channel.guild.id,
+        )?.settings.tts.idleTimeout,
+      });
 
     if (!voiceConn) {
       const newConn = joinVoiceChannel({
@@ -130,7 +134,9 @@ async function convertMessageToSpeech(
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
 
-  let voiceId = clientInstance.femaleRoleId;
+  let voiceId = clientInstance.installedGuilds.find(
+    (g) => g.id === message.guildId,
+  )?.settings.tts.femaleVoiceId;
   // if the user has a role called "male" change to using the male voice (Adam - 21mL7)
   const member = message.member;
   if (member) {
@@ -138,7 +144,9 @@ async function convertMessageToSpeech(
       (role) => role.name.toLowerCase() === "male",
     );
     if (hasMaleRole) {
-      voiceId = clientInstance.maleRoleId;
+      voiceId = clientInstance.installedGuilds.find(
+        (g) => g.id === message.guildId,
+      )?.settings.tts.maleVoiceId as string;
     }
   }
 

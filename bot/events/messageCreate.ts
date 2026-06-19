@@ -5,13 +5,20 @@ import { TTSInstance } from "../modules/tts/TTSInstance.ts";
 
 const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
   type: "messageCreate",
-  execute: async (message) => {
+  execute: async (message, client) => {
     if (message.author.bot) return;
     if (!message.inGuild()) return;
     try {
       if (isValidTTS(message)) {
         try {
-          const tts = await TTSInstance.create(message);
+          const guild = client.installedGuilds.find(
+            (g) => g.id === message.guildId,
+          );
+          if (!guild) {
+            console.error(`Guild not found for message: ${message.id}`);
+            return;
+          }
+          const tts = await TTSInstance.create(message, guild);
           await tts.run();
         } catch (error) {
           console.error("Error processing TTS message:", error);
