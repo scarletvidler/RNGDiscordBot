@@ -3,14 +3,13 @@ import type {
   Channel,
   ChatInputCommandInteraction,
   SlashCommandBuilder,
+  SlashCommandOptionsOnlyBuilder,
 } from "discord.js";
 import VoicePlayerClass from "./modules/VoicePlayer.ts";
 
 export type channelWithPlayer = Channel & { player?: VoicePlayerClass };
 export interface BotCommand {
-  data:
-    | SlashCommandBuilder
-    | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
+  data: SlashCommandOptionsOnlyBuilder;
   execute(
     interaction: ChatInputCommandInteraction,
     client: ExtendedClient,

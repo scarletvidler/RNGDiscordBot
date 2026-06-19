@@ -41,13 +41,17 @@ export async function joinAndPlay(
 
     invariant(currentChannel, "Channel not found in cache");
 
+    const timeOutDuration = clientInstance.installedGuilds.find(
+      (g) => g.id === channel.guild.id,
+    )?.settings.tts.idleTimeout;
     currentChannel.player =
       currentChannel.player ||
       new VoicePlayerClass({
-        idleTimeout: clientInstance.installedGuilds.find(
-          (g) => g.id === channel.guild.id,
-        )?.settings.tts.idleTimeout,
+        idleTimeout: timeOutDuration,
       });
+
+    // reset the idle timer whenever a new message is sent
+    currentChannel.player.idleTimeoutDuration = timeOutDuration || 60;
 
     if (!voiceConn) {
       const newConn = joinVoiceChannel({

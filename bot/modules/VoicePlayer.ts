@@ -132,6 +132,10 @@ export default class VoicePlayerClass {
     });
   }
 
+  set idleTimeoutDuration(duration: number) {
+    this.idleTimeout = duration * 1000; // Convert seconds to milliseconds
+  }
+
   forceStop() {
     this.soundQueue = [];
     this.audioInstance.stop();

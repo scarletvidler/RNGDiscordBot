@@ -1,12 +1,16 @@
-// Disable TTS replies for this guild
-
 import { SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-replies-toggle")
-    .setDescription("Toggles TTS replies for this guild."),
+    .setName("tts-channel-name")
+    .setDescription("Sets the TTS channel name for this guild.")
+    .addStringOption((option) =>
+      option
+        .setName("channel-name")
+        .setDescription("The name of the voice channel to use for TTS.")
+        .setRequired(true),
+    ),
   async execute(interaction, client) {
     await interaction.deferReply({ ephemeral: false });
     const guild = client.installedGuilds.find(
@@ -16,13 +20,10 @@ const command: BotCommand = {
       await interaction.editReply("This command can only be used in a guild.");
       return;
     }
-    // Update the guild settings to toggle TTS replies
+    const channelName = interaction.options.getString("channel-name", true);
     const extendedGuild = guild as any;
-    extendedGuild.settings.tts.repliesEnabled =
-      !extendedGuild.settings.tts.repliesEnabled;
-    await interaction.editReply(
-      `TTS replies have been ${extendedGuild.settings.tts.repliesEnabled ? "enabled" : "disabled"} for this guild.`,
-    );
+    extendedGuild.settings.tts.ttsChannelName = channelName;
+    await interaction.editReply(`TTS channel name set to: ${channelName}`);
   },
 };
 

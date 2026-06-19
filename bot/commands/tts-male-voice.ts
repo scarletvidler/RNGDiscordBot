@@ -1,12 +1,10 @@
-// Disable TTS replies for this guild
-
 import { SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-replies-toggle")
-    .setDescription("Toggles TTS replies for this guild."),
+    .setName("tts-male-voice")
+    .setDescription("Sets the male TTS voice ID for this guild."),
   async execute(interaction, client) {
     await interaction.deferReply({ ephemeral: false });
     const guild = client.installedGuilds.find(
@@ -16,13 +14,10 @@ const command: BotCommand = {
       await interaction.editReply("This command can only be used in a guild.");
       return;
     }
-    // Update the guild settings to toggle TTS replies
+    const voiceId = interaction.options.getString("voice-id", true);
     const extendedGuild = guild as any;
-    extendedGuild.settings.tts.repliesEnabled =
-      !extendedGuild.settings.tts.repliesEnabled;
-    await interaction.editReply(
-      `TTS replies have been ${extendedGuild.settings.tts.repliesEnabled ? "enabled" : "disabled"} for this guild.`,
-    );
+    extendedGuild.settings.tts.maleVoiceId = voiceId;
+    await interaction.editReply(`Male voice ID set to: ${voiceId}`);
   },
 };
 
