@@ -10,8 +10,10 @@ export async function registerSlashCommands(
 ): Promise<void> {
   try {
     const rest = apiConnect(token);
-    const commandsJson = client.commands.map((cmd) => cmd.data.toJSON());
     for (const guildId of guildIds) {
+      const commandsJson = client.commands
+        .filter((cmd) => !cmd.guildId || cmd.guildId === guildId)
+        .map((cmd) => cmd.data.toJSON());
       console.log(`Adding commands for guild 📢 ${guildId}...`);
       const data = (await rest.put(
         Routes.applicationGuildCommands(clientId, guildId),

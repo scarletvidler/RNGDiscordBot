@@ -9,6 +9,7 @@ import VoicePlayerClass from "./modules/VoicePlayer.ts";
 
 export type channelWithPlayer = Channel & { player?: VoicePlayerClass };
 export interface BotCommand {
+  guildId?: string;
   data: SlashCommandOptionsOnlyBuilder;
   execute(
     interaction: ChatInputCommandInteraction,
