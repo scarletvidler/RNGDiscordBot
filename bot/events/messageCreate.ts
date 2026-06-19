@@ -2,10 +2,10 @@ import { TextChannel, type Message } from "discord.js";
 import type { BotEvent, ExtendedClient } from "../types.ts";
 import isValidTTS from "../modules/tts/isValidTTS.ts";
 import { TTSInstance } from "../modules/tts/TTSInstance.ts";
+import { sendGuildAnnouncement } from "../modules/sendGuildAnnouncement.ts";
 
 const ANNOUNCE_GUILD_ID = "1179157503766962176";
 const ANNOUNCE_CHANNEL_NAME = "announce";
-const UPDATES_CHANNEL_NAME = "lerche-updates";
 
 const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
   type: "messageCreate",
@@ -18,11 +18,12 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
       (message.channel as TextChannel).name === ANNOUNCE_CHANNEL_NAME
     ) {
       for (const guild of client.guilds.cache.values()) {
-        const channels = await guild.channels.fetch();
-        const target = channels.find(
-          (c) => c?.name === UPDATES_CHANNEL_NAME && c.isTextBased(),
-        ) as TextChannel | undefined;
-        if (target) await target.send(message.content);
+        const result = await sendGuildAnnouncement(guild, message.content);
+        if (!result.ok) {
+          console.warn(
+            `Announcement skipped for ${result.guildName}: ${result.reason}`,
+          );
+        }
       }
       return;
     }
@@ -48,9 +49,16 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
       }
     } catch (error) {
       console.error("TTS validation error:", error);
-      await message.channel.send(`TTS validation failed: ${error.message}`);
+      await message.channel.send(
+        `TTS validation failed: ${getErrorMessage(error)}`,
+      );
     }
   },
 };
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
 
 export default event;

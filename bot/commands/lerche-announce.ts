@@ -1,5 +1,6 @@
-import { SlashCommandBuilder, TextChannel } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
+import { sendGuildAnnouncement } from "../modules/sendGuildAnnouncement.ts";
 
 const command: BotCommand = {
   guildId: "1179157503766962176",
@@ -21,16 +22,11 @@ const command: BotCommand = {
     const results: string[] = [];
 
     for (const guild of client.guilds.cache.values()) {
-      const channels = await guild.channels.fetch();
-      const channel = channels.find(
-        (c) => c?.name === "lerche-updates" && c.isTextBased(),
-      ) as TextChannel | undefined;
-
-      if (channel) {
-        await channel.send(message);
-        results.push(`✅ ${guild.name}`);
+      const result = await sendGuildAnnouncement(guild, message);
+      if (result.ok) {
+        results.push(`[sent] ${result.guildName}`);
       } else {
-        results.push(`❌ ${guild.name} (no "lerche-updates" channel)`);
+        results.push(`[skipped] ${result.guildName} (${result.reason})`);
       }
     }
 
