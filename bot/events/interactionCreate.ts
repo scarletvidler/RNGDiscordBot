@@ -14,6 +14,27 @@ const event: BotEvent<[Interaction, ExtendedClient]> = {
       return;
     }
 
+    const member = interaction.member;
+
+    if (!member || !("permissions" in member)) {
+      console.error("Interaction member is not a GuildMember.");
+      return;
+    }
+
+    if (command.requirements?.userPermissions) {
+      const missingPermissions = command.requirements.userPermissions.filter(
+        (perm) => !member.permissions.has(perm as any),
+      );
+
+      if (missingPermissions.length > 0) {
+        await interaction.reply({
+          content: `You lack the following permissions to use this command: ${missingPermissions.join(", ")}`,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+    }
+
     try {
       await command.execute(interaction, client);
     } catch (error) {
