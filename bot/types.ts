@@ -11,6 +11,9 @@ export interface BotCommand {
   data:
     | SlashCommandBuilder
     | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
+  requirements?: {
+    userPermissions?: string[];
+  };
   execute(interaction: ChatInputCommandInteraction): Promise<void>;
 }
 
