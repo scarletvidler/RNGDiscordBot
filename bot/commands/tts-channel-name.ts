@@ -11,6 +11,9 @@ const command: BotCommand = {
         .setDescription("The name of the voice channel to use for TTS.")
         .setRequired(true),
     ),
+  requirements: {
+    userPermissions: ["Administrator"],
+  },
   async execute(interaction, client) {
     await interaction.deferReply({ ephemeral: false });
     const guild = client.installedGuilds.find(

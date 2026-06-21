@@ -11,6 +11,9 @@ const command: BotCommand = {
         .setDescription("The ElevenLabs voice ID to use for female voices.")
         .setRequired(true),
     ),
+  requirements: {
+    userPermissions: ["Administrator"],
+  },
   async execute(interaction, client) {
     await interaction.deferReply({ ephemeral: false });
     const guild = client.installedGuilds.find(

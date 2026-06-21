@@ -14,6 +14,9 @@ const command: BotCommand = {
         .setRequired(true)
         .setMinValue(30),
     ),
+  requirements: {
+    userPermissions: ["Administrator"],
+  },
   async execute(interaction, client) {
     await interaction.deferReply({ ephemeral: false });
     const guild = client.installedGuilds.find(

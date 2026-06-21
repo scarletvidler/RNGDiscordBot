@@ -7,6 +7,9 @@ const command: BotCommand = {
   data: new SlashCommandBuilder()
     .setName("tts-replies-toggle")
     .setDescription("Toggles TTS replies for this guild."),
+  requirements: {
+    userPermissions: ["Administrator"],
+  },
   async execute(interaction, client) {
     await interaction.deferReply({ ephemeral: false });
     const guild = client.installedGuilds.find(

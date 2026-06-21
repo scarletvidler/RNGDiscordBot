@@ -5,6 +5,9 @@ const command: BotCommand = {
   data: new SlashCommandBuilder()
     .setName("tts-male-voice")
     .setDescription("Sets the male TTS voice ID for this guild."),
+  requirements: {
+    userPermissions: ["Administrator"],
+  },
   async execute(interaction, client) {
     await interaction.deferReply({ ephemeral: false });
     const guild = client.installedGuilds.find(
