@@ -11,6 +11,9 @@ export type channelWithPlayer = Channel & { player?: VoicePlayerClass };
 export interface BotCommand {
   guildId?: string;
   data: SlashCommandOptionsOnlyBuilder;
+  requirements?: {
+    userPermissions?: string[];
+  };
   execute(
     interaction: ChatInputCommandInteraction,
     client: ExtendedClient,

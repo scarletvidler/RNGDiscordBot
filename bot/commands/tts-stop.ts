@@ -7,6 +7,9 @@ const command: BotCommand = {
     .setDescription(
       "Stops the TTS playback and clears the queue. (used for when she gets stuck)",
     ),
+  requirements: {
+    userPermissions: ["Administrator"],
+  },
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
     const channel = interaction.member?.voice.channel;
