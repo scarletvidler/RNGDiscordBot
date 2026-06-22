@@ -13,6 +13,9 @@ import clientInstance from "./client.ts";
 import getCleanName from "../helpers/getCleanName.ts";
 import invariant from "tiny-invariant";
 import { channelWithPlayer } from "../types.ts";
+import { ElevenLabsClient, play } from "@elevenlabs/elevenlabs-js";
+import { createWriteStream, createReadStream } from "fs";
+import fs from "node:fs";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
@@ -38,9 +41,17 @@ export async function joinAndPlay(
 
     invariant(currentChannel, "Channel not found in cache");
 
+    const timeOutDuration = clientInstance.installedGuilds.find(
+      (g) => g.id === channel.guild.id,
+    )?.settings.tts.idleTimeout;
     currentChannel.player =
       currentChannel.player ||
-      new VoicePlayerClass({ idleTimeout: clientInstance.idleTimeout });
+      new VoicePlayerClass({
+        idleTimeout: timeOutDuration,
+      });
+
+    // reset the idle timer whenever a new message is sent
+    currentChannel.player.idleTimeoutDuration = timeOutDuration || 60;
 
     if (!voiceConn) {
       const newConn = joinVoiceChannel({
@@ -51,7 +62,7 @@ export async function joinAndPlay(
       });
 
       newConn.on("stateChange", (oldState, newState) => {
-        console.debug(`[voice] ${oldState.status} -> ${newState.status}`);
+        // console.debug(`[voice] ${oldState.status} -> ${newState.status}`);
       });
 
       // Only attach disconnect handler AFTER we've reached Ready
@@ -127,7 +138,9 @@ async function convertMessageToSpeech(
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
 
-  let voiceId = clientInstance.femaleRoleId;
+  let voiceId = clientInstance.installedGuilds.find(
+    (g) => g.id === message.guildId,
+  )?.settings.tts.femaleVoiceId;
   // if the user has a role called "male" change to using the male voice (Adam - 21mL7)
   const member = message.member;
   if (member) {
@@ -135,46 +148,53 @@ async function convertMessageToSpeech(
       (role) => role.name.toLowerCase() === "male",
     );
     if (hasMaleRole) {
-      voiceId = clientInstance.maleRoleId;
+      voiceId = clientInstance.installedGuilds.find(
+        (g) => g.id === message.guildId,
+      )?.settings.tts.maleVoiceId as string;
     }
   }
 
   const text = validateMessageContent(message);
+  console.log(`User: ${getCleanName(message.author)}`, `Message: ${text}`);
+
   console.log(
-    `User: ${getCleanName(message.author)}`,
-    `Voice ID: ${voiceId}`,
-    `Message: ${text}`,
+    `Using voice ID: ${voiceId} for user: ${getCleanName(message.author)}`,
   );
 
-  console.log("Downloading speech from ElevenLabs...");
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=mp3_44100_128`,
-    {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text,
-        model_id: "eleven_v3",
-        voice_settings: {
-          speed: 1.2,
+  const elevenlabs = new ElevenLabsClient({
+    apiKey,
+  });
+
+  const pronunciationDictionary =
+    await elevenlabs.pronunciationDictionaries.createFromFile({
+      file: fs.createReadStream("bot/pronunciation/dictionary.pls"),
+      name: "default",
+    });
+
+  try {
+    const audioStream = await elevenlabs.textToSpeech.convert(voiceId, {
+      text,
+      modelId: "eleven_v3",
+      outputFormat: "mp3_44100_128",
+      pronunciationDictionaryLocators: [
+        {
+          pronunciationDictionaryId: pronunciationDictionary.id,
+          versionId: pronunciationDictionary.versionId,
         },
-      }),
-    },
-  );
+      ],
+    });
 
-  console.log("ElevenLabs response status:", response.status);
+    const chunks: Buffer[] = [];
+    for await (const chunk of audioStream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const content = Buffer.concat(chunks);
 
-  if (response.status !== 200) {
-    const errorText = await response.text();
-    throw new Error(`❌ ElevenLabs TTS error: ${response.status} ${errorText}`);
+    // convert the buffer to a Readable stream
+    const audio = Readable.from(content);
+    return audio;
+  } catch (error) {
+    console.error("❌ Error converting text to speech:", error);
+    throw error;
   }
-
-  const body = response.body;
-  if (!body) throw new Error("❌ ElevenLabs returned no body");
-
-  // Convert Web ReadableStream → Node Readable for @discordjs/voice compatibility
-  return Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0]);
 }

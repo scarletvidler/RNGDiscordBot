@@ -1,19 +1,28 @@
-import { Message, TextChannel } from "discord.js";
+import { Guild, Message, TextChannel } from "discord.js";
 import { joinAndPlay } from "../ttsListen.ts";
+import { ExtendedGuild } from "../../types.ts";
 
 export class TTSInstance {
   private message: Message<boolean>;
   public channel: TextChannel;
   public reply?: Message;
+  private guild: ExtendedGuild;
 
-  constructor(message: Message<boolean>) {
+  constructor(message: Message<boolean>, guild: ExtendedGuild) {
     this.message = message;
+    this.guild = guild;
     this.channel = message.channel as TextChannel;
-    console.log("TTS module initialized.");
   }
 
-  static async create(message: Message<boolean>): Promise<TTSInstance> {
-    const instance = new TTSInstance(message);
+  checkIfRepliesAreEnabled(): boolean {
+    return this.guild.settings.tts.repliesEnabled ?? true; // Default to true if not set
+  }
+
+  static async create(
+    message: Message<boolean>,
+    guild: ExtendedGuild,
+  ): Promise<TTSInstance> {
+    const instance = new TTSInstance(message, guild);
     instance.reply = await instance.sendMessage(
       "Listening for TTS messages...",
     );
@@ -22,6 +31,10 @@ export class TTSInstance {
 
   async sendMessage(messageToSet: string) {
     try {
+      if (!this.checkIfRepliesAreEnabled()) {
+        console.log("Replies are disabled for this guild. Skipping reply.");
+        return;
+      }
       // Create an ephemeral reply to the user to confirm that their TTS message is being processed
       return await this.channel.send(messageToSet);
     } catch (error) {
@@ -33,7 +46,6 @@ export class TTSInstance {
   async run() {
     try {
       // Placeholder for TTS logic, e.g., converting text to speech and playing it in a voice channel
-      console.log("Running TTS for message:", this.message.content);
       if (this.message.member && this.message.member.voice.channel) {
         await joinAndPlay(this.message.member.voice.channel, this.message);
         if (this.reply) {

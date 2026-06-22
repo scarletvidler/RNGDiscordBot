@@ -2,7 +2,10 @@ import { Message, Role, TextChannel } from "discord.js";
 import clientInstance from "../client.ts";
 
 export default function isValidTTS(message: Message<true>): boolean {
-  const ttsChannel = clientInstance.ttsChannelName || "tts";
+  const guild = clientInstance.installedGuilds.find(
+    (g) => g.id === message.guildId,
+  );
+  const ttsChannel = guild?.settings.tts.ttsChannelName || "tts";
   const maxLength = 400;
 
   if (message.pinned) return false;
