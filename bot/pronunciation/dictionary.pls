@@ -7,4 +7,8 @@
     <grapheme>Lerche</grapheme>
     <alias>Lerch</alias>
   </lexeme>
+    <lexeme>
+    <grapheme>Cem</grapheme>
+    <alias>[Turkish] Cem</alias>
+  </lexeme>
 </lexicon> 
