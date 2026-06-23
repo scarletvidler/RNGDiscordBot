@@ -29,6 +29,29 @@ npm run dev
 npm run start:bot:dev
 ```
 
+## Versioning
+
+This project uses semantic versions from `package.json`.
+
+```sh
+# Tiny fixes and small tweaks, for example 0.1.0 -> 0.1.1
+npm run release:patch
+
+# Bigger feature updates, for example 0.1.1 -> 0.2.0
+npm run release:minor
+
+# Stable breaking releases, for example 1.4.2 -> 2.0.0
+npm run release:major
+```
+
+Each release command updates `package.json` and `package-lock.json`, creates a git commit, and creates a git tag. Push the release commit and tag with:
+
+```sh
+git push --follow-tags
+```
+
+The running bot logs its version at startup and exposes it through `/version`.
+
 ## Architecture
 
 ```

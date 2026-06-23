@@ -35,7 +35,6 @@ export class ExtendedClient extends Client {
   prefix!: string;
   commands: Collection<string, BotCommand>;
   installedGuilds!: ExtendedGuild[];
-
   constructor(options: any) {
     super(options);
     this.commands = new Collection();
@@ -51,6 +50,9 @@ export interface ExtendedGuild extends Guild {
       ttsChannelName: string;
       idleTimeout: number;
     };
+  };
+  logging: {
+    messageCount: number;
   };
 }
 

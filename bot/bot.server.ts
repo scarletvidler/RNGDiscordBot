@@ -9,8 +9,11 @@ import { ExtendedGuild, type BotCommand, type BotEvent } from "./types.ts";
 import { getGuilds } from "./api/getGuilds.ts";
 import clientInstance from "./modules/client.ts";
 import setUpGuilds from "./modules/setUpGuilds.ts";
+import { botVersion } from "./version.ts";
 
 const client = clientInstance;
+
+console.log(`Starting Lerche Discord Bot v${botVersion}`);
 
 const commandsDirectory = getDirectoryRoot();
 const commandsDir = path.join(commandsDirectory, "commands");

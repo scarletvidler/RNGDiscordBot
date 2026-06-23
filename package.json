@@ -1,5 +1,6 @@
 {
-  "name": "Lerche Discord Bot",
+  "name": "lerche-discord-bot",
+  "version": "0.1.0",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -7,6 +8,9 @@
     "start:bot": "tsx watch server.js",
     "start:bot:dev": "tsx watch --env-file=.env.development server.js",
     "start:server": "tsx server.js",
+    "release:patch": "npm version patch",
+    "release:minor": "npm version minor",
+    "release:major": "npm version major",
     "typecheck": "tsc && tsc -p tsconfig.json --noEmit",
     "typecheck:bot": "tsc -p tsconfig.json --noEmit"
   },
