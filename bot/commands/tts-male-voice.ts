@@ -4,7 +4,13 @@ import { BotCommand } from "../types.ts";
 const command: BotCommand = {
   data: new SlashCommandBuilder()
     .setName("tts-male-voice")
-    .setDescription("Sets the male TTS voice ID for this guild."),
+    .setDescription("Sets the male TTS voice ID for this guild.")
+    .addStringOption((option) =>
+      option
+        .setName("voice-id")
+        .setDescription("The ElevenLabs voice ID to use for male voices.")
+        .setRequired(true),
+    ),
   requirements: {
     userPermissions: ["Administrator"],
   },
