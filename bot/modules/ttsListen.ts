@@ -156,10 +156,10 @@ async function convertMessageToSpeech(
   }
 
   const text = validateMessageContent(message);
-  console.log(`User: ${getCleanName(message.author)}`, `Message: ${text}`);
-
   console.log(
-    `Using voice ID: ${voiceId} for user: ${getCleanName(message.author)}`,
+    `⚔️ Guild: ${message.guild?.name}`,
+    `🗣📢 User: ${getCleanName(message.author)}`,
+    `📜 Message: ${text}`,
   );
 
   const elevenlabs = new ElevenLabsClient({
