@@ -44,6 +44,9 @@ export async function joinAndPlay(
     const timeOutDuration = clientInstance.installedGuilds.find(
       (g) => g.id === channel.guild.id,
     )?.settings.tts.idleTimeout;
+    console.log(
+      `Idle timeout duration for guild ${channel.guild.id}: ${timeOutDuration} seconds`,
+    );
     currentChannel.player =
       currentChannel.player ||
       new VoicePlayerClass({
@@ -51,7 +54,9 @@ export async function joinAndPlay(
       });
 
     // reset the idle timer whenever a new message is sent
-    currentChannel.player.idleTimeoutDuration = timeOutDuration || 60;
+    currentChannel.player.setIdleTimeoutDuration(timeOutDuration || 600);
+
+    console.log(currentChannel.player.idleTimeout);
 
     if (!voiceConn) {
       const newConn = joinVoiceChannel({

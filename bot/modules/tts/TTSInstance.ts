@@ -51,6 +51,12 @@ export class TTSInstance {
         if (this.reply) {
           await this.reply.edit("Message played in voice channel.");
         }
+
+        if (this.setMessageCount() % 100 === 0) {
+          await this.channel.send(
+            `👋 Thanks for supporting Lerche's development! Please share the bot with your friends and community! It helps me make this into a real project. https://discord.com/oauth2/authorize?client_id=1511773768438251660`,
+          );
+        }
       } else {
         console.warn("User is not in a voice channel. Cannot play TTS.");
         this.reply?.edit(
@@ -60,6 +66,19 @@ export class TTSInstance {
     } catch (error) {
       console.error("Error running TTS:", error);
       throw new Error("Failed to run TTS.");
+    }
+  }
+
+  setMessageCount(): number {
+    try {
+      if (!this.guild.logging) {
+        this.guild.logging = { messageCount: 0 };
+      }
+      this.guild.logging.messageCount += 1;
+      return this.guild.logging.messageCount;
+    } catch (error) {
+      console.error("Error logging TTS message:", error);
+      throw new Error("Failed to log TTS message.");
     }
   }
 }

@@ -6,11 +6,13 @@ import client from "./client.ts";
 export default async function setUpGuilds(
   client: ExtendedClient,
 ): Promise<string[]> {
-  const guilds: Guild[] = (await getGuilds(process.env.BOT_TOKEN!)) as Guild[];
+  const guilds: ExtendedGuild[] = (await getGuilds(
+    process.env.BOT_TOKEN!,
+  )) as ExtendedGuild[];
   const guildIds: string[] = guilds.map((guild) => guild.id);
   guilds.map((guild) => {
     console.log(`Connected to guild: 🏯 ${guild.name} (ID: ${guild.id})`);
-    setUpGuild(guild as ExtendedGuild, {
+    setUpGuild(guild, {
       tts: {
         repliesEnabled: true,
         femaleVoiceId: client.femaleRoleId,
@@ -19,6 +21,7 @@ export default async function setUpGuilds(
         idleTimeout: client.idleTimeout,
       },
     });
+    setUpGuildLogging(guild);
   });
 
   const extendedGuilds: ExtendedGuild[] = guilds.map((guild) => {
@@ -30,18 +33,20 @@ export default async function setUpGuilds(
 }
 
 function setUpGuild(
-  guild: ExtendedGuild,
+  guild: Guild,
   settings: ExtendedGuild["settings"],
-): void {
-  if (!guild.settings) {
-    guild.settings = {
-      tts: {
-        repliesEnabled: true,
-        femaleVoiceId: settings.tts.femaleVoiceId,
-        maleVoiceId: settings.tts.maleVoiceId,
-        ttsChannelName: settings.tts.ttsChannelName,
-        idleTimeout: settings.tts.idleTimeout,
-      },
+): ExtendedGuild {
+  const extendedGuild = guild as ExtendedGuild;
+  if (!extendedGuild.settings) {
+    extendedGuild.settings = settings;
+  }
+  return extendedGuild;
+}
+
+function setUpGuildLogging(guild: ExtendedGuild): void {
+  if (!guild.logging) {
+    guild.logging = {
+      messageCount: 0,
     };
   }
 }

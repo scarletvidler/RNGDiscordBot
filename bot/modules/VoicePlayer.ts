@@ -110,7 +110,7 @@ export default class VoicePlayerClass {
   }
 
   get hasIdledTooLong(): boolean {
-    return Date.now() - this.idleTimer > this.idleTimeout;
+    return Date.now() - this.idleTimer > this.idleTimeout * 1000;
   }
 
   getSoundAsset(name: string): string | null {
@@ -144,7 +144,7 @@ export default class VoicePlayerClass {
     });
   }
 
-  set idleTimeoutDuration(duration: number) {
+  setIdleTimeoutDuration(duration: number) {
     // Accept either seconds (normal path) or legacy milliseconds values.
     this.idleTimeout = duration;
   }
