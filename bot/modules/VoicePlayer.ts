@@ -15,14 +15,16 @@ export default class VoicePlayerClass {
   timeOfCreation: number;
   idleTimeout: number;
   idleTimer: number;
+  isDisconnecting: boolean;
   connection: VoiceConnection | null;
   audioInstance: AudioPlayer;
   soundQueue: AudioResource[];
 
   constructor(options: { idleTimeout?: number } = {}) {
     this.timeOfCreation = Date.now();
-    this.idleTimeout = options.idleTimeout || 600000; // default to 10 minutes if not provided
+    this.idleTimeout = options.idleTimeout || 600; // default to 10 minutes if not provided (in seconds)
     this.idleTimer = this.timeOfCreation;
+    this.isDisconnecting = false;
     this.connection = null;
     this.soundQueue = [];
     this.audioInstance = createAudioPlayer();
@@ -37,15 +39,25 @@ export default class VoicePlayerClass {
 
   _monitorIdleState() {
     setInterval(() => {
-      if (this.hasIdledTooLong && this.isStopped) {
+      if (this.hasIdledTooLong && this.isStopped && !this.isDisconnecting) {
+        this.isDisconnecting = true;
         const asset = this.getSoundAsset("disconnect.ogg");
+        const disconnect = () => {
+          if (this.connection != null) {
+            this.connection.destroy();
+            this.connection = null;
+          }
+          this.isDisconnecting = false;
+        };
+
         if (asset) {
-          this.playSoundFileDirect(asset).then(() => {
-            if (this.connection != null) {
-              this.connection.destroy();
-              this.connection = null;
-            }
-          });
+          this.playSoundFileDirect(asset)
+            .catch(() => {
+              // Fallback to direct disconnect if the sound fails to play.
+            })
+            .finally(disconnect);
+        } else {
+          disconnect();
         }
       }
     }, 1000);
@@ -133,7 +145,8 @@ export default class VoicePlayerClass {
   }
 
   set idleTimeoutDuration(duration: number) {
-    this.idleTimeout = duration * 1000; // Convert seconds to milliseconds
+    // Accept either seconds (normal path) or legacy milliseconds values.
+    this.idleTimeout = duration;
   }
 
   forceStop() {

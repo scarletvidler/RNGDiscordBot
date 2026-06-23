@@ -20,6 +20,6 @@ clientInstance.femaleRoleId = `${
 clientInstance.maleRoleId = "goT3UYdM9bhm0n2lmKQx";
 clientInstance.ttsChannelName = `${process.env.TTS_CHANNEL_NAME || "tts"}`;
 clientInstance.prefix = "rng:";
-clientInstance.idleTimeout = 600000; // 10 minutes
+clientInstance.idleTimeout = 600; // 10 minutes (seconds)
 
 export default clientInstance;
