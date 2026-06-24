@@ -86,7 +86,7 @@ const command: BotCommand = {
     };
 
     if (pokemon.sprite) {
-      embed.thumbnail = { url: pokemon.sprite };
+      embed.image = { url: pokemon.sprite };
     }
 
     await interaction.editReply({

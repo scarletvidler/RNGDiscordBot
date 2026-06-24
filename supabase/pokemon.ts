@@ -13,6 +13,8 @@ export interface CooldownStatus {
 export interface PokemonSprites {
   front_default?: string | null;
   front_shiny?: string | null;
+  official_artwork_shiny: string | null;
+  official_artwork_default: string | null;
 }
 
 export interface Pokemon {
@@ -105,8 +107,8 @@ const getPokemonSprite = (
   isShiny: boolean,
 ): string | null | undefined => {
   return isShiny
-    ? pokemon?.sprites?.front_shiny
-    : pokemon?.sprites?.front_default;
+    ? pokemon?.sprites?.official_artwork_shiny
+    : pokemon?.sprites?.official_artwork_default;
 };
 
 export const rollPokemon = async (
