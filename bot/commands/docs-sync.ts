@@ -4,7 +4,7 @@ import type { BotCommand } from "../types.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("docs-sync-development-please-ignore")
+    .setName("docs-please-ignore")
     .setDescription("Creates or updates the how-to docs forum posts.")
     .addStringOption((option) =>
       option
