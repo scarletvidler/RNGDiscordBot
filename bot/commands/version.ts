@@ -1,5 +1,9 @@
 import type { BotCommand } from "../types.ts";
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  MessageFlags,
+  SlashCommandBuilder,
+} from "discord.js";
 import { botVersion } from "../version.ts";
 
 const command: BotCommand = {
@@ -10,7 +14,7 @@ const command: BotCommand = {
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.reply({
       content: `Lerche Discord Bot v${botVersion}`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

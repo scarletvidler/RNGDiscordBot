@@ -18,7 +18,7 @@ const command: BotCommand = {
     userPermissions: ["Administrator"],
   },
   async execute(interaction, client) {
-    await interaction.deferReply({ ephemeral: false });
+    await interaction.deferReply();
     const guild = client.installedGuilds.find(
       (g) => g.id === interaction.guildId,
     );

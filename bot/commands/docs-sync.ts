@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { syncHowToDocs } from "../modules/syncHowToDocs.ts";
 import type { BotCommand } from "../types.ts";
 
@@ -18,7 +18,9 @@ const command: BotCommand = {
     userPermissions: ["Administrator"],
   },
   async execute(interaction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({
+      flags: MessageFlags.Ephemeral,
+    });
 
     if (!interaction.guild) {
       await interaction.editReply("This command can only be used in a server.");

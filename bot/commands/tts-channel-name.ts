@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
 
 const command: BotCommand = {
@@ -15,7 +15,9 @@ const command: BotCommand = {
     userPermissions: ["Administrator"],
   },
   async execute(interaction, client) {
-    await interaction.deferReply({ ephemeral: false });
+    await interaction.deferReply({
+      flags: MessageFlags.Ephemeral,
+    });
     const guild = client.installedGuilds.find(
       (g) => g.id === interaction.guildId,
     );

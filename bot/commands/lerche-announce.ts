@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
 import { sendGuildAnnouncement } from "../modules/sendGuildAnnouncement.ts";
 
@@ -16,7 +16,9 @@ const command: BotCommand = {
         .setRequired(true),
     ),
   async execute(interaction, client) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({
+      flags: MessageFlags.Ephemeral,
+    });
 
     const message = interaction.options.getString("message", true);
     const results: string[] = [];

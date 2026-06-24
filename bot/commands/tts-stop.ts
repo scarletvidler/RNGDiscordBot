@@ -1,5 +1,9 @@
 import type { BotCommand } from "../types.ts";
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  MessageFlags,
+  SlashCommandBuilder,
+} from "discord.js";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -11,7 +15,9 @@ const command: BotCommand = {
     userPermissions: ["Administrator"],
   },
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({
+      flags: MessageFlags.Ephemeral,
+    });
     const channel = interaction.member?.voice.channel;
     if (!channel) {
       await interaction.editReply(
