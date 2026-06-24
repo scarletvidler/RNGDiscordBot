@@ -7,7 +7,7 @@ import {
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const DOCS_DIR = path.join(process.cwd(), "docs", "how-to-lerche");
+const DOCS_DIR = path.join(process.cwd(), "docs", "how-to");
 const DISCORD_MESSAGE_LIMIT = 2000;
 
 interface HowToDoc {
