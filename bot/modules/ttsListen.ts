@@ -10,18 +10,16 @@ import { Channel, type Message, type VoiceBasedChannel } from "discord.js";
 import { Readable } from "stream";
 import VoicePlayerClass from "./VoicePlayer.ts";
 import clientInstance from "./client.ts";
-import getCleanName from "../helpers/getCleanName.ts";
+import { getCleanName } from "../helpers/getClean.ts";
 import invariant from "tiny-invariant";
 import { channelWithPlayer } from "../types.ts";
-import { ElevenLabsClient, play } from "@elevenlabs/elevenlabs-js";
-import { createWriteStream, createReadStream } from "fs";
-import fs from "node:fs";
 import isRosie from "../helpers/isRosie.ts";
+import ElevenLabs from "./ElevenLabs.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
   message: Message<boolean>,
-): Promise<boolean> {
+): Promise<{ messagePlayed: string }> {
   try {
     let voiceConn: VoiceConnection | undefined = getVoiceConnection(
       channel.guild.id,
@@ -98,9 +96,9 @@ export async function joinAndPlay(
       if (pingAsset) player.playSoundFile(pingAsset);
     }
 
-    const resourceStream = await convertMessageToSpeech(message);
-    player.playSoundFile(resourceStream);
-    return true;
+    const { audio, playedMessage } = await convertMessageToSpeech(message);
+    player.playSoundFile(audio);
+    return { messagePlayed: playedMessage };
   } catch (error) {
     console.error("Error in joinAndPlay:", error);
     throw error;
@@ -136,10 +134,7 @@ function validateMessageContent(message: Message<boolean>): string {
 
 async function convertMessageToSpeech(
   message: Message<boolean>,
-): Promise<Readable> {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  if (!apiKey) throw new Error("❌ ELEVENLABS_API_KEY missing from .env");
-
+): Promise<{ audio: Readable; playedMessage: string }> {
   let voiceId = clientInstance.installedGuilds.find(
     (g) => g.id === message.guildId,
   )?.settings.tts.femaleVoiceId;
@@ -160,35 +155,15 @@ async function convertMessageToSpeech(
     voiceId = "kdmDKE6EkgrWrrykO9Qt";
   }
 
+  if (!voiceId) {
+    throw new Error("No voiceId configured for this guild.");
+  }
+
   const text = validateMessageContent(message);
-  console.log(
-    `⚔️ Guild: ${message.guild?.name}`,
-    `🗣📢 User: ${getCleanName(message.author)}`,
-    `📜 Message: ${text}`,
-  );
-
-  const elevenlabs = new ElevenLabsClient({
-    apiKey,
-  });
-
-  const pronunciationDictionary =
-    await elevenlabs.pronunciationDictionaries.createFromFile({
-      file: fs.createReadStream("bot/pronunciation/dictionary.pls"),
-      name: "default",
-    });
+  const elevenlabs = ElevenLabs.getInstance();
 
   try {
-    const audioStream = await elevenlabs.textToSpeech.convert(voiceId, {
-      text,
-      modelId: "eleven_v3",
-      outputFormat: "mp3_44100_128",
-      pronunciationDictionaryLocators: [
-        {
-          pronunciationDictionaryId: pronunciationDictionary.id,
-          versionId: pronunciationDictionary.versionId,
-        },
-      ],
-    });
+    const audioStream = await elevenlabs.convertTextToSpeech(voiceId, text);
 
     const chunks: Buffer[] = [];
     for await (const chunk of audioStream) {
@@ -198,7 +173,7 @@ async function convertMessageToSpeech(
 
     // convert the buffer to a Readable stream
     const audio = Readable.from(content);
-    return audio;
+    return { audio, playedMessage: text };
   } catch (error) {
     console.error("❌ Error converting text to speech:", error);
     throw error;

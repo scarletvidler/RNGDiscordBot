@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
+import ElevenLabs from "../modules/ElevenLabs.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -25,6 +26,17 @@ const command: BotCommand = {
     }
     const voiceId = interaction.options.getString("voice-id", true);
     const extendedGuild = guild as any;
+
+    await ElevenLabs.getInstance()
+      .getVoiceName(voiceId)
+      .catch(async (error) => {
+        console.error("Error fetching voice name:", error);
+        await interaction.editReply(
+          `Failed to fetch voice name for ID: ${voiceId}. Please ensure the voice ID is valid.`,
+        );
+        throw new Error(`Failed to fetch voice name for ID: ${voiceId}`);
+      });
+
     extendedGuild.settings.tts.maleVoiceId = voiceId;
     await interaction.editReply(`Male voice ID set to: ${voiceId}`);
   },
