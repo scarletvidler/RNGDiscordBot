@@ -16,6 +16,7 @@ import { channelWithPlayer } from "../types.ts";
 import { ElevenLabsClient, play } from "@elevenlabs/elevenlabs-js";
 import { createWriteStream, createReadStream } from "fs";
 import fs from "node:fs";
+import isRosie from "../helpers/isRosie.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
@@ -153,6 +154,10 @@ async function convertMessageToSpeech(
         (g) => g.id === message.guildId,
       )?.settings.tts.maleVoiceId as string;
     }
+  }
+
+  if (isRosie(member as any)) {
+    voiceId = "kdmDKE6EkgrWrrykO9Qt";
   }
 
   const text = validateMessageContent(message);
