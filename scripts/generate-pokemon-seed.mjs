@@ -106,7 +106,7 @@ assertUnique(rows, "name");
 
 const columns = [
   "handle",
-  "id",
+  "pokemon_id",
   "form_id",
   "name",
   "form_name",
@@ -158,7 +158,6 @@ INSERT INTO public.pokemon (${columns.join(", ")})
 VALUES
 ${values.join(",\n")}
 ON CONFLICT (handle) DO UPDATE SET
-  id = EXCLUDED.id,
   pokedex_id = EXCLUDED.pokedex_id,
   form_id = EXCLUDED.form_id,
   name = EXCLUDED.name,

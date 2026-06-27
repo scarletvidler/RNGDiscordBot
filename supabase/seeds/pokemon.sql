@@ -2,7 +2,7 @@ BEGIN;
 
 TRUNCATE TABLE public.pokemon CASCADE;
 
-INSERT INTO public.pokemon (handle, id, form_id, name, form_name, height, weight, capture_rate, gender_rate, is_baby, is_legendary, is_mythical, flavor_text, form_sprite_front, form_sprite_shiny, dream_sprite_front_female, dream_sprite_front_default, official_sprite_front_shiny, official_sprite_front_default)
+INSERT INTO public.pokemon (handle, pokemon_id, form_id, name, form_name, height, weight, capture_rate, gender_rate, is_baby, is_legendary, is_mythical, flavor_text, form_sprite_front, form_sprite_shiny, dream_sprite_front_female, dream_sprite_front_default, official_sprite_front_shiny, official_sprite_front_default)
 VALUES
   ('0001-1', 1, 1, 'bulbasaur', NULL, 7, 69, 45, 1, FALSE, FALSE, FALSE, 'A strange seed was planted on its back at birth. The plant sprouts and grows with this POKéMON.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/1.png', NULL, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/1.svg', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/1.png', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png'),
   ('0002-2', 2, 2, 'ivysaur', NULL, 10, 130, 45, 1, FALSE, FALSE, FALSE, 'When the bulb on its back grows large, it appears to lose the ability to stand on its hind legs.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/2.png', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/2.png', NULL, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/2.svg', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/2.png', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/2.png'),
@@ -1584,7 +1584,6 @@ VALUES
   ('10325-10550', 998, 10550, 'baxcalibur-mega', 'mega', 21, 3150, 10, 4, FALSE, FALSE, FALSE, 'This Pokémon blasts cryogenic air out from its mouth. This air can instantly freeze even liquid-hot lava.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10325.png', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/10325.png', NULL, NULL, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/10325.png', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/10325.png'),
   ('10326-10554', 678, 10554, 'meowstic-female-mega-mega-female', 'mega-female', 8, 101, 75, 4, FALSE, FALSE, FALSE, 'When in danger, it raises its ears and releases enough psychic power to grind a 10-ton truck into dust.', NULL, NULL, NULL, NULL, NULL, NULL)
 ON CONFLICT (handle) DO UPDATE SET
-  id = EXCLUDED.id,
   pokedex_id = EXCLUDED.pokedex_id,
   form_id = EXCLUDED.form_id,
   name = EXCLUDED.name,
