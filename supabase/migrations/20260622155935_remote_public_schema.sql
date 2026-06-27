@@ -61,10 +61,11 @@ SET default_table_access_method = "heap";
 
 CREATE TABLE IF NOT EXISTS "public"."pokemon" (
     "handle" "text" NOT NULL,
-    "id" bigint NOT NULL,
+    "pokedex_id" bigint NOT NULL,
     "form_id" bigint NOT NULL,
     "name" "text" NOT NULL,
     "form_name" "text",
+    "sprites" jsonb,
     "height" integer,
     "weight" integer,
     "capture_rate" integer,
@@ -73,12 +74,6 @@ CREATE TABLE IF NOT EXISTS "public"."pokemon" (
     "is_legendary" boolean DEFAULT false NOT NULL,
     "is_mythical" boolean DEFAULT false NOT NULL,
     "flavor_text" "text",
-    "form_sprite_front" "text",
-    "form_sprite_shiny" "text",
-    "dream_sprite_front_female" "text",
-    "dream_sprite_front_default" "text",
-    "official_sprite_front_shiny" "text",
-    "official_sprite_front_default" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
@@ -143,7 +138,7 @@ ALTER TABLE ONLY "public"."pokemon"
 
 
 ALTER TABLE ONLY "public"."pokemon"
-    ADD CONSTRAINT "pokemon_id_form_id_key" UNIQUE ("id", "form_id");
+    ADD CONSTRAINT "pokedex_id_form_id_key" UNIQUE ("pokedex_id", "form_id");
 
 
 

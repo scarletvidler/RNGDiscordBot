@@ -22,6 +22,11 @@ const sqlNumber = (value) =>
 
 const sqlBoolean = (value) => (value ? "TRUE" : "FALSE");
 
+const sqlJson = (value) => {
+  if (value === null || value === undefined) return "NULL";
+  return `'${JSON.stringify(value).replaceAll("'", "''")}'::jsonb`;
+};
+
 const cleanFlavorText = (texts) => {
   const flavor = texts?.[0]?.flavor_text;
   if (!flavor) return null;
@@ -73,12 +78,20 @@ const rows = pokemon.flatMap((entry) => {
       is_legendary: Boolean(specy.is_legendary),
       is_mythical: Boolean(specy.is_mythical),
       flavor_text: cleanFlavorText(specy.pokemonspeciesflavortexts),
-      form_sprite_front: formSprites.sprites ?? null,
-      form_sprite_shiny: formSprites.shiny_sprites ?? null,
-      dream_sprite_front_female: dreamSprites.front_female ?? null,
-      dream_sprite_front_default: dreamSprites.front_default ?? null,
-      official_sprite_front_shiny: officialSprites.front_shiny ?? null,
-      official_sprite_front_default: officialSprites.front_default ?? null,
+      sprites: {
+        back_shiny: formSprites.back_shiny ?? null,
+        back_female: formSprites.back_female ?? null,
+        front_shiny: formSprites.front_shiny ?? null,
+        back_default: formSprites.back_default ?? null,
+        front_female: formSprites.front_female ?? null,
+        front_default: formSprites.front_default ?? null,
+        back_shiny_female: formSprites.back_female_shiny ?? null,
+        front_shiny_female: formSprites.front_female_shiny ?? null,
+        official_artwork_shiny: officialSprites.front_shiny ?? null,
+        official_artwork_default: officialSprites.front_default ?? null,
+        dream_sprite_front_default: dreamSprites.front_default ?? null,
+        dream_sprite_front_female: dreamSprites.front_female ?? null,
+      },
     };
   });
 });
@@ -106,7 +119,7 @@ assertUnique(rows, "name");
 
 const columns = [
   "handle",
-  "pokemon_id",
+  "pokedex_id",
   "form_id",
   "name",
   "form_name",
@@ -118,12 +131,7 @@ const columns = [
   "is_legendary",
   "is_mythical",
   "flavor_text",
-  "form_sprite_front",
-  "form_sprite_shiny",
-  "dream_sprite_front_female",
-  "dream_sprite_front_default",
-  "official_sprite_front_shiny",
-  "official_sprite_front_default",
+  "sprites",
 ];
 
 const values = rows.map((row) => {
@@ -141,12 +149,7 @@ const values = rows.map((row) => {
     sqlBoolean(row.is_legendary),
     sqlBoolean(row.is_mythical),
     sqlString(row.flavor_text),
-    sqlString(row.form_sprite_front),
-    sqlString(row.form_sprite_shiny),
-    sqlString(row.dream_sprite_front_female),
-    sqlString(row.dream_sprite_front_default),
-    sqlString(row.official_sprite_front_shiny),
-    sqlString(row.official_sprite_front_default),
+    sqlJson(row.sprites),
   ].join(", ")})`;
 });
 
@@ -170,12 +173,7 @@ ON CONFLICT (handle) DO UPDATE SET
   is_legendary = EXCLUDED.is_legendary,
   is_mythical = EXCLUDED.is_mythical,
   flavor_text = EXCLUDED.flavor_text,
-  form_sprite_front = EXCLUDED.form_sprite_front,
-  form_sprite_shiny = EXCLUDED.form_sprite_shiny,
-  dream_sprite_front_female = EXCLUDED.dream_sprite_front_female,
-  dream_sprite_front_default = EXCLUDED.dream_sprite_front_default,
-  official_sprite_front_shiny = EXCLUDED.official_sprite_front_shiny,
-  official_sprite_front_default = EXCLUDED.official_sprite_front_default;
+  sprites = EXCLUDED.sprites;
 
 COMMIT;
 `;
