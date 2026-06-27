@@ -5,6 +5,14 @@ const event: BotEvent<[Interaction, ExtendedClient]> = {
   type: "interactionCreate",
   execute: async (interaction, client) => {
     if (!interaction.isChatInputCommand()) return;
+    if (!interaction.inCachedGuild()) {
+      await interaction.reply({
+        content: "This command can only be used in a guild.",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
     const command = interaction.client.commands.get(interaction.commandName);
 
     if (!command) {
@@ -14,16 +22,9 @@ const event: BotEvent<[Interaction, ExtendedClient]> = {
       return;
     }
 
-    const member = interaction.member;
-
-    if (!member || !("permissions" in member)) {
-      console.error("Interaction member is not a GuildMember.");
-      return;
-    }
-
     if (command.requirements?.userPermissions) {
       const missingPermissions = command.requirements.userPermissions.filter(
-        (perm) => !member.permissions.has(perm as any),
+        (perm) => !interaction.member.permissions.has(perm as any),
       );
 
       if (missingPermissions.length > 0) {

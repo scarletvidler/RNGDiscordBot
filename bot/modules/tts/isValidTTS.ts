@@ -1,4 +1,4 @@
-import { Message, Role, TextChannel } from "discord.js";
+import { Message, Role } from "discord.js";
 import clientInstance from "../client.ts";
 
 export default function isValidTTS(message: Message<true>): boolean {
@@ -6,10 +6,15 @@ export default function isValidTTS(message: Message<true>): boolean {
     (g) => g.id === message.guildId,
   );
   const ttsChannel = guild?.settings.tts.ttsChannelName || "tts";
+  const roomPrefixEnabled = guild?.settings.tts.roomPrefixEnabled ?? false;
   const maxLength = 400;
 
   if (message.pinned) return false;
-  if (message.channel.name !== ttsChannel) return false;
+  if (roomPrefixEnabled) {
+    if (!message.content.trim().startsWith("/t")) return false;
+  } else if (message.channel.name !== ttsChannel) {
+    return false;
+  }
 
   const memberRoles = message.member?.roles.cache;
   // Test if any of the users has a role named "Lerche  Listens or Amelia Listens, to allow for more flexible role management
@@ -26,10 +31,12 @@ export default function isValidTTS(message: Message<true>): boolean {
     );
   }
 
-  if (message.content.length === 0)
+  const ttsContent = getTTSContent(message.content, roomPrefixEnabled);
+
+  if (ttsContent.length === 0)
     throw new Error("TTS message cannot be empty.");
   if (
-    message.content.length > maxLength &&
+    ttsContent.length > maxLength &&
     message.member?.id !== clientInstance.ownerId
   )
     throw new Error(
@@ -37,4 +44,10 @@ export default function isValidTTS(message: Message<true>): boolean {
     );
 
   return true;
+}
+
+function getTTSContent(content: string, roomPrefixEnabled: boolean): string {
+  const trimmed = content.trim();
+  if (!roomPrefixEnabled) return trimmed;
+  return trimmed.replace(/^\/t(?:\s+|$)/i, "").trim();
 }

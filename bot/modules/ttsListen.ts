@@ -108,6 +108,14 @@ export async function joinAndPlay(
 function validateMessageContent(message: Message<boolean>): string {
   try {
     let content = message.content.trim();
+    const roomPrefixEnabled =
+      clientInstance.installedGuilds.find((g) => g.id === message.guildId)
+        ?.settings.tts.roomPrefixEnabled ?? false;
+
+    if (roomPrefixEnabled) {
+      content = content.replace(/^\/t(?:\s+|$)/i, "").trim();
+    }
+
     content = content.replace(/\n/g, " ");
 
     message.mentions.users.forEach((user) => {
@@ -164,12 +172,7 @@ async function convertMessageToSpeech(
 
   try {
     const audioStream = await elevenlabs.convertTextToSpeech(voiceId, text);
-
-    const chunks: Buffer[] = [];
-    for await (const chunk of audioStream) {
-      chunks.push(Buffer.from(chunk));
-    }
-    const content = Buffer.concat(chunks);
+    const content = await streamToBuffer(audioStream);
 
     // convert the buffer to a Readable stream
     const audio = Readable.from(content);
@@ -178,4 +181,30 @@ async function convertMessageToSpeech(
     console.error("❌ Error converting text to speech:", error);
     throw error;
   }
+}
+
+async function streamToBuffer(
+  stream: ReadableStream<Uint8Array> | AsyncIterable<Uint8Array>,
+): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+
+  if (Symbol.asyncIterator in stream) {
+    for await (const chunk of stream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
+  }
+
+  const reader = stream.getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  return Buffer.concat(chunks);
 }

@@ -1,0 +1,172 @@
+create extension if not exists "pgcrypto";
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  display_name text,
+  avatar_url text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.discord_users (
+  id text primary key,
+  username text not null,
+  global_name text,
+  avatar_url text,
+  is_bot boolean not null default false,
+  first_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now()
+);
+
+create table if not exists public.guilds (
+  id text primary key,
+  name text not null,
+  owner_id text references public.discord_users(id) on delete set null,
+  icon_url text,
+  joined_at timestamptz not null default now(),
+  left_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.guild_members (
+  guild_id text not null references public.guilds(id) on delete cascade,
+  user_id text not null references public.discord_users(id) on delete cascade,
+  display_name text,
+  roles jsonb not null default '[]'::jsonb,
+  joined_at timestamptz,
+  first_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  primary key (guild_id, user_id)
+);
+
+create table if not exists public.guild_tts_settings (
+  guild_id text primary key references public.guilds(id) on delete cascade,
+  replies_enabled boolean not null default true,
+  room_prefix_enabled boolean not null default false,
+  tts_channel_name text not null default 'tts',
+  female_voice_id text,
+  male_voice_id text,
+  idle_timeout_seconds integer not null default 600 check (idle_timeout_seconds > 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.guild_command_settings (
+  id uuid primary key default gen_random_uuid(),
+  guild_id text not null references public.guilds(id) on delete cascade,
+  command_name text not null,
+  enabled boolean not null default true,
+  settings jsonb not null default '{}'::jsonb,
+  updated_by_user_id text references public.discord_users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (guild_id, command_name)
+);
+
+create table if not exists public.guild_chat_logs (
+  id uuid primary key default gen_random_uuid(),
+  guild_id text not null references public.guilds(id) on delete cascade,
+  channel_id text not null,
+  voice_channel_id text,
+  user_id text references public.discord_users(id) on delete set null,
+  message_id text unique,
+  raw_message text not null,
+  spoken_message text,
+  tts_mode text not null default 'channel' check (tts_mode in ('channel', 'room_prefix')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists guild_chat_logs_guild_created_idx
+  on public.guild_chat_logs (guild_id, created_at desc);
+
+create index if not exists guild_command_settings_guild_idx
+  on public.guild_command_settings (guild_id);
+
+create trigger profiles_set_updated_at
+  before update on public.profiles
+  for each row execute function public.set_updated_at();
+
+create trigger guilds_set_updated_at
+  before update on public.guilds
+  for each row execute function public.set_updated_at();
+
+create trigger guild_tts_settings_set_updated_at
+  before update on public.guild_tts_settings
+  for each row execute function public.set_updated_at();
+
+create trigger guild_command_settings_set_updated_at
+  before update on public.guild_command_settings
+  for each row execute function public.set_updated_at();
+
+alter table public.profiles enable row level security;
+alter table public.discord_users enable row level security;
+alter table public.guilds enable row level security;
+alter table public.guild_members enable row level security;
+alter table public.guild_tts_settings enable row level security;
+alter table public.guild_command_settings enable row level security;
+alter table public.guild_chat_logs enable row level security;
+
+create policy "Profiles are readable by authenticated users"
+  on public.profiles for select
+  to authenticated
+  using (true);
+
+create policy "Users can update their own profile"
+  on public.profiles for update
+  to authenticated
+  using ((select auth.uid()) = id)
+  with check ((select auth.uid()) = id);
+
+create policy "Users can insert their own profile"
+  on public.profiles for insert
+  to authenticated
+  with check ((select auth.uid()) = id);
+
+create policy "Guild metadata is readable by authenticated users"
+  on public.guilds for select
+  to authenticated
+  using (true);
+
+create policy "Guild TTS settings are readable by authenticated users"
+  on public.guild_tts_settings for select
+  to authenticated
+  using (true);
+
+create policy "Guild command settings are readable by authenticated users"
+  on public.guild_command_settings for select
+  to authenticated
+  using (true);
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, display_name, avatar_url)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'display_name', new.email),
+    new.raw_user_meta_data ->> 'avatar_url'
+  )
+  on conflict (id) do nothing;
+
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();

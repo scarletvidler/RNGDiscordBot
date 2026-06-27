@@ -12,11 +12,25 @@ Create a `.env` file at the project root with the following:
 BOT_TOKEN=your_discord_bot_token
 CLIENT_ID=your_discord_application_client_id
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
+SUPABASE_URL=http://127.0.0.1:55241
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Optional — defaults shown
 TTS_CHANNEL_NAME=tts
 default_voice_id=cgSgspJ2msm6clMCkdW9
 ```
+
+### Supabase
+
+Supabase lives in `supabase/`.
+
+```sh
+npx supabase start
+npx supabase db reset
+```
+
+The schema is in `supabase/migrations/`, local seed data is in `supabase/seeds/`, and table-specific helpers are in `supabase/models/`.
 
 ### Run
 
@@ -125,10 +139,13 @@ export default event;
 | `/poki` | Fetches a random Pokémon (1–505) from PokéAPI and displays its name, height, weight, and sprite in an embed. |
 | `/convert <amount> <from> <to>` | Converts a currency amount between two ISO currency codes using the ExchangeRate API. |
 | `/tts-stop` | Stops TTS playback and clears the queue. Requires the invoker to be in a voice channel. Reply is ephemeral. |
+| `/tts-room-prefix-toggle` | Toggles room-prefix TTS mode. When enabled, Lerche reads messages from the sender's current voice room only when the message starts with `/t`. |
 
 ## TTS (Text-to-Speech)
 
 Messages posted in the configured TTS channel (default `#tts`, overridable via `TTS_CHANNEL_NAME`) by authorised users are spoken aloud in the sender's current voice channel via [ElevenLabs](https://elevenlabs.io/).
+
+Admins can use `/tts-room-prefix-toggle` to switch a guild into `/t` room mode. In that mode Lerche ignores the configured TTS text channel, watches normal guild messages, and only speaks messages that start with `/t`; the `/t` prefix is removed before speech generation.
 
 **Authorised users:** any member with the Lerche or Amelia role IDs, or anyone with a role named `Lerche Listens` or `Amelia Listens` (for flexible per-server role management).
 

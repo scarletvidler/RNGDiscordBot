@@ -1,6 +1,8 @@
-import { Guild, Message, TextChannel } from "discord.js";
+import { Message, TextChannel } from "discord.js";
 import { joinAndPlay } from "../ttsListen.ts";
 import { ExtendedGuild } from "../../types.ts";
+import { insertGuildChatLog } from "../../../supabase/models/chatLogs.ts";
+import { upsertGuildMember } from "../../../supabase/models/users.ts";
 
 export class TTSInstance {
   private message: Message<boolean>;
@@ -61,6 +63,7 @@ export class TTSInstance {
           );
         }
         this.logMessageDetails(messagePlayed);
+        await this.logMessageToSupabase(messagePlayed);
       } else {
         console.warn("User is not in a voice channel. Cannot play TTS.");
         this.reply?.edit(
@@ -70,6 +73,24 @@ export class TTSInstance {
     } catch (error) {
       console.error("Error running TTS:", error);
       throw new Error("Failed to run TTS.");
+    }
+  }
+
+  async logMessageToSupabase(text: string) {
+    try {
+      if (this.message.member) {
+        await upsertGuildMember(this.message.member);
+      }
+
+      await insertGuildChatLog({
+        message: this.message,
+        spokenMessage: text,
+        ttsMode: this.guild.settings.tts.roomPrefixEnabled
+          ? "room_prefix"
+          : "channel",
+      });
+    } catch (error) {
+      console.error("Error logging TTS message to Supabase:", error);
     }
   }
 

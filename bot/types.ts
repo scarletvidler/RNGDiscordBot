@@ -45,6 +45,7 @@ export interface ExtendedGuild extends Guild {
   settings: {
     tts: {
       repliesEnabled: boolean;
+      roomPrefixEnabled: boolean;
       femaleVoiceId: string;
       maleVoiceId: string;
       ttsChannelName: string;

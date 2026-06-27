@@ -1,4 +1,4 @@
-import type { BotCommand } from "../types.ts";
+import type { BotCommand, channelWithPlayer } from "../types.ts";
 import {
   ChatInputCommandInteraction,
   MessageFlags,
@@ -18,7 +18,14 @@ const command: BotCommand = {
     await interaction.deferReply({
       flags: MessageFlags.Ephemeral,
     });
-    const channel = interaction.member?.voice.channel;
+    if (!interaction.inCachedGuild()) {
+      await interaction.editReply("This command can only be used in a guild.");
+      return;
+    }
+
+    const channel = interaction.member?.voice.channel as
+      | channelWithPlayer
+      | null;
     if (!channel) {
       await interaction.editReply(
         "You need to be in a voice channel to use this command.",
