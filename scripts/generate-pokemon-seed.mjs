@@ -2,8 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const sourcePath =
-  process.argv[2] ??
-  "C:/Users/Scarl/.codex/attachments/4d6c1ca7-6cfc-4070-992e-93ea06ab9644/pasted-text.txt";
+  process.argv[2] ?? "C:\\Users\\Scarl\\Downloads\\pokemon.txt";
 const outputPath = process.argv[3] ?? "supabase/seeds/pokemon.sql";
 
 const payload = JSON.parse(fs.readFileSync(sourcePath, "utf8"));
@@ -27,7 +26,10 @@ const cleanFlavorText = (texts) => {
   const flavor = texts?.[0]?.flavor_text;
   if (!flavor) return null;
 
-  return flavor.replace(/[\n\f\r\t]+/g, " ").replace(/\s+/g, " ").trim();
+  return flavor
+    .replace(/[\n\f\r\t]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 };
 
 const formNameForRow = (baseName, formName) => {
@@ -36,6 +38,12 @@ const formNameForRow = (baseName, formName) => {
     return baseName;
   }
   return `${baseName}-${formName}`;
+};
+
+const pokemonPokedexId = (form) => {
+  if (!form) return null;
+  const pokeID = form.pokemon.pokemon_species_id ?? null;
+  return pokeID;
 };
 
 const pokemonHandle = (pokemonId, formId) =>
@@ -53,7 +61,7 @@ const rows = pokemon.flatMap((entry) => {
 
     return {
       handle: pokemonHandle(entry.id, form?.id ?? entry.id),
-      id: entry.id,
+      pokedex_id: pokemonPokedexId(form),
       form_id: form?.id ?? entry.id,
       name: formNameForRow(entry.name, formName),
       form_name: formName || null,
@@ -121,7 +129,7 @@ const columns = [
 const values = rows.map((row) => {
   return `  (${[
     sqlString(row.handle),
-    sqlNumber(row.id),
+    sqlNumber(row.pokedex_id),
     sqlNumber(row.form_id),
     sqlString(row.name),
     sqlString(row.form_name),
@@ -151,6 +159,7 @@ VALUES
 ${values.join(",\n")}
 ON CONFLICT (handle) DO UPDATE SET
   id = EXCLUDED.id,
+  pokedex_id = EXCLUDED.pokedex_id,
   form_id = EXCLUDED.form_id,
   name = EXCLUDED.name,
   form_name = EXCLUDED.form_name,
@@ -175,6 +184,8 @@ COMMIT;
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, sql);
 
-const multiFormRows = pokemon.filter((entry) => (entry.pokemonforms ?? []).length > 1);
+const multiFormRows = pokemon.filter(
+  (entry) => (entry.pokemonforms ?? []).length > 1,
+);
 console.log(`Wrote ${rows.length} pokemon rows to ${outputPath}`);
 console.log(`Expanded ${multiFormRows.length} pokemon with multiple forms`);
