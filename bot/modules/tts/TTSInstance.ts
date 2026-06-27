@@ -115,9 +115,6 @@ export class TTSInstance {
         this.guild.logging = { messageCount: 0 };
       }
       this.guild.logging.messageCount += 1;
-      console.log(
-        `Current message count for ${this.guild.name}: ${this.guild.logging.messageCount}`,
-      );
       return this.guild.logging.messageCount;
     } catch (error) {
       console.error("Error logging TTS message:", error);
