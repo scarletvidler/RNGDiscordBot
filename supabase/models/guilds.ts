@@ -14,12 +14,15 @@ export async function upsertGuild(guild: Guild): Promise<void> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
 
-  const { error } = await supabase.from("guilds").upsert({
-    id: guild.id,
-    name: guild.name,
-    owner_id: guild.ownerId ?? null,
-    left_at: null,
-  });
+  const { error } = await supabase.from("guilds").upsert(
+    {
+      id: guild.id,
+      name: guild.name,
+      owner_id: guild.ownerId ?? null,
+      left_at: null,
+    },
+    { onConflict: "id", ignoreDuplicates: true },
+  );
 
   if (error) throw error;
 }
