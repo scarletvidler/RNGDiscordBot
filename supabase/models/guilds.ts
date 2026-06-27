@@ -18,7 +18,6 @@ export async function upsertGuild(guild: Guild): Promise<void> {
     id: guild.id,
     name: guild.name,
     owner_id: guild.ownerId ?? null,
-    icon_url: guild.iconURL(),
     left_at: null,
   });
 

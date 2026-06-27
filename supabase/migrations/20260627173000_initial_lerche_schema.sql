@@ -32,7 +32,6 @@ create table if not exists public.guilds (
   id text primary key,
   name text not null,
   owner_id text references public.discord_users(id) on delete set null,
-  icon_url text,
   joined_at timestamptz not null default now(),
   left_at timestamptz,
   created_at timestamptz not null default now(),

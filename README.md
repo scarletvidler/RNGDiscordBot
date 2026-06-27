@@ -13,8 +13,7 @@ BOT_TOKEN=your_discord_bot_token
 CLIENT_ID=your_discord_application_client_id
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
 SUPABASE_URL=http://127.0.0.1:55241
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_SECRET_KEY=your_supabase_secret_key
 
 # Optional — defaults shown
 TTS_CHANNEL_NAME=tts

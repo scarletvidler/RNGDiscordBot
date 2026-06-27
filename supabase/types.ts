@@ -28,7 +28,9 @@ export interface Database {
           first_seen_at?: string;
           last_seen_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["discord_users"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["discord_users"]["Insert"]
+        >;
         Relationships: [];
       };
       guilds: {
@@ -36,7 +38,6 @@ export interface Database {
           id: string;
           name: string;
           owner_id: string | null;
-          icon_url: string | null;
           joined_at: string;
           left_at: string | null;
           created_at: string;
@@ -46,7 +47,6 @@ export interface Database {
           id: string;
           name: string;
           owner_id?: string | null;
-          icon_url?: string | null;
           joined_at?: string;
           left_at?: string | null;
           created_at?: string;
@@ -78,7 +78,9 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["guild_tts_settings"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["guild_tts_settings"]["Insert"]
+        >;
         Relationships: [];
       };
       guild_command_settings: {
@@ -102,7 +104,9 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["guild_command_settings"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["guild_command_settings"]["Insert"]
+        >;
         Relationships: [];
       };
       guild_chat_logs: {
@@ -130,7 +134,9 @@ export interface Database {
           tts_mode?: "channel" | "room_prefix";
           created_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["guild_chat_logs"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["guild_chat_logs"]["Insert"]
+        >;
         Relationships: [];
       };
       guild_members: {
@@ -152,7 +158,9 @@ export interface Database {
           first_seen_at?: string;
           last_seen_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["guild_members"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["guild_members"]["Insert"]
+        >;
         Relationships: [];
       };
     };
