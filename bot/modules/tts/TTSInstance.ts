@@ -77,6 +77,7 @@ export class TTSInstance {
   }
 
   async logMessageToSupabase(text: string) {
+    console.log("Logging TTS message to Supabase:", text);
     try {
       if (this.message.member) {
         await upsertGuildMember(this.message.member);
