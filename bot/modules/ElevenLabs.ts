@@ -6,6 +6,11 @@ type DictionaryLocator = {
   versionId: string;
 };
 
+type AudioWithRawResponse = {
+  data: ReadableStream<Uint8Array<ArrayBufferLike>>;
+  rawResponse: Pick<Response, "status" | "headers">;
+};
+
 class ElevenLabs {
   private static instance?: ElevenLabs;
 
@@ -50,15 +55,20 @@ class ElevenLabs {
     return this.defaultDictionaryLocator;
   }
 
-  async convertTextToSpeech(voiceId: string, text: string) {
+  async convertTextToSpeech(
+    voiceId: string,
+    text: string,
+  ): Promise<AudioWithRawResponse> {
     const dictionary = await this.getDefaultDictionaryLocator();
 
-    return this.client.textToSpeech.convert(voiceId, {
-      text,
-      modelId: "eleven_v3",
-      outputFormat: "mp3_44100_128",
-      pronunciationDictionaryLocators: [dictionary],
-    });
+    return this.client.textToSpeech
+      .convert(voiceId, {
+        text,
+        modelId: "eleven_v3",
+        outputFormat: "mp3_44100_128",
+        pronunciationDictionaryLocators: [dictionary],
+      })
+      .withRawResponse();
   }
 
   async getVoiceName(voiceId: string): Promise<string> {

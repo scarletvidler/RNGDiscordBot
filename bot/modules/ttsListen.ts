@@ -175,6 +175,11 @@ async function convertMessageToSpeech(
       voiceId,
       text,
     );
+    if (!data) {
+      throw new Error(
+        `ElevenLabs returned no audio stream for voice ${voiceId} (status ${rawResponse.status}).`,
+      );
+    }
     const content = await streamToBuffer(data);
     const tokensUsed = rawResponse.headers.get("character-cost") ?? 0; // Example calculation, replace with actual token usage logic
 
@@ -190,9 +195,15 @@ async function convertMessageToSpeech(
 }
 
 async function streamToBuffer(
-  stream: ReadableStream<Uint8Array> | AsyncIterable<Uint8Array>,
+  stream:
+    | ReadableStream<Uint8Array<ArrayBufferLike>>
+    | AsyncIterable<Uint8Array<ArrayBufferLike>>,
 ): Promise<Buffer> {
   const chunks: Buffer[] = [];
+
+  if (!stream) {
+    throw new Error("Cannot read audio stream from ElevenLabs response.");
+  }
 
   if (Symbol.asyncIterator in stream) {
     for await (const chunk of stream) {
