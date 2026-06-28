@@ -97,6 +97,9 @@ export async function joinAndPlay(
 
     const { audio, playedMessage, tokensUsed } =
       await convertMessageToSpeech(message);
+    console.log(
+      `Audio stream received from ElevenLabs with ${tokensUsed} tokens used.`,
+    );
     player.playSoundFile(audio);
     return { messagePlayed: playedMessage, tokensUsed };
   } catch (error) {
@@ -176,6 +179,9 @@ async function convertMessageToSpeech(
       text,
     );
     if (!data) {
+      console.error(
+        `ElevenLabs returned no audio stream for voice ${voiceId} (status ${rawResponse.status}).`,
+      );
       throw new Error(
         `ElevenLabs returned no audio stream for voice ${voiceId} (status ${rawResponse.status}).`,
       );
