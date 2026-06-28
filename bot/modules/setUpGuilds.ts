@@ -39,13 +39,7 @@ export default async function setUpGuilds(
             token_balance: 0,
             token_limit: 1000,
           },
-          [
-            "id",
-            "message_count",
-            "token_total_usage",
-            "token_balance",
-            "token_limit",
-          ],
+          ["id"],
           false,
         );
         defaultSettings.tts = await ensureGuildTtsSettings(
