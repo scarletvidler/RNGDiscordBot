@@ -34,14 +34,23 @@ export async function ensureGuildTtsSettings(
   const supabase = getSupabaseAdmin();
   if (!supabase) return defaults;
 
-  const { data, error } = await supabase
+  const { data: existing, error: readError } = await supabase
     .from("guild_tts_settings")
-    .upsert(toRow(guildId, defaults), { onConflict: "guild_id" })
+    .select()
+    .eq("guild_id", guildId)
+    .maybeSingle();
+
+  if (readError) throw readError;
+  if (existing) return fromRow(existing);
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("guild_tts_settings")
+    .insert(toRow(guildId, defaults))
     .select()
     .single();
 
-  if (error) throw error;
-  return fromRow(data);
+  if (insertError) throw insertError;
+  return fromRow(inserted);
 }
 
 export async function saveGuildTtsSettings(
