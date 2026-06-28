@@ -192,7 +192,7 @@ async function convertMessageToSpeech(
     console.log(`TTS conversion successful. Tokens used: ${tokensUsed}`);
 
     // convert the buffer to a Readable stream
-    const audio = Readable.from(content);
+    const audio = Readable.from([content]);
     return { audio, playedMessage: text, tokensUsed: Number(tokensUsed) };
   } catch (error) {
     console.error("❌ Error converting text to speech:", error);
