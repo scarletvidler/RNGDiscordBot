@@ -59,6 +59,132 @@ export type Database = {
         }
         Relationships: []
       }
+      "pokemon-new": {
+        Row: {
+          capture_rate: number | null
+          created_at: string | null
+          dream_sprite_front_default: string | null
+          dream_sprite_front_female: string | null
+          flavor_text: string | null
+          form_id: number | null
+          form_name: string | null
+          form_sprite_front: string | null
+          form_sprite_shiny: string | null
+          gender_rate: number | null
+          handle: string
+          height: number | null
+          is_baby: boolean | null
+          is_legendary: boolean | null
+          is_mythical: boolean | null
+          name: string | null
+          official_sprite_front_default: string | null
+          official_sprite_front_shiny: string | null
+          pokedex_id: number | null
+          weight: number | null
+        }
+        Insert: {
+          capture_rate?: number | null
+          created_at?: string | null
+          dream_sprite_front_default?: string | null
+          dream_sprite_front_female?: string | null
+          flavor_text?: string | null
+          form_id?: number | null
+          form_name?: string | null
+          form_sprite_front?: string | null
+          form_sprite_shiny?: string | null
+          gender_rate?: number | null
+          handle: string
+          height?: number | null
+          is_baby?: boolean | null
+          is_legendary?: boolean | null
+          is_mythical?: boolean | null
+          name?: string | null
+          official_sprite_front_default?: string | null
+          official_sprite_front_shiny?: string | null
+          pokedex_id?: number | null
+          weight?: number | null
+        }
+        Update: {
+          capture_rate?: number | null
+          created_at?: string | null
+          dream_sprite_front_default?: string | null
+          dream_sprite_front_female?: string | null
+          flavor_text?: string | null
+          form_id?: number | null
+          form_name?: string | null
+          form_sprite_front?: string | null
+          form_sprite_shiny?: string | null
+          gender_rate?: number | null
+          handle?: string
+          height?: number | null
+          is_baby?: boolean | null
+          is_legendary?: boolean | null
+          is_mythical?: boolean | null
+          name?: string | null
+          official_sprite_front_default?: string | null
+          official_sprite_front_shiny?: string | null
+          pokedex_id?: number | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      pokemon2: {
+        Row: {
+          capture_rate: number | null
+          created_at: string
+          flavor_text: string | null
+          form_id: number
+          form_name: string | null
+          gender_rate: number | null
+          handle: string
+          height: number | null
+          id: number
+          is_baby: boolean
+          is_legendary: boolean
+          is_mythical: boolean
+          name: string
+          pokedex_id: number
+          sprites: Json | null
+          weight: number | null
+        }
+        Insert: {
+          capture_rate?: number | null
+          created_at?: string
+          flavor_text?: string | null
+          form_id: number
+          form_name?: string | null
+          gender_rate?: number | null
+          handle: string
+          height?: number | null
+          id?: never
+          is_baby?: boolean
+          is_legendary?: boolean
+          is_mythical?: boolean
+          name: string
+          pokedex_id: number
+          sprites?: Json | null
+          weight?: number | null
+        }
+        Update: {
+          capture_rate?: number | null
+          created_at?: string
+          flavor_text?: string | null
+          form_id?: number
+          form_name?: string | null
+          gender_rate?: number | null
+          handle?: string
+          height?: number | null
+          id?: never
+          is_baby?: boolean
+          is_legendary?: boolean
+          is_mythical?: boolean
+          name?: string
+          pokedex_id?: number
+          sprites?: Json | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -147,6 +273,13 @@ export type Database = {
             columns: ["pokemon_id"]
             isOneToOne: false
             referencedRelation: "pokemon"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_pokemon_pokemon2_id_fkey"
+            columns: ["pokemon_id"]
+            isOneToOne: false
+            referencedRelation: "pokemon2"
             referencedColumns: ["id"]
           },
           {

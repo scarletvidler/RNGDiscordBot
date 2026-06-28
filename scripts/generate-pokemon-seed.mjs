@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const sourcePath =
-  process.argv[2] ?? "C:\\Users\\Scarl\\Downloads\\pokemon.txt";
+  process.argv[2] ?? "C:\\Users\\pyroa\\Desktop\\pokemondata.txt";
 const outputPath = process.argv[3] ?? "supabase/seeds/pokemon.sql";
 
 const payload = JSON.parse(fs.readFileSync(sourcePath, "utf8"));
@@ -155,9 +155,9 @@ const values = rows.map((row) => {
 
 const sql = `BEGIN;
 
-TRUNCATE TABLE public.pokemon CASCADE;
+TRUNCATE TABLE public.pokemon1 CASCADE;
 
-INSERT INTO public.pokemon (${columns.join(", ")})
+INSERT INTO public.pokemon1 (${columns.join(", ")})
 VALUES
 ${values.join(",\n")}
 ON CONFLICT (handle) DO UPDATE SET

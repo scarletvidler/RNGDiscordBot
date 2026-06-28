@@ -19,16 +19,20 @@ export interface PokemonSprites {
 
 export interface Pokemon {
   id: number;
-  name: string;
+  handle: string;
   pokedex_id: number;
+  form_id: number;
+  name: string;
+  form_name: string | null;
   sprites: any;
-  capture_rate: number | null;
   height: number | null;
   weight: number | null;
+  capture_rate: number | null;
+  gender_rate: number | null;
+  is_baby: boolean;
+  is_legendary: boolean;
+  is_mythical: boolean;
   flavor_text: string | null;
-  has_gender_differences: boolean;
-  legendary: boolean;
-  mythical: boolean;
 }
 
 export interface SpriteContainer {
@@ -47,7 +51,7 @@ export interface UserPokemon {
   pokemon: Pokemon | null;
 }
 
-const COOLDOWN_HOURS = 0.01;
+const COOLDOWN_HOURS = 4;
 const SHINY_CHANCE = 0.01;
 
 const cooldownStatus = (lastRolledAt: Profile["last_rolled_at"]) => {
@@ -163,17 +167,13 @@ export const rollPokemon = async (
     const ownedPokemonIds =
       ownedPokemon?.map((pokemon) => pokemon.pokemon_id) ?? [];
 
-    const query = supabase
-      .from("pokemon")
-      .select(
-        "id,name,sprites,pokedex_id,height,weight,flavor_text,has_gender_differences,capture_rate,legendary,mythical",
-      )
-      .throwOnError();
+    const query = supabase.from("pokemon2").select("*").throwOnError();
 
     const { data: available } = await (ownedPokemonIds.length > 0
       ? query.not("id", "in", `(${ownedPokemonIds.join(",")})`)
       : query);
 
+    console.log("fetched from:", available?.[0]);
     if (!available?.length) {
       throw new Error("You caught them all!");
     }
@@ -193,18 +193,9 @@ export const rollPokemon = async (
 
     return {
       data: {
-        id: randomPokemon.id,
-        name: randomPokemon.name,
-        pokedex_id: randomPokemon.pokedex_id,
+        ...randomPokemon,
         sprite: spriteUrl,
         isShiny,
-        height: randomPokemon.height,
-        weight: randomPokemon.weight,
-        flavor_text: randomPokemon.flavor_text,
-        has_gender_differences: randomPokemon.has_gender_differences,
-        capture_rate: randomPokemon.capture_rate,
-        legendary: randomPokemon.legendary,
-        mythical: randomPokemon.mythical,
       },
       error: null,
     };
@@ -237,9 +228,10 @@ export const getUserPokemon = async (
     };
   });
 
-  return { data: formattedData, error: null };
+  return { data: formattedData as unknown as UserPokemon[], error: null };
 };
 
-// logic to keep rolling/being able to roll the shiny version of what you have - sort of done maybe?
-// roster - ehh
+// logic to keep rolling/being able to roll the shiny version of what you have - sort of inherently done maybe?
+// roster
 // differentiate and show both or one (most likely shiny) on the roster - ehh
+// roll chances stacking up to 24h and you get one every 6h or something like that so you can wake up and roll 4
