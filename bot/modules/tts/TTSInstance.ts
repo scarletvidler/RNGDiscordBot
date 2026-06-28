@@ -61,7 +61,8 @@ export class TTSInstance {
 
         if (this.updateMessageCount() % 100 === 0) {
           await this.channel.send(
-            `👋 Thanks for supporting Lerche's development! Please share the bot with your friends and community! It helps me make this into a real project. https://discord.com/oauth2/authorize?client_id=1511773768438251660`,
+            `👋 Thanks for supporting Lerche's development! If you're enjoying Lerche, please consider leaving a review on Top.gg! 
+https://top.gg/bot/1511773768438251660#reviews`,
           );
         }
         this.logMessageDetails(messagePlayed);
