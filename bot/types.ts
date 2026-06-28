@@ -54,6 +54,9 @@ export interface ExtendedGuild extends Guild {
   };
   logging: {
     messageCount: number;
+    tokenTotalUsage: number;
+    tokenBalance: number;
+    tokenLimit: number;
   };
 }
 

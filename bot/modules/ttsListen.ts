@@ -12,14 +12,15 @@ import VoicePlayerClass from "./VoicePlayer.ts";
 import clientInstance from "./client.ts";
 import { getCleanName } from "../helpers/getClean.ts";
 import invariant from "tiny-invariant";
-import { channelWithPlayer } from "../types.ts";
+import { channelWithPlayer, ExtendedGuild } from "../types.ts";
 import isRosie from "../helpers/isRosie.ts";
 import ElevenLabs from "./ElevenLabs.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
   message: Message<boolean>,
-): Promise<{ messagePlayed: string }> {
+  guild: ExtendedGuild,
+): Promise<{ messagePlayed: string; tokensUsed: number }> {
   try {
     let voiceConn: VoiceConnection | undefined = getVoiceConnection(
       channel.guild.id,
@@ -37,21 +38,19 @@ export async function joinAndPlay(
       (await clientInstance.channels.fetch(channel.id).catch((err) => {
         console.error(`Error fetching channel ${channel.id}:`, err);
       })) || false;
-
     invariant(currentChannel, "Channel not found in cache");
+    invariant(guild, "Guild not found in installedGuilds");
 
-    const timeOutDuration = clientInstance.installedGuilds.find(
-      (g) => g.id === channel.guild.id,
-    )?.settings.tts.idleTimeout;
+    const { idleTimeout } = guild.settings.tts;
 
     currentChannel.player =
       currentChannel.player ||
       new VoicePlayerClass({
-        idleTimeout: timeOutDuration,
+        idleTimeout: idleTimeout,
       });
 
     // reset the idle timer whenever a new message is sent
-    currentChannel.player.setIdleTimeoutDuration(timeOutDuration || 600);
+    currentChannel.player.setIdleTimeoutDuration(idleTimeout || 600);
 
     if (!voiceConn) {
       const newConn = joinVoiceChannel({
@@ -96,9 +95,10 @@ export async function joinAndPlay(
       if (pingAsset) player.playSoundFile(pingAsset);
     }
 
-    const { audio, playedMessage } = await convertMessageToSpeech(message);
+    const { audio, playedMessage, tokensUsed } =
+      await convertMessageToSpeech(message);
     player.playSoundFile(audio);
-    return { messagePlayed: playedMessage };
+    return { messagePlayed: playedMessage, tokensUsed };
   } catch (error) {
     console.error("Error in joinAndPlay:", error);
     throw error;
@@ -142,7 +142,7 @@ function validateMessageContent(message: Message<boolean>): string {
 
 async function convertMessageToSpeech(
   message: Message<boolean>,
-): Promise<{ audio: Readable; playedMessage: string }> {
+): Promise<{ audio: Readable; playedMessage: string; tokensUsed: number }> {
   let voiceId = clientInstance.installedGuilds.find(
     (g) => g.id === message.guildId,
   )?.settings.tts.femaleVoiceId;
@@ -171,12 +171,18 @@ async function convertMessageToSpeech(
   const elevenlabs = ElevenLabs.getInstance();
 
   try {
-    const audioStream = await elevenlabs.convertTextToSpeech(voiceId, text);
-    const content = await streamToBuffer(audioStream);
+    const { data, rawResponse } = await elevenlabs.convertTextToSpeech(
+      voiceId,
+      text,
+    );
+    const content = await streamToBuffer(data);
+    const tokensUsed = rawResponse.headers.get("character-cost") ?? 0; // Example calculation, replace with actual token usage logic
+
+    console.log(`TTS conversion successful. Tokens used: ${tokensUsed}`);
 
     // convert the buffer to a Readable stream
     const audio = Readable.from(content);
-    return { audio, playedMessage: text };
+    return { audio, playedMessage: text, tokensUsed: Number(tokensUsed) };
   } catch (error) {
     console.error("❌ Error converting text to speech:", error);
     throw error;

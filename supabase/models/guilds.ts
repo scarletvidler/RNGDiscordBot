@@ -1,7 +1,7 @@
 import type { Guild } from "discord.js";
 import { getSupabaseAdmin } from "../client.ts";
 
-export interface GuildTtsSettings {
+export interface DBGuildTtsSettings {
   repliesEnabled: boolean;
   roomPrefixEnabled: boolean;
   ttsChannelName: string;
@@ -9,30 +9,58 @@ export interface GuildTtsSettings {
   maleVoiceId: string;
   idleTimeout: number;
 }
+export interface DBGuild {
+  id: string;
+  name: string;
+  owner_id: string | null;
+  message_count: number;
+  token_total_usage: number;
+  token_balance: number;
+  token_limit: number;
+  joined_at: string;
+  left_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
-export async function upsertGuild(guild: Guild): Promise<void> {
+/*
+  Creates or updates a guild record in the database. If the guild already exists, it will update the existing record with the new information. If it does not exist, it will create a new record.
+*/
+export async function upsertGuild(
+  guild: Guild,
+  rows: Partial<DBGuild> = {},
+  onConflictRows: (keyof DBGuild)[] = [],
+  ignoreDuplicates: boolean = false,
+): Promise<DBGuild> {
   const supabase = getSupabaseAdmin();
-  if (!supabase) return;
-
-  const { error } = await supabase.from("guilds").upsert(
-    {
-      id: guild.id,
-      name: guild.name,
-      owner_id: guild.ownerId ?? null,
-      left_at: null,
-    },
-    { onConflict: "id", ignoreDuplicates: true },
-  );
+  if (!supabase) throw new Error("Supabase client not initialized");
+  onConflictRows = ["id", ...onConflictRows];
+  const { data, error } = await supabase
+    .from("guilds")
+    .upsert(
+      {
+        id: guild.id,
+        name: guild.name,
+        ...rows,
+      },
+      {
+        onConflict: onConflictRows.join(","),
+        ignoreDuplicates,
+      },
+    )
+    .select()
+    .single();
 
   if (error) throw error;
+  return data;
 }
 
 export async function ensureGuildTtsSettings(
   guildId: string,
-  defaults: GuildTtsSettings,
-): Promise<GuildTtsSettings> {
+  defaults: DBGuildTtsSettings,
+): Promise<DBGuildTtsSettings> {
   const supabase = getSupabaseAdmin();
-  if (!supabase) return defaults;
+  if (!supabase) throw new Error("Supabase client not initialized");
 
   const { data: existing, error: readError } = await supabase
     .from("guild_tts_settings")
@@ -55,7 +83,7 @@ export async function ensureGuildTtsSettings(
 
 export async function saveGuildTtsSettings(
   guildId: string,
-  settings: GuildTtsSettings,
+  settings: DBGuildTtsSettings,
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
@@ -69,7 +97,7 @@ export async function saveGuildTtsSettings(
 
 export async function toggleGuildRoomPrefixMode(
   guildId: string,
-  currentSettings: GuildTtsSettings,
+  currentSettings: DBGuildTtsSettings,
 ): Promise<boolean> {
   const nextValue = !currentSettings.roomPrefixEnabled;
   await saveGuildTtsSettings(guildId, {
@@ -79,7 +107,25 @@ export async function toggleGuildRoomPrefixMode(
   return nextValue;
 }
 
-function toRow(guildId: string, settings: GuildTtsSettings) {
+export async function saveGuildSettings(
+  guildId: string,
+  rows: Partial<DBGuild>,
+): Promise<DBGuild> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+  // Update the guild settings and return the updated row
+  const { data, error } = await supabase
+    .from("guilds")
+    .update(rows)
+    .eq("id", guildId)
+    .select()
+    .single();
+  if (error) throw error;
+
+  return data;
+}
+
+function toRow(guildId: string, settings: DBGuildTtsSettings) {
   return {
     guild_id: guildId,
     replies_enabled: settings.repliesEnabled,
@@ -98,7 +144,7 @@ function fromRow(row: {
   female_voice_id: string | null;
   male_voice_id: string | null;
   idle_timeout_seconds: number;
-}): GuildTtsSettings {
+}): DBGuildTtsSettings {
   return {
     repliesEnabled: row.replies_enabled,
     roomPrefixEnabled: row.room_prefix_enabled,

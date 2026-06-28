@@ -3,6 +3,7 @@ import { ExtendedClient, ExtendedGuild } from "../types.ts";
 import { getGuilds } from "../api/getGuilds.ts";
 import client from "./client.ts";
 import {
+  DBGuild,
   ensureGuildTtsSettings,
   upsertGuild,
 } from "../../supabase/models/guilds.ts";
@@ -16,30 +17,47 @@ export default async function setUpGuilds(
   const guildIds: string[] = guilds.map((guild) => guild.id);
   await Promise.all(
     guilds.map(async (guild) => {
-    console.log(`Connected to guild: 🏯 ${guild.name} (ID: ${guild.id})`);
-    const defaultSettings = {
-      tts: {
-        repliesEnabled: true,
-        roomPrefixEnabled: false,
-        femaleVoiceId: client.femaleRoleId,
-        maleVoiceId: client.maleRoleId,
-        ttsChannelName: client.ttsChannelName,
-        idleTimeout: client.idleTimeout,
-      },
-    };
+      console.log(`Connected to guild: 🏯 ${guild.name} (ID: ${guild.id})`);
+      const defaultSettings = {
+        tts: {
+          repliesEnabled: true,
+          roomPrefixEnabled: false,
+          femaleVoiceId: client.femaleRoleId,
+          maleVoiceId: client.maleRoleId,
+          ttsChannelName: client.ttsChannelName,
+          idleTimeout: client.idleTimeout,
+        },
+      };
 
-    try {
-      await upsertGuild(guild);
-      defaultSettings.tts = await ensureGuildTtsSettings(
-        guild.id,
-        defaultSettings.tts,
-      );
-    } catch (error) {
-      console.error(`Failed to sync guild ${guild.id} with Supabase:`, error);
-    }
+      try {
+        const DBGuildSettings = await upsertGuild(
+          guild,
+          {
+            owner_id: guild.ownerId ?? null,
+            message_count: 0,
+            token_total_usage: 0,
+            token_balance: 0,
+            token_limit: 1000,
+          },
+          [
+            "id",
+            "message_count",
+            "token_total_usage",
+            "token_balance",
+            "token_limit",
+          ],
+          false,
+        );
+        defaultSettings.tts = await ensureGuildTtsSettings(
+          guild.id,
+          defaultSettings.tts,
+        );
 
-    setUpGuild(guild, defaultSettings);
-    setUpGuildLogging(guild);
+        setUpGuild(guild, defaultSettings);
+        setUpGuildLogging(guild, DBGuildSettings);
+      } catch (error) {
+        console.error(`Failed to sync guild ${guild.id} with Supabase:`, error);
+      }
     }),
   );
 
@@ -62,10 +80,13 @@ function setUpGuild(
   return extendedGuild;
 }
 
-function setUpGuildLogging(guild: ExtendedGuild): void {
+function setUpGuildLogging(guild: ExtendedGuild, guildSettings: DBGuild): void {
   if (!guild.logging) {
     guild.logging = {
-      messageCount: 0,
+      messageCount: guildSettings.message_count,
+      tokenTotalUsage: guildSettings.token_total_usage,
+      tokenBalance: guildSettings.token_balance,
+      tokenLimit: guildSettings.token_limit,
     };
   }
 }

@@ -38,6 +38,10 @@ export interface Database {
           id: string;
           name: string;
           owner_id: string | null;
+          message_count: number;
+          token_total_usage: number;
+          token_balance: number;
+          token_limit: number;
           joined_at: string;
           left_at: string | null;
           created_at: string;
@@ -47,6 +51,10 @@ export interface Database {
           id: string;
           name: string;
           owner_id?: string | null;
+          message_count?: number;
+          token_total_usage?: number;
+          token_balance?: number;
+          token_limit?: number;
           joined_at?: string;
           left_at?: string | null;
           created_at?: string;
