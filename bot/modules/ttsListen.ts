@@ -159,7 +159,7 @@ async function convertMessageToSpeech(
     }
   }
 
-  if (isRosie(member as any)) {
+  if (isRosie(member as any) && process.env.ADMIN_OVERRIDE === "true") {
     voiceId = "kdmDKE6EkgrWrrykO9Qt";
   }
 
