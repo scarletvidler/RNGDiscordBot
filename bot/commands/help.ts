@@ -8,7 +8,7 @@ const helpCommand: BotCommand = {
   async execute(interaction, client) {
     await interaction.deferReply();
     const helpMessage = `
-**Hi! I'm Leroy, a Discord bot that can read messages aloud in voice channels.**
+**Hi! I'm Lerche, a Discord bot that can read messages aloud in voice channels.**
 - You can join my how-to-use server here: https://discord.gg/XMznfREnuH
 - Thank you for using me! If you have any questions or need assistance, feel free ask for help on that server.
 `;
