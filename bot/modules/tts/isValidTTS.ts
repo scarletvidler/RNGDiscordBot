@@ -1,5 +1,6 @@
 import { Message, Role } from "discord.js";
 import clientInstance from "../client.ts";
+import isRosie from "../../helpers/isRosie.ts";
 
 export default function isValidTTS(message: Message<true>): boolean {
   const guild = clientInstance.installedGuilds.find(
@@ -25,7 +26,11 @@ export default function isValidTTS(message: Message<true>): boolean {
     (role: Role) => role.name === "Amelia Listens",
   );
 
-  if (!hasLercheListensRole && !hasAmeliaListensRole) {
+  if (
+    !hasLercheListensRole &&
+    !hasAmeliaListensRole &&
+    isRosie(message.member as any) === false
+  ) {
     throw new Error(
       "User does not have permission to use TTS. Must have either Lerche or Amelia role.",
     );
@@ -33,8 +38,7 @@ export default function isValidTTS(message: Message<true>): boolean {
 
   const ttsContent = getTTSContent(message.content, roomPrefixEnabled);
 
-  if (ttsContent.length === 0)
-    throw new Error("TTS message cannot be empty.");
+  if (ttsContent.length === 0) throw new Error("TTS message cannot be empty.");
   if (
     ttsContent.length > maxLength &&
     message.member?.id !== clientInstance.ownerId

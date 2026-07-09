@@ -1,5 +1,6 @@
 import { Events, Interaction, MessageFlags } from "discord.js";
 import { BotEvent, ExtendedClient } from "../types.ts";
+import isRosie from "../helpers/isRosie.ts";
 
 const event: BotEvent<[Interaction, ExtendedClient]> = {
   type: "interactionCreate",
@@ -29,7 +30,7 @@ const event: BotEvent<[Interaction, ExtendedClient]> = {
 
       if (
         missingPermissions.length > 0 &&
-        interaction.member.id !== "122548971737579520"
+        isRosie(interaction.member as any) === false
       ) {
         await interaction.reply({
           content: `You lack the following permissions to use this command: ${missingPermissions.join(", ")}`,
