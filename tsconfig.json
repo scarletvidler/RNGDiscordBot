@@ -12,5 +12,5 @@
     "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["bot/**/*.ts", "bot/commands/roll.js"]
+  "include": ["bot/**/*.ts", "supabase/**/*.ts", "tests/**/*.ts"]
 }

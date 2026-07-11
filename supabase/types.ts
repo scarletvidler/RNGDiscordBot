@@ -13,7 +13,7 @@ export interface Database {
         Row: {
           id: string;
           username: string;
-          global_name: string | null;
+          profile_name: string | null;
           avatar_url: string | null;
           is_bot: boolean;
           first_seen_at: string;
@@ -22,7 +22,7 @@ export interface Database {
         Insert: {
           id: string;
           username: string;
-          global_name?: string | null;
+          profile_name?: string | null;
           avatar_url?: string | null;
           is_bot?: boolean;
           first_seen_at?: string;
@@ -169,6 +169,84 @@ export interface Database {
         Update: Partial<
           Database["public"]["Tables"]["guild_members"]["Insert"]
         >;
+        Relationships: [];
+      };
+      pokemon: {
+        Row: {
+          id: number;
+          handle: string;
+          pokedex_id: number;
+          form_id: number;
+          name: string;
+          form_name: string | null;
+          sprites: Json | null;
+          height: number | null;
+          weight: number | null;
+          capture_rate: number | null;
+          gender_rate: number | null;
+          is_baby: boolean;
+          is_legendary: boolean;
+          is_mythical: boolean;
+          flavor_text: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          handle: string;
+          pokedex_id: number;
+          form_id: number;
+          name: string;
+          form_name?: string | null;
+          sprites?: Json | null;
+          height?: number | null;
+          weight?: number | null;
+          capture_rate?: number | null;
+          gender_rate?: number | null;
+          is_baby?: boolean;
+          is_legendary?: boolean;
+          is_mythical?: boolean;
+          flavor_text?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["pokemon"]["Insert"]>;
+        Relationships: [];
+      };
+      pokemon_profiles: {
+        Row: {
+          id: string;
+          created_at: string;
+          discord_user_id: string;
+          guild_id: string;
+          last_rolled_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          discord_user_id: string;
+          guild_id: string;
+          last_rolled_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["pokemon_profiles"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      user_pokemon: {
+        Row: {
+          id: string;
+          created_at: string;
+          profile_id: string;
+          pokemon_id: number;
+          shiny: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          profile_id: string;
+          pokemon_id: number;
+          shiny?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["user_pokemon"]["Insert"]>;
         Relationships: [];
       };
     };

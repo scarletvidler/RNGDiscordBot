@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import type { BotCommand } from "../types.ts";
-import { toggleGuildRoomPrefixMode } from "../../supabase/models/guilds.ts";
+import { toggleGuildRoomPrefixMode } from "../../supabase/modules/guild.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()

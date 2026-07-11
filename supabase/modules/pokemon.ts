@@ -1,60 +1,22 @@
-import { supabase } from "./client.ts";
+import { getSupabaseAdmin } from "../client.ts";
+import type { Database } from "../types.ts";
+import {
+  CooldownStatus,
+  Pokemon,
+  RolledPokemon,
+  SpriteContainer,
+  UserPokemon,
+} from "../types/pokemon.ts";
 
 export interface Profile {
   id: string;
   last_rolled_at: string | null;
 }
 
-export interface CooldownStatus {
-  canRoll: boolean;
-  message: string | null;
-}
-
-export interface PokemonSprites {
-  front_default?: string | null;
-  front_shiny?: string | null;
-  official_artwork_shiny: string | null;
-  official_artwork_default: string | null;
-}
-
-export interface Pokemon {
-  id: number;
-  handle: string;
-  pokedex_id: number;
-  form_id: number;
-  name: string;
-  form_name: string | null;
-  sprites: any;
-  height: number | null;
-  weight: number | null;
-  capture_rate: number | null;
-  gender_rate: number | null;
-  is_baby: boolean;
-  is_legendary: boolean;
-  is_mythical: boolean;
-  flavor_text: string | null;
-}
-
-export interface SpriteContainer {
-  sprites?: any;
-}
-
-export interface RolledPokemon extends Omit<Pokemon, "sprites"> {
-  sprite: string | null | undefined;
-  isShiny: boolean;
-}
-
-export interface UserPokemon {
-  id: string;
-  isShiny: boolean;
-  sprite: string | null | undefined;
-  pokemon: Pokemon | null;
-}
-
 const COOLDOWN_HOURS = 4;
 const SHINY_CHANCE = 0.01;
 
-const cooldownStatus = (lastRolledAt: Profile["last_rolled_at"]) => {
+const cooldownStatus = (lastRolledAt: ["last_rolled_at"]) => {
   const status: CooldownStatus = {
     canRoll: false,
     message: null,
@@ -118,6 +80,11 @@ const getPokemonSprite = (
 export const rollPokemon = async (
   profile: Profile,
 ): Promise<{ data: RolledPokemon | boolean | null; error: any }> => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return { data: null, error: "Supabase client not initialized" };
+  }
+
   const { canRoll, message } = cooldownStatus(profile.last_rolled_at);
 
   if (!canRoll) {
@@ -125,7 +92,7 @@ export const rollPokemon = async (
   }
 
   let dynamicQuery = supabase
-    .from("profiles")
+    .from("pokemon_profiles")
     .update({ last_rolled_at: new Date().toISOString() })
     .eq("id", profile.id);
 
@@ -149,7 +116,7 @@ export const rollPokemon = async (
 
   const revertCooldown = async () => {
     await supabase
-      .from("profiles")
+      .from("pokemon_profiles")
       .update({ last_rolled_at: profile.last_rolled_at })
       .eq("id", profile.id);
   };
@@ -165,9 +132,11 @@ export const rollPokemon = async (
       .throwOnError();
 
     const ownedPokemonIds =
-      ownedPokemon?.map((pokemon) => pokemon.pokemon_id) ?? [];
+      ownedPokemon?.map(
+        (pokemon: Pick<UserPokemonRow, "pokemon_id">) => pokemon.pokemon_id,
+      ) ?? [];
 
-    const query = supabase.from("pokemon2").select("*").throwOnError();
+    const query = supabase.from("pokemon").select("*").throwOnError();
 
     const { data: available } = await (ownedPokemonIds.length > 0
       ? query.not("id", "in", `(${ownedPokemonIds.join(",")})`)
@@ -209,6 +178,11 @@ export const rollPokemon = async (
 export const getUserPokemon = async (
   profile: Profile,
 ): Promise<{ data: UserPokemon[] | null; error: any }> => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return { data: null, error: "Supabase client not initialized" };
+  }
+
   const { data, error } = await supabase
     .from("user_pokemon")
     .select("id, shiny, pokemon(*)")
@@ -217,7 +191,7 @@ export const getUserPokemon = async (
   if (error) return { data: null, error };
   if (!data) return { data: [], error: null };
 
-  const formattedData = data.map((user) => {
+  const formattedData = (data as UserPokemonWithDetails[]).map((user) => {
     const spriteUrl = getPokemonSprite(user.pokemon, user.shiny);
 
     return {

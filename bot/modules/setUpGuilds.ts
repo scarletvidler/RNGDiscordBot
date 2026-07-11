@@ -6,7 +6,7 @@ import {
   DBGuild,
   ensureGuildTtsSettings,
   upsertGuild,
-} from "../../supabase/models/guilds.ts";
+} from "../../supabase/modules/guild.ts";
 
 export default async function setUpGuilds(
   client: ExtendedClient,
@@ -34,10 +34,7 @@ export default async function setUpGuilds(
           guild,
           {
             owner_id: guild.ownerId ?? null,
-            message_count: 0,
-            token_total_usage: 0,
-            token_balance: 0,
-            token_limit: 1000,
+            left_at: null,
           },
           ["id"],
           false,

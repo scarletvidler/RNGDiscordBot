@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
 import ElevenLabs from "../modules/ElevenLabs.ts";
-import { saveGuildTtsSettings } from "../../supabase/models/guilds.ts";
+import { saveGuildTtsSettings } from "../../supabase/modules/guild.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()

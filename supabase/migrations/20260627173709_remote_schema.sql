@@ -1,38 +1,24 @@
 SET check_function_bodies = false;
-DROP EXTENSION pg_net;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT DELETE, INSERT, SELECT, UPDATE ON TABLES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT, USAGE ON SEQUENCES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON ROUTINES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT DELETE, INSERT, SELECT, UPDATE ON TABLES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT, USAGE ON SEQUENCES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON ROUTINES TO authenticated;
+
+DROP EXTENSION IF EXISTS pg_net;
+
+-- Bot-only database access: revoke direct anon/authenticated object access.
+REVOKE ALL ON SCHEMA public FROM anon;
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM anon;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM anon;
+REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM anon;
+
+-- Keep bot/admin path fully enabled via service_role.
+GRANT USAGE ON SCHEMA public TO service_role;
+
+GRANT DELETE,INSERT,SELECT,UPDATE ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT SELECT,USAGE ON ALL SEQUENCES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT DELETE, INSERT, SELECT, UPDATE ON TABLES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT, USAGE ON SEQUENCES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON ROUTINES TO service_role;
-GRANT ALL ON FUNCTION public.handle_new_user() TO anon;
-GRANT ALL ON FUNCTION public.handle_new_user() TO authenticated;
-GRANT ALL ON FUNCTION public.handle_new_user() TO service_role;
-GRANT ALL ON FUNCTION public.set_updated_at() TO anon;
-GRANT ALL ON FUNCTION public.set_updated_at() TO authenticated;
-GRANT ALL ON FUNCTION public.set_updated_at() TO service_role;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.discord_users TO anon;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.discord_users TO authenticated;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.discord_users TO service_role;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_chat_logs TO anon;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_chat_logs TO authenticated;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_chat_logs TO service_role;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_command_settings TO anon;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_command_settings TO authenticated;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_command_settings TO service_role;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_members TO anon;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_members TO authenticated;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_members TO service_role;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_tts_settings TO anon;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_tts_settings TO authenticated;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guild_tts_settings TO service_role;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guilds TO anon;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guilds TO authenticated;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.guilds TO service_role;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.profiles TO anon;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.profiles TO authenticated;
-GRANT DELETE, INSERT, SELECT, UPDATE ON public.profiles TO service_role;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT
+SELECT, USAGE, UPDATE ON SEQUENCES TO service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO service_role;

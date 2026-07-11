@@ -1,27 +1,6 @@
 import type { Guild } from "discord.js";
 import { getSupabaseAdmin } from "../client.ts";
-
-export interface DBGuildTtsSettings {
-  repliesEnabled: boolean;
-  roomPrefixEnabled: boolean;
-  ttsChannelName: string;
-  femaleVoiceId: string;
-  maleVoiceId: string;
-  idleTimeout: number;
-}
-export interface DBGuild {
-  id: string;
-  name: string;
-  owner_id: string | null;
-  message_count: number;
-  token_total_usage: number;
-  token_balance: number;
-  token_limit: number;
-  joined_at: string;
-  left_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import { DBGuild, DBGuildTtsSettings } from "../types/guild.ts";
 
 /*
   Creates or updates a guild record in the database. If the guild already exists, it will update the existing record with the new information. If it does not exist, it will create a new record.
@@ -36,11 +15,11 @@ export async function upsertGuild(
   if (!supabase) throw new Error("Supabase client not initialized");
   onConflictRows = ["id", ...onConflictRows];
   const { data, error } = await supabase
-    .from("guilds")
+    .from("guild")
     .upsert(
       {
         id: guild.id,
-        name: guild.name,
+        guild_name: guild.name,
         ...rows,
       },
       {
@@ -115,7 +94,7 @@ export async function saveGuildSettings(
   if (!supabase) throw new Error("Supabase client not initialized");
   // Update the guild settings and return the updated row
   const { data, error } = await supabase
-    .from("guilds")
+    .from("guild")
     .update(rows)
     .eq("id", guildId)
     .select()

@@ -1,9 +1,9 @@
 import { Message, TextChannel } from "discord.js";
 import { joinAndPlay } from "../ttsListen.ts";
 import { ExtendedGuild } from "../../types.ts";
-import { insertGuildChatLog } from "../../../supabase/models/chatLogs.ts";
-import { upsertGuildMember } from "../../../supabase/models/users.ts";
-import { saveGuildSettings } from "../../../supabase/models/guilds.ts";
+import { insertGuildChatLog } from "../../../supabase/modules/chatLogs.ts";
+import { upsertGuildMember } from "../../../supabase/modules/users.ts";
+import { saveGuildSettings } from "../../../supabase/modules/guild.ts";
 
 export class TTSInstance {
   private message: Message<boolean>;

@@ -4,8 +4,8 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import type { BotCommand } from "../types.ts";
-import { rollPokemon } from "../../supabase/pokemon.ts";
-import { getUserProfile } from "../../supabase/profiles.ts";
+import { rollPokemon } from "../../supabase/modules/pokemon.ts";
+import { getUserProfile } from "../../supabase/modules/profiles.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -44,15 +44,15 @@ const command: BotCommand = {
 
     let prefix = "A wild";
     if (pokemon.isShiny) prefix = "✨ A wild Shiny";
-    else if (pokemon.mythical) prefix = "🌀 A wild Mythical";
-    else if (pokemon.legendary) prefix = "👑 A wild Legendary";
+    else if (pokemon.is_mythical) prefix = "🌀 A wild Mythical";
+    else if (pokemon.is_legendary) prefix = "👑 A wild Legendary";
 
     let embedColor = 0x0099ff; // Standard Blue
     if (pokemon.isShiny)
       embedColor = 0xffd700; // Gold
-    else if (pokemon.mythical)
+    else if (pokemon.is_mythical)
       embedColor = 0xa335ee; // Purple
-    else if (pokemon.legendary) embedColor = 0xff8000; // Orange
+    else if (pokemon.is_legendary) embedColor = 0xff8000; // Orange
 
     const formattedHeight = pokemon.height
       ? `${(pokemon.height / 10).toFixed(1)}m`
