@@ -7,6 +7,7 @@
   "scripts": {
     "start:bot": "tsx watch server.js",
     "start:bot:dev": "tsx watch --env-file=.env.development server.js",
+    "start:bot:psy": "tsx watch --env-file=.env.psy server.js",
     "start:server": "tsx server.js",
     "release:patch": "npm version patch",
     "release:minor": "npm version minor",
@@ -38,6 +39,7 @@
     "@types/node": "^25.8.0",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
+    "supabase": "^2.107.0",
     "tailwindcss": "^3.4.4",
     "tsx": "^4.22.1",
     "typescript": "^5.1.6",

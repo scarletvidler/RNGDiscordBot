@@ -34,8 +34,8 @@ The schema is in `supabase/migrations/`, local seed data is in `supabase/seeds/`
 ### Run
 
 ```sh
-# Install Dependancies 
-npm i 
+# Install Dependancies
+npm i
 # Start the Web Server (Remix)
 npm run dev
 # Start the dev Bot (Chisato)
@@ -135,9 +135,9 @@ export default event;
 
 | Command | Description |
 |---|---|
-| `/poki` | Fetches a random Pokémon (1–505) from PokéAPI and displays its name, height, weight, and sprite in an embed. |
-| `/convert <amount> <from> <to>` | Converts a currency amount between two ISO currency codes using the ExchangeRate API. |
-| `/tts-stop` | Stops TTS playback and clears the queue. Requires the invoker to be in a voice channel. Reply is ephemeral. |
+| `/roll`                         | Fetches a random Pokémon (1–505) from PokéAPI and displays its name, height, weight, and sprite in an embed. |
+| `/convert <amount> <from> <to>` | Converts a currency amount between two ISO currency codes using the ExchangeRate API.                        |
+| `/tts-stop` | Stops TTS playback and clears the queue. Requires the invoker to be in a voice channel. Reply is ephemeral.                      |
 | `/tts-room-prefix-toggle` | Toggles room-prefix TTS mode. When enabled, Lerche reads messages from the sender's current voice room only when the message starts with `/t`. |
 
 ## TTS (Text-to-Speech)
@@ -149,6 +149,7 @@ Admins can use `/tts-room-prefix-toggle` to switch a guild into `/t` room mode. 
 **Authorised users:** any member with the Lerche or Amelia role IDs, or anyone with a role named `Lerche Listens` or `Amelia Listens` (for flexible per-server role management).
 
 **Validation (`isValidTTS`):**
+
 - Pinned messages are silently ignored.
 - Messages over 400 characters are rejected (the bot owner bypasses this limit).
 - Messages from users lacking any of the authorised roles throw a permission error posted back to the channel.
@@ -156,6 +157,7 @@ Admins can use `/tts-room-prefix-toggle` to switch a guild into `/t` room mode. 
 **Voice selection:** users with a role named `male` are spoken with the configured male voice (Adam); everyone else uses the default female voice. Both voices are configurable via environment variables.
 
 **Flow:**
+
 1. `messageCreate` event calls `isValidTTS` to validate channel, permissions, and length.
 2. `TTSInstance.create()` sends a `"Listening for TTS messages..."` status message to the channel.
 3. `joinAndPlay` (in `ttsListen.ts`) joins the sender's voice channel (or reuses an existing connection).
@@ -168,8 +170,6 @@ Admins can use `/tts-room-prefix-toggle` to switch a guild into `/t` room mode. 
 `bot/modules/VoicePlayer.ts` manages a single `AudioPlayer` and a sound queue per voice channel. Sounds play sequentially. A ping sound (`ping.ogg`) plays when the bot first joins a channel. After 10 minutes of silence (configurable via `clientInstance.idleTimeout`) the bot plays `disconnect.ogg` and leaves the channel.
 
 `forceStop()` clears the queue and stops playback immediately — called by `/tts-stop`.
-
-
 
 ### TODO
 
