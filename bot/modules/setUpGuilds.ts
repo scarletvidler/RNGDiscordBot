@@ -25,11 +25,18 @@ export default async function setUpGuilds(
     guilds.map(async (guild) => {
       console.log(`Connected to guild: 🏯 ${guild.name} (ID: ${guild.id})`);
 
-      const extendedGuild = await getExtendedGuild(guild.id);
+      try {
+        const extendedGuild = await getExtendedGuild(guild.id);
 
-      // if client.installedGuilds does not already contain this guild, add it
-      if (!client.installedGuilds.find((g) => g.id === guild.id)) {
-        client.installedGuilds.push(extendedGuild);
+        // if client.installedGuilds does not already contain this guild, add it
+        if (!client.installedGuilds.find((g) => g.id === guild.id)) {
+          client.installedGuilds.push(extendedGuild);
+        }
+      } catch (error) {
+        console.error(
+          `Failed to set up guild ${guild.id} (${guild.name}):`,
+          error,
+        );
       }
     }),
   );
