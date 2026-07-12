@@ -2,7 +2,7 @@
 
 import { SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
-import { saveGuildTtsSettings } from "../../supabase/models/guilds.ts";
+import { saveGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -24,7 +24,7 @@ const command: BotCommand = {
     const extendedGuild = guild as any;
     extendedGuild.settings.tts.repliesEnabled =
       !extendedGuild.settings.tts.repliesEnabled;
-    await saveGuildTtsSettings(guild.id, extendedGuild.settings.tts);
+    await saveGuildTTSSettings(guild.id, extendedGuild.settings.tts);
     await interaction.editReply(
       `TTS replies have been ${extendedGuild.settings.tts.repliesEnabled ? "enabled" : "disabled"} for this guild.`,
     );

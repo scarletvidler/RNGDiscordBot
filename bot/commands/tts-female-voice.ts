@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
 import ElevenLabs from "../modules/ElevenLabs.ts";
-import { saveGuildTtsSettings } from "../../supabase/models/guilds.ts";
+import { saveGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -39,7 +39,7 @@ const command: BotCommand = {
       });
 
     extendedGuild.settings.tts.femaleVoiceId = voiceId;
-    await saveGuildTtsSettings(guild.id, extendedGuild.settings.tts);
+    await saveGuildTTSSettings(guild.id, extendedGuild.settings.tts);
     await interaction.editReply(`Female voice ID set to: ${voiceId}`);
   },
 };

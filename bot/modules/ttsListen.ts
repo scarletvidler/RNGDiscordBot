@@ -15,11 +15,12 @@ import invariant from "tiny-invariant";
 import { channelWithPlayer, ExtendedGuild } from "../types.ts";
 import isRosie from "../helpers/isRosie.ts";
 import ElevenLabs from "./ElevenLabs.ts";
+import { DBGuildWithSettings } from "../../supabase/models/guilds.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
   message: Message<boolean>,
-  guild: ExtendedGuild,
+  guild: DBGuildWithSettings,
 ): Promise<{ messagePlayed: string; tokensUsed: number }> {
   try {
     let voiceConn: VoiceConnection | undefined = getVoiceConnection(

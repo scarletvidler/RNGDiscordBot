@@ -1,86 +1,124 @@
 import { Guild } from "discord.js";
-import { ExtendedClient, ExtendedGuild } from "../types.ts";
+import { APIGuild, ExtendedClient, ExtendedGuild } from "../types.ts";
 import { getGuilds } from "../api/getGuilds.ts";
-import client from "./client.ts";
 import {
+  DBGetGuild,
   DBGuild,
+  DBGuildWithSettings,
   ensureGuildTtsSettings,
-  upsertGuild,
+  getOrCreateDBGuild,
 } from "../../supabase/models/guilds.ts";
+import { upsertDiscordUser } from "../../supabase/models/users.ts";
+import { APIGetUserByGuild } from "../api/getUser.ts";
+import invariant from "tiny-invariant";
+import client from "./client.ts";
 
 export default async function setUpGuilds(
   client: ExtendedClient,
 ): Promise<string[]> {
-  const guilds: ExtendedGuild[] = (await getGuilds(
+  client.installedGuilds = [];
+  const guilds: APIGuild[] = (await getGuilds(
     process.env.BOT_TOKEN!,
-  )) as ExtendedGuild[];
+  )) as APIGuild[];
   const guildIds: string[] = guilds.map((guild) => guild.id);
   await Promise.all(
     guilds.map(async (guild) => {
       console.log(`Connected to guild: 🏯 ${guild.name} (ID: ${guild.id})`);
-      const defaultSettings = {
-        tts: {
-          repliesEnabled: true,
-          roomPrefixEnabled: false,
-          femaleVoiceId: client.femaleRoleId,
-          maleVoiceId: client.maleRoleId,
-          ttsChannelName: client.ttsChannelName,
-          idleTimeout: client.idleTimeout,
-        },
-      };
 
-      try {
-        const DBGuildSettings = await upsertGuild(
-          guild,
-          {
-            owner_id: guild.ownerId ?? null,
-            message_count: 0,
-            token_total_usage: 0,
-            token_balance: 0,
-            token_limit: 1000,
-          },
-          ["id"],
-          false,
-        );
-        defaultSettings.tts = await ensureGuildTtsSettings(
-          guild.id,
-          defaultSettings.tts,
-        );
+      const extendedGuild = await getExtendedGuild(guild.id);
 
-        setUpGuild(guild, defaultSettings);
-        setUpGuildLogging(guild, DBGuildSettings);
-      } catch (error) {
-        console.error(`Failed to sync guild ${guild.id} with Supabase:`, error);
+      // if client.installedGuilds does not already contain this guild, add it
+      if (!client.installedGuilds.find((g) => g.id === guild.id)) {
+        client.installedGuilds.push(extendedGuild);
       }
     }),
   );
-
-  const extendedGuilds: ExtendedGuild[] = guilds.map((guild) => {
-    return guild as ExtendedGuild;
-  });
-  client.installedGuilds = extendedGuilds;
 
   return guildIds;
 }
 
 function setUpGuild(
-  guild: Guild,
-  settings: ExtendedGuild["settings"],
-): ExtendedGuild {
-  const extendedGuild = guild as ExtendedGuild;
+  guild: DBGuild,
+  settings: DBGuildWithSettings["settings"],
+): DBGuildWithSettings {
+  const extendedGuild = guild as DBGuildWithSettings;
   if (!extendedGuild.settings) {
     extendedGuild.settings = settings;
   }
   return extendedGuild;
 }
 
-function setUpGuildLogging(guild: ExtendedGuild, guildSettings: DBGuild): void {
-  if (!guild.logging) {
-    guild.logging = {
-      messageCount: guildSettings.message_count,
-      tokenTotalUsage: guildSettings.token_total_usage,
-      tokenBalance: guildSettings.token_balance,
-      tokenLimit: guildSettings.token_limit,
+function defaultGuildSettings() {
+  return {
+    tts: {
+      repliesEnabled: true,
+      roomPrefixEnabled: false,
+      femaleVoiceId: client.femaleRoleId,
+      maleVoiceId: client.maleRoleId,
+      ttsChannelName: client.ttsChannelName,
+      idleTimeout: client.idleTimeout,
+    },
+    logging: {
+      messageCount: 0,
+      tokenTotalUsage: 0,
+      tokenBalance: 0,
+      tokenLimit: 0,
+    },
+  };
+}
+
+export async function getExtendedGuild(
+  guildId: string,
+): Promise<DBGuildWithSettings> {
+  const DBGuild = await DBGetGuild(guildId);
+  if (!DBGuild) {
+    console.error(`Guild with ID ${guildId} not found in database.`);
+    throw new Error(`Guild with ID ${guildId} not found in database.`);
+  }
+  const settings = await ensureGuildTtsSettings(
+    guildId,
+    defaultGuildSettings().tts,
+  );
+  const extendedGuild: DBGuildWithSettings = {
+    ...DBGuild,
+    settings: {
+      tts: settings,
+      logging: {
+        messageCount: DBGuild.message_count,
+        tokenTotalUsage: DBGuild.token_total_usage,
+        tokenBalance: DBGuild.token_balance,
+        tokenLimit: DBGuild.token_limit,
+      },
+    },
+  };
+
+  return extendedGuild;
+}
+
+export async function setUpExtendedGuild(
+  guild: Guild,
+  client: ExtendedClient,
+): Promise<DBGuildWithSettings> {
+  const defaultSettings = defaultGuildSettings();
+
+  try {
+    const DBGuild = await getOrCreateDBGuild(guild);
+    defaultSettings.tts = await ensureGuildTtsSettings(
+      guild.id,
+      defaultSettings.tts,
+    );
+
+    const extendedGuild: DBGuildWithSettings = {
+      ...DBGuild,
+      settings: defaultSettings,
     };
+
+    client.installedGuilds.push(extendedGuild);
+
+    return extendedGuild;
+  } catch (error) {
+    throw new Error(
+      `Failed to sync guild ${guild.id} (${guild.name}) with Supabase`,
+    );
   }
 }

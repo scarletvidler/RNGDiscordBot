@@ -1,7 +1,7 @@
-import { Guild } from "discord.js";
+import { APIGuild } from "discord.js";
 import { apiConnect } from "./apiConnect.ts";
 
-export async function getGuilds(token: string): Promise<Guild[]> {
+export async function getGuilds(token: string): Promise<APIGuild[]> {
   const rest = apiConnect(token);
 
   try {

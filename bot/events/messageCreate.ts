@@ -3,6 +3,8 @@ import type { BotEvent, ExtendedClient } from "../types.ts";
 import isValidTTS from "../modules/tts/isValidTTS.ts";
 import { TTSInstance } from "../modules/tts/TTSInstance.ts";
 import { sendGuildAnnouncement } from "../modules/sendGuildAnnouncement.ts";
+import { getOrCreateDBGuild } from "../../supabase/models/guilds.ts";
+import { setUpExtendedGuild } from "../modules/setUpGuilds.ts";
 
 const ANNOUNCE_GUILD_ID = "1179157503766962176";
 const ANNOUNCE_CHANNEL_NAME = "announce";
@@ -31,12 +33,18 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
     try {
       if (isValidTTS(message)) {
         try {
-          const guild = client.installedGuilds.find(
+          let guild = client.installedGuilds.find(
             (g) => g.id === message.guildId,
           );
           if (!guild) {
-            console.error(`Guild not found for message: ${message.id}`);
-            return;
+            console.error(
+              `Guild not found for message: ${message.id}, guildId: ${message.guildId}`,
+            );
+            setUpExtendedGuild(message.guild, client).catch((error) => {
+              throw new Error(
+                `Failed to set up guild ${message.guildId} (${message.guild?.name})`,
+              );
+            });
           }
           const tts = await TTSInstance.create(message, guild);
           await tts.run();
