@@ -6,6 +6,7 @@ import type {
   SlashCommandOptionsOnlyBuilder,
 } from "discord.js";
 import VoicePlayerClass from "./modules/VoicePlayer.ts";
+import { DBGuildWithSettings } from "../supabase/models/guilds.ts";
 
 export type channelWithPlayer = Channel & { player?: VoicePlayerClass };
 export interface BotCommand {
@@ -25,6 +26,11 @@ export interface BotEvent<TArgs extends unknown[] = unknown[]> {
   execute(...args: TArgs): Promise<void> | void;
 }
 
+export type APIGuild = {
+  id: string;
+  name: string;
+};
+
 export class ExtendedClient extends Client {
   ownerId!: string;
   femaleRoleId!: string;
@@ -34,7 +40,7 @@ export class ExtendedClient extends Client {
   idleTimeout!: number;
   prefix!: string;
   commands: Collection<string, BotCommand>;
-  installedGuilds!: ExtendedGuild[];
+  installedGuilds!: DBGuildWithSettings[];
   constructor(options: any) {
     super(options);
     this.commands = new Collection();

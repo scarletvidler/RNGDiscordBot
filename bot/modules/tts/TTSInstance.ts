@@ -3,15 +3,19 @@ import { joinAndPlay } from "../ttsListen.ts";
 import { ExtendedGuild } from "../../types.ts";
 import { insertGuildChatLog } from "../../../supabase/models/chatLogs.ts";
 import { upsertGuildMember } from "../../../supabase/models/users.ts";
-import { saveGuildSettings } from "../../../supabase/models/guilds.ts";
+import {
+  DBGuild,
+  DBGuildWithSettings,
+  saveGuildSettings,
+} from "../../../supabase/models/guilds.ts";
 
 export class TTSInstance {
   private message: Message<boolean>;
   public channel: TextChannel;
   public reply?: Message;
-  private guild: ExtendedGuild;
+  private guild: DBGuildWithSettings;
 
-  constructor(message: Message<boolean>, guild: ExtendedGuild) {
+  constructor(message: Message<boolean>, guild: DBGuildWithSettings) {
     this.message = message;
     this.guild = guild;
     this.channel = message.channel as TextChannel;
@@ -23,7 +27,7 @@ export class TTSInstance {
 
   static async create(
     message: Message<boolean>,
-    guild: ExtendedGuild,
+    guild: DBGuildWithSettings,
   ): Promise<TTSInstance> {
     const instance = new TTSInstance(message, guild);
     instance.reply = await instance.sendMessage(
@@ -83,7 +87,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
   // TODO: MOVE TO GUILD CLASS
   getMessageCount(): number {
     try {
-      return this.guild.logging?.messageCount ?? 0;
+      return this.guild.settings.logging?.messageCount ?? 0;
     } catch (error) {
       console.error("Error retrieving message count:", error);
       throw new Error("Failed to retrieve message count.");
@@ -93,7 +97,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
   updateMessageCount(count?: number): number {
     try {
       const newCount = count ?? this.getMessageCount() + 1;
-      this.guild.logging!.messageCount = newCount;
+      this.guild.settings.logging!.messageCount = newCount;
       saveGuildSettings(this.guild.id, { message_count: newCount });
       return newCount;
     } catch (error) {
@@ -104,7 +108,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
 
   getUsageLimits(): number {
     try {
-      const { tokenBalance } = this.guild.logging;
+      const { tokenBalance } = this.guild.settings.logging;
       return tokenBalance;
     } catch (error) {
       console.error("Error retrieving usage limits:", error);
@@ -132,15 +136,15 @@ https://top.gg/bot/1511773768438251660#reviews`,
   async updateUsage(tokensUsed: number): Promise<void> {
     try {
       const newBalance =
-        this.guild.logging.tokenBalance - tokensUsed >= 0
-          ? this.guild.logging.tokenBalance - tokensUsed
+        this.guild.settings.logging!.tokenBalance - tokensUsed >= 0
+          ? this.guild.settings.logging!.tokenBalance - tokensUsed
           : 0;
-      this.guild.logging.tokenBalance = newBalance;
-      this.guild.logging.tokenTotalUsage += tokensUsed;
+      this.guild.settings.logging!.tokenBalance = newBalance;
+      this.guild.settings.logging!.tokenTotalUsage += tokensUsed;
 
       await saveGuildSettings(this.guild.id, {
-        token_balance: this.guild.logging.tokenBalance,
-        token_total_usage: this.guild.logging.tokenTotalUsage,
+        token_balance: this.guild.settings.logging!.tokenBalance,
+        token_total_usage: this.guild.settings.logging!.tokenTotalUsage,
       });
     } catch (error) {
       console.error("Error updating usage:", error);
@@ -173,7 +177,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
         `⚔️ Guild: ${this.message.guild?.name}`,
         `📢 User: ${this.message.author.username}`,
         `📜 Message: ${text}`,
-        `🎙️ Count: ${this.guild.logging?.messageCount ?? 0}`,
+        `🎙️ Count: ${this.guild.settings.logging?.messageCount ?? 0}`,
       );
     } catch (error) {
       console.error("Error logging TTS message details:", error);

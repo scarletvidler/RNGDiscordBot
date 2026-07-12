@@ -37,7 +37,7 @@ export interface Database {
         Row: {
           id: string;
           name: string;
-          owner_id: string | null;
+          owner_id: string;
           message_count: number;
           token_total_usage: number;
           token_balance: number;
@@ -50,7 +50,7 @@ export interface Database {
         Insert: {
           id: string;
           name: string;
-          owner_id?: string | null;
+          owner_id?: string;
           message_count?: number;
           token_total_usage?: number;
           token_balance?: number;
