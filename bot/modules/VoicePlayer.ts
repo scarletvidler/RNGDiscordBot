@@ -11,7 +11,7 @@ import getDirectoryRoot from "../helpers/getDirectoryRoot.ts";
 import path from "path";
 import fs from "fs";
 
-export default class VoicePlayerClass {
+export default class VoicePlayer {
   timeOfCreation: number;
   idleTimeout: number;
   idleTimer: number;

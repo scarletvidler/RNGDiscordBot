@@ -8,7 +8,7 @@ import {
 } from "@discordjs/voice";
 import { Channel, type Message, type VoiceBasedChannel } from "discord.js";
 import { Readable } from "stream";
-import VoicePlayerClass from "./VoicePlayer.ts";
+import VoicePlayer from "./VoicePlayer.ts";
 import clientInstance from "./client.ts";
 import { getCleanName } from "../helpers/getClean.ts";
 import invariant from "tiny-invariant";
@@ -46,7 +46,7 @@ export async function joinAndPlay(
 
     currentChannel.player =
       currentChannel.player ||
-      new VoicePlayerClass({
+      new VoicePlayer({
         idleTimeout: idleTimeout,
       });
 

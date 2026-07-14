@@ -8,7 +8,7 @@ export default function isValidTTS(message: Message<true>): boolean {
   );
   const ttsChannel = guild?.settings.tts.ttsChannelName || "tts";
   const roomPrefixEnabled = guild?.settings.tts.roomPrefixEnabled ?? false;
-  const maxLength = 400;
+  const maxLength = 300;
 
   if (message.pinned) return false;
   if (roomPrefixEnabled) {
