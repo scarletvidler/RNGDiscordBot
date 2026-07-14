@@ -25,22 +25,25 @@ const command: BotCommand = {
       await interaction.editReply("This command can only be used in a guild.");
       return;
     }
-    const voiceId = interaction.options.getString("voice-id", true);
-    const extendedGuild = guild as any;
+    // const voiceId = interaction.options.getString("voice-id", true);
+    // const extendedGuild = guild as any;
 
-    await ElevenLabs.getInstance()
-      .getVoiceName(voiceId)
-      .catch(async (error) => {
-        console.error("Error fetching voice name:", error);
-        await interaction.editReply(
-          `Failed to fetch voice name for ID: ${voiceId}. Please ensure the voice ID is valid.`,
-        );
-        throw new Error(`Failed to fetch voice name for ID: ${voiceId}`);
-      });
+    // await ElevenLabs.getInstance()
+    //   .getVoiceName(voiceId)
+    //   .catch(async (error) => {
+    //     console.error("Error fetching voice name:", error);
+    //     await interaction.editReply(
+    //       `Failed to fetch voice name for ID: ${voiceId}. Please ensure the voice ID is valid.`,
+    //     );
+    //     throw new Error(`Failed to fetch voice name for ID: ${voiceId}`);
+    //   });
 
-    extendedGuild.settings.tts.maleVoiceId = voiceId;
-    await saveGuildTTSSettings(guild.id, extendedGuild.settings.tts);
-    await interaction.editReply(`Male voice ID set to: ${voiceId}`);
+    // extendedGuild.settings.tts.maleVoiceId = voiceId;
+    // await saveGuildTTSSettings(guild.id, extendedGuild.settings.tts);
+    // await interaction.editReply(`Male voice ID set to: ${voiceId}`);
+    await interaction.editReply(
+      "This command is currently disabled. Sorry! I'll be re-enabling it soon.",
+    );
   },
 };
 
