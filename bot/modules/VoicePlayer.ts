@@ -44,8 +44,14 @@ export default class VoicePlayerClass {
         const asset = this.getSoundAsset("disconnect.ogg");
         const disconnect = () => {
           if (this.connection != null) {
-            this.connection.destroy();
-            this.connection = null;
+            console.log("Disconnecting from voice channel due to inactivity.");
+            console.log(this.connection);
+            try {
+              this.connection.destroy();
+              this.connection = null;
+            } catch (error) {
+              console.error("Error disconnecting from voice channel:", error);
+            }
           }
           this.isDisconnecting = false;
         };
