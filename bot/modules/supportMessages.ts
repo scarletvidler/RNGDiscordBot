@@ -52,7 +52,7 @@ export function usageLimitReachedMessage(
         "The bot is still in early development, and all current running costs are coming directly from my bank account.",
         "I simply cannot cover these costs alone, so a **small Patreon subscription for power users** will be introduced soon.",
         "",
-        "If you really love the bot and want to keep using her, please reach out to me on Discord at **o._rosie_.o**.",
+        "If you really love the bot and want to keep using her, please reach out to me on Discord at `o._rosie_.o`.",
         "I have a Buy Me a Coffee link and can provide a temporary token allowance.",
         "",
         "I am sorry about this, and I do plan to add other ways to help when I can.",
