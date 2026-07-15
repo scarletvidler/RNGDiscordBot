@@ -48,7 +48,6 @@ export default class VoicePlayer {
             this.connection.state.status !== "destroyed"
           ) {
             console.log("Disconnecting from voice channel due to inactivity.");
-            console.log(this.connection);
             try {
               this.connection.destroy();
               this.connection = null;
