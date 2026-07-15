@@ -153,7 +153,6 @@ https://top.gg/bot/1511773768438251660#reviews`,
   }
 
   async logMessageToSupabase(text: string) {
-    console.log("Logging TTS message to Supabase:", text);
     try {
       if (this.message.member) {
         await upsertGuildMember(this.message.member);
