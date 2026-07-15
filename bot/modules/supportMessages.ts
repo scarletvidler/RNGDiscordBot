@@ -72,26 +72,20 @@ export function shouldSendUsageMessage(
   previousTotalUsage: number,
   nextTotalUsage: number,
 ): boolean {
-  console.log(
-    `Checking if usage message should be sent. Previous total usage: ${previousTotalUsage}, Next total usage: ${nextTotalUsage}`,
-  );
-
-  if (nextTotalUsage <= TOKEN_WARNING_START) {
+  // Do not send anything until usage has reached the first warning point.
+  if (nextTotalUsage < TOKEN_WARNING_START) {
     return false;
   }
 
+  // Turn raw token totals into 1000-token buckets:
+  // 2000-2999 => 2, 3000-3999 => 3, and so on.
   const previousThreshold = Math.floor(
     previousTotalUsage / TOKEN_WARNING_INTERVAL,
   );
   const nextThreshold = Math.floor(nextTotalUsage / TOKEN_WARNING_INTERVAL);
 
-  console.log(
-    `Previous Total Usage: ${previousTotalUsage}, Previous threshold: ${previousThreshold}, Next threshold: ${nextThreshold}`,
-  );
-
-  return (
-    nextThreshold > previousThreshold && nextTotalUsage >= TOKEN_WARNING_START
-  );
+  // Send a warning only when usage crosses into the next bucket.
+  return nextThreshold > previousThreshold;
 }
 
 export function hasReachedUsageLimit(totalUsage: number): boolean {

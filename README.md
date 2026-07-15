@@ -1,12 +1,108 @@
-# RNG Discord Bot / Lerche
+# Lerche
 
-A Discord bot built with [discord.js](https://discord.js.org/) and TypeScript. Commands and events are loaded dynamically at startup, and slash commands are registered per-guild on login.
+Lerche is a Discord text-to-speech bot built for voice-active servers that want messages read aloud in a way that feels social, lightweight, and easy to manage.
 
-## Setup
+At its core, Lerche listens for approved messages in a server, converts them into speech with ElevenLabs, and plays them in the sender's current voice channel. It is designed for friend groups and community servers that spend a lot of time in voice and want fast, natural TTS without a lot of setup friction.
 
-### Environment variables
+## What Lerche Does
 
-Create a `.env` file at the project root with the following:
+Lerche turns text messages into spoken audio in Discord voice channels.
+
+Key behaviour:
+- Reads messages from a dedicated TTS text channel by default.
+- Can switch into room-prefix mode, where users type `/t` in normal chat and Lerche only reads messages for their current voice room.
+- Uses different voices depending on configured server settings and role-based behaviour.
+- Queues audio cleanly so overlapping messages do not turn into noise.
+- Stops listening after inactivity and disconnects automatically.
+
+## How It Feels In Use
+
+The intended flow is simple:
+1. A user joins a voice channel.
+2. They post a message in the configured TTS channel, or use `/t` if room-prefix mode is enabled.
+3. Lerche validates the message and permissions.
+4. The bot joins the voice channel if needed, generates speech, and plays it back.
+
+This makes Lerche useful for casual hangouts, accessibility support, background chatter, and shared voice spaces where not everyone wants to talk constantly but still wants to participate.
+
+## Main Features
+
+### TTS Playback
+
+Lerche uses ElevenLabs to generate speech and plays it directly in Discord voice channels. Messages are cleaned up before playback so they sound more natural, including flattening line breaks, handling mentions, and turning raw links into spoken-friendly text.
+
+### Guild-Specific Settings
+
+Each server can keep its own settings, including:
+- TTS channel name
+- Reply visibility
+- Room-prefix mode
+- Male and female voice IDs
+- Idle timeout duration
+
+### Role-Aware Access
+
+Lerche is built for controlled use, not open spam. TTS access is limited to approved roles, including flexible named roles like `Lerche Listens` and `Amelia Listens`.
+
+### Utility Commands
+
+Lerche also includes a handful of extra commands outside TTS, including currency conversion, documentation sync, version reporting, and playback controls.
+
+## Commands
+
+| Command | Description |
+|---|---|
+| `/convert <amount> <from> <to>` | Converts a currency amount between ISO currency codes. |
+| `/help` | Explains how to use Lerche and its commands. |
+| `/tts-stop` | Stops playback and clears the current TTS queue. |
+| `/tts-room-prefix-toggle` | Toggles `/t` room-prefix mode for a guild. |
+| `/tts-channel-name` | Changes the text channel Lerche watches for TTS. |
+| `/tts-idle-timeout` | Changes how long Lerche waits before leaving an idle voice channel. |
+| `/tts-female-voice` | Sets the configured female voice. |
+| `/tts-male-voice` | Sets the configured male voice. |
+| `/tts-replies-toggle` | Toggles channel reply messages from Lerche. |
+| `/version` | Shows the current bot version. |
+
+## Current Limits
+
+Lerche is still in early development.
+
+Right now:
+- TTS usage is tracked per guild.
+- Lerche warns users as usage approaches the configured token cap.
+- TTS stops once the guild reaches the hard token limit.
+- Funding support options are planned for heavier users.
+
+That limit exists because voice generation has a real running cost, and the current version of Lerche is still being supported directly rather than through a formal hosted plan.
+
+## Tech Stack
+
+Lerche is built with:
+- TypeScript
+- discord.js
+- ElevenLabs
+- Supabase
+
+The bot loads commands and events dynamically at startup, and stores guild-specific settings and logs in Supabase.
+
+## Running Your Own Copy
+
+This repository can still be self-hosted if needed, but it is primarily the source for Lerche itself rather than a contributor guide.
+
+Minimum setup:
+- A Discord bot token and application client ID
+- An ElevenLabs API key
+- A Supabase project or local Supabase instance
+
+Useful scripts:
+
+```sh
+npm install
+npm run start:bot:dev
+npm run typecheck:bot
+```
+
+Environment variables currently used include:
 
 ```env
 BOT_TOKEN=your_discord_bot_token
@@ -14,165 +110,10 @@ CLIENT_ID=your_discord_application_client_id
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
 SUPABASE_URL=http://127.0.0.1:55241
 SUPABASE_SECRET_KEY=your_supabase_secret_key
-
-# Optional — defaults shown
 TTS_CHANNEL_NAME=tts
 default_voice_id=cgSgspJ2msm6clMCkdW9
 ```
 
-### Supabase
+## Project Shape
 
-Supabase lives in `supabase/`.
-
-```sh
-npx supabase start
-npx supabase db reset
-```
-
-The schema is in `supabase/migrations/`, local seed data is in `supabase/seeds/`, and table-specific helpers are in `supabase/models/`.
-
-### Run
-
-```sh
-# Install Dependancies 
-npm i 
-# Start the Web Server (Remix)
-npm run dev
-# Start the dev Bot (Chisato)
-npm run start:bot:dev
-```
-
-## Versioning
-
-This project uses semantic versions from `package.json`.
-
-```sh
-# Tiny fixes and small tweaks, for example 0.1.0 -> 0.1.1
-npm run release:patch
-
-# Bigger feature updates, for example 0.1.1 -> 0.2.0
-npm run release:minor
-
-# Stable breaking releases, for example 1.4.2 -> 2.0.0
-npm run release:major
-```
-
-Each release command updates `package.json` and `package-lock.json`, creates a git commit, and creates a git tag. Push the release commit and tag with:
-
-```sh
-git push --follow-tags
-```
-
-The running bot logs its version at startup and exposes it through `/version`.
-
-## Architecture
-
-```
-bot/
-├── bot.server.ts          # Entry point — initialises client, loads commands & events
-├── slash-commands.ts      # Registers slash commands with Discord and routes interactions
-├── types.ts               # ExtendedClient, BotCommand, BotEvent interfaces
-├── commands/              # Slash command modules (auto-loaded)
-├── events/                # Event handler modules (auto-loaded)
-├── modules/               # Shared logic (TTS, voice player, currency converter)
-│   └── tts/
-│       ├── TTSInstance.ts # Wraps a single TTS message lifecycle (send status reply, play)
-│       └── isValidTTS.ts  # Validates channel, permissions, and message length
-├── api/                   # Discord REST wrappers
-├── helpers/               # Utility functions
-└── assets/sounds/         # Audio files used by the voice player
-```
-
-### Command & event loading
-
-On startup, `bot.server.ts` recursively scans `commands/` and `events/` and dynamically imports every `.ts`/`.js` file it finds. A valid command module must export a default with `data` (a `SlashCommandBuilder`) and an `execute` function. A valid event module must export a default with `type` (the event name) and an `execute` function.
-
-Slash commands are registered against up to three guilds immediately after the client emits `clientReady`.
-
-### Adding a command
-
-Create a new file in `bot/commands/`. It will be picked up automatically on the next restart.
-
-```ts
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import type { BotCommand } from "../types.ts";
-
-const command: BotCommand = {
-  data: new SlashCommandBuilder()
-    .setName("example")
-    .setDescription("An example command"),
-
-  async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.reply("Hello!");
-  },
-};
-
-export default command;
-```
-
-### Adding an event
-
-Create a new file in `bot/events/`. The client instance is passed as the last argument to `execute`.
-
-```ts
-import type { BotEvent } from "../types.ts";
-
-const event: BotEvent = {
-  type: "messageCreate",
-  execute: async (message) => {
-    // handle event
-  },
-};
-
-export default event;
-```
-
-## TODO
-
-- [ ] **Guild class** — create a `Guild` class that attaches to the `clientInstance` for each server found via the `getGuild` request, used to store per-guild preferences.
-
-## Commands
-
-| Command | Description |
-|---|---|
-| `/poki` | Fetches a random Pokémon (1–505) from PokéAPI and displays its name, height, weight, and sprite in an embed. |
-| `/convert <amount> <from> <to>` | Converts a currency amount between two ISO currency codes using the ExchangeRate API. |
-| `/tts-stop` | Stops TTS playback and clears the queue. Requires the invoker to be in a voice channel. Reply is ephemeral. |
-| `/tts-room-prefix-toggle` | Toggles room-prefix TTS mode. When enabled, Lerche reads messages from the sender's current voice room only when the message starts with `/t`. |
-
-## TTS (Text-to-Speech)
-
-Messages posted in the configured TTS channel (default `#tts`, overridable via `TTS_CHANNEL_NAME`) by authorised users are spoken aloud in the sender's current voice channel via [ElevenLabs](https://elevenlabs.io/).
-
-Admins can use `/tts-room-prefix-toggle` to switch a guild into `/t` room mode. In that mode Lerche ignores the configured TTS text channel, watches normal guild messages, and only speaks messages that start with `/t`; the `/t` prefix is removed before speech generation.
-
-**Authorised users:** any member with the Lerche or Amelia role IDs, or anyone with a role named `Lerche Listens` or `Amelia Listens` (for flexible per-server role management).
-
-**Validation (`isValidTTS`):**
-- Pinned messages are silently ignored.
-- Messages over 400 characters are rejected (the bot owner bypasses this limit).
-- Messages from users lacking any of the authorised roles throw a permission error posted back to the channel.
-
-**Voice selection:** users with a role named `male` are spoken with the configured male voice (Adam); everyone else uses the default female voice. Both voices are configurable via environment variables.
-
-**Flow:**
-1. `messageCreate` event calls `isValidTTS` to validate channel, permissions, and length.
-2. `TTSInstance.create()` sends a `"Listening for TTS messages..."` status message to the channel.
-3. `joinAndPlay` (in `ttsListen.ts`) joins the sender's voice channel (or reuses an existing connection).
-4. The message is sanitised — newlines flattened, `@mentions` replaced with display names, URLs described in plain English.
-5. The sanitised text is sent to ElevenLabs (`eleven_v3` model, 1.2× speed) and streamed back as MP3.
-6. `VoicePlayer` queues and plays the audio. The status message is edited to `"Message played in voice channel."`.
-
-### VoicePlayer
-
-`bot/modules/VoicePlayer.ts` manages a single `AudioPlayer` and a sound queue per voice channel. Sounds play sequentially. A ping sound (`ping.ogg`) plays when the bot first joins a channel. After 10 minutes of silence (configurable via `clientInstance.idleTimeout`) the bot plays `disconnect.ogg` and leaves the channel.
-
-`forceStop()` clears the queue and stops playback immediately — called by `/tts-stop`.
-
-
-
-### TODO
-
-- Add Database routing for advanced operations and per server customisation
-- Add direct logging 
-- Add connection to Larken
+The main bot code lives in [bot](bot), with commands in [bot/commands](bot/commands), events in [bot/events](bot/events), and shared runtime logic in [bot/modules](bot/modules). Supabase schema, models, and seeds live in [supabase](supabase).
