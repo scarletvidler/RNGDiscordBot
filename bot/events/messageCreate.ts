@@ -5,6 +5,10 @@ import { TTSInstance } from "../modules/tts/TTSInstance.ts";
 import { sendGuildAnnouncement } from "../modules/sendGuildAnnouncement.ts";
 import { getOrCreateDBGuild } from "../../supabase/models/guilds.ts";
 import { setUpExtendedGuild } from "../modules/setUpGuilds.ts";
+import {
+  hasReachedUsageLimit,
+  usageLimitReachedMessage,
+} from "../modules/supportMessages.ts";
 
 const ANNOUNCE_GUILD_ID = "1179157503766962176";
 const ANNOUNCE_CHANNEL_NAME = "announce";
@@ -40,12 +44,16 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
             console.error(
               `Guild not found for message: ${message.id}, guildId: ${message.guildId}`,
             );
-            setUpExtendedGuild(message.guild, client).catch((error) => {
-              throw new Error(
-                `Failed to set up guild ${message.guildId} (${message.guild?.name})`,
-              );
-            });
+            guild = await setUpExtendedGuild(message.guild, client);
           }
+
+          if (hasReachedUsageLimit(guild.settings.logging.tokenTotalUsage)) {
+            await message.channel.send(
+              usageLimitReachedMessage(guild.settings.logging.tokenTotalUsage),
+            );
+            return;
+          }
+
           const tts = await TTSInstance.create(message, guild);
           await tts.run();
         } catch (error) {

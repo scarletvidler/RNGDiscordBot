@@ -1,1 +1,99 @@
-export function supportMessages() {}
+import { EmbedBuilder, type MessageCreateOptions } from "discord.js";
+
+export const TOKEN_WARNING_START = 2000;
+export const TOKEN_WARNING_INTERVAL = 1000;
+export const TOKEN_WARNING_STOP = 10000;
+const SUPPORT_GIF_URL = "https://c.tenor.com/Q70pTPV9w6YAAAAC/tenor.gif";
+
+export function usageMessage(totalUsage: number): MessageCreateOptions {
+  const remainingTokens = Math.max(TOKEN_WARNING_STOP - totalUsage, 0);
+  const embed = new EmbedBuilder()
+    .setColor(0xffb347)
+    .setTitle("Lerche Usage Notice")
+    .setDescription(
+      `**🛑 Please note the following:**
+- Lerche will stop processing TTS once **${TOKEN_WARNING_STOP.toLocaleString()} total tokens** have been used.
+- The bot is still in early development, and all costs are currently coming directly from my bank account.
+- I simply cannot cover these costs alone, so a **small Patreon subscription for power users** will be introduced soon.
+- I am sorry about this, and I do plan to add other ways to help when I can.
+
+**‼️ Please note:**
+This message was introduced on **15 June 2026**. Any usage before that date will **not** be counted toward the total, because I do not think that would be fair.
+
+If you really love the bot and want to keep using her, please reach out to me on Discord at **o._rosie_.o**. I have a Buy Me a Coffee link and can provide a temporary token allowance. (just the amount it costs me)`,
+    )
+    .addFields(
+      {
+        name: "📊 Current Total Usage",
+        value: `${totalUsage.toLocaleString()} tokens`,
+        inline: true,
+      },
+      {
+        name: "⏳ Remaining Before Cutoff",
+        value: `${remainingTokens.toLocaleString()} tokens`,
+        inline: true,
+      },
+    )
+    .setImage(SUPPORT_GIF_URL);
+
+  return { embeds: [embed] };
+}
+
+export function usageLimitReachedMessage(
+  totalUsage: number,
+): MessageCreateOptions {
+  const embed = new EmbedBuilder()
+    .setColor(0xe74c3c)
+    .setTitle("Lerche TTS Paused")
+    .setDescription(
+      [
+        `Lerche has reached the mandatory **${TOKEN_WARNING_STOP.toLocaleString()} token limit** and must stop processing TTS messages.`,
+        "",
+        "The bot is still in early development, and all current running costs are coming directly from my bank account.",
+        "I simply cannot cover these costs alone, so a **small Patreon subscription for power users** will be introduced soon.",
+        "",
+        "If you really love the bot and want to keep using her, please reach out to me on Discord at **o._rosie_.o**.",
+        "I have a Buy Me a Coffee link and can provide a temporary token allowance.",
+        "",
+        "I am sorry about this, and I do plan to add other ways to help when I can.",
+      ].join("\n"),
+    )
+    .addFields({
+      name: "📊 Current Total Usage",
+      value: `${totalUsage.toLocaleString()} tokens`,
+      inline: true,
+    })
+    .setImage(SUPPORT_GIF_URL);
+
+  return { embeds: [embed] };
+}
+
+export function shouldSendUsageMessage(
+  previousTotalUsage: number,
+  nextTotalUsage: number,
+): boolean {
+  console.log(
+    `Checking if usage message should be sent. Previous total usage: ${previousTotalUsage}, Next total usage: ${nextTotalUsage}`,
+  );
+
+  if (nextTotalUsage <= TOKEN_WARNING_START) {
+    return false;
+  }
+
+  const previousThreshold = Math.floor(
+    previousTotalUsage / TOKEN_WARNING_INTERVAL,
+  );
+  const nextThreshold = Math.floor(nextTotalUsage / TOKEN_WARNING_INTERVAL);
+
+  console.log(
+    `Previous Total Usage: ${previousTotalUsage}, Previous threshold: ${previousThreshold}, Next threshold: ${nextThreshold}`,
+  );
+
+  return (
+    nextThreshold > previousThreshold && nextTotalUsage >= TOKEN_WARNING_START
+  );
+}
+
+export function hasReachedUsageLimit(totalUsage: number): boolean {
+  return totalUsage >= TOKEN_WARNING_STOP;
+}
