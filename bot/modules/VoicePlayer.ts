@@ -19,6 +19,7 @@ export default class VoicePlayerClass {
   connection: VoiceConnection | null;
   audioInstance: AudioPlayer;
   soundQueue: AudioResource[];
+  timerChecker: NodeJS.Timeout | null;
 
   constructor(options: { idleTimeout?: number } = {}) {
     this.timeOfCreation = Date.now();
@@ -28,22 +29,27 @@ export default class VoicePlayerClass {
     this.connection = null;
     this.soundQueue = [];
     this.audioInstance = createAudioPlayer();
+    this.timerChecker = null;
 
-    this._monitorIdleState();
     this._handleEvents();
   }
 
   _setConnection(connection: VoiceConnection) {
     this.connection = connection;
+    this._monitorIdleState();
   }
 
   _removeConnection() {
+    if (this.timerChecker) {
+      clearInterval(this.timerChecker);
+      this.timerChecker = null;
+    }
     this.connection?.destroy();
     this.connection = null;
   }
 
   _monitorIdleState() {
-    setInterval(() => {
+    this.timerChecker = setInterval(() => {
       if (this.hasIdledTooLong && this.isStopped && !this.isDisconnecting) {
         this.isDisconnecting = true;
         const asset = this.getSoundAsset("disconnect.ogg");
@@ -154,5 +160,6 @@ export default class VoicePlayerClass {
   forceStop() {
     this.soundQueue = [];
     this.audioInstance.stop();
+    this._removeConnection();
   }
 }

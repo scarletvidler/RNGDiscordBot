@@ -1,14 +1,15 @@
 import { Client, Collection, Guild } from "discord.js";
 import type {
-  Channel,
   ChatInputCommandInteraction,
-  SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
+  VoiceBasedChannel,
 } from "discord.js";
 import VoicePlayerClass from "./modules/VoicePlayer.ts";
 import { DBGuildWithSettings } from "../supabase/models/guilds.ts";
 
-export type channelWithPlayer = Channel & { player?: VoicePlayerClass };
+export type channelWithPlayer = VoiceBasedChannel & {
+  player?: VoicePlayerClass;
+};
 export interface BotCommand {
   guildId?: string;
   data: SlashCommandOptionsOnlyBuilder;
