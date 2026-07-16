@@ -1,5 +1,6 @@
 import { TextChannel, type Message } from "discord.js";
 import type { BotEvent, ExtendedClient } from "../types.ts";
+import invariant from "tiny-invariant";
 import isValidTTS from "../modules/tts/isValidTTS.ts";
 import { TTSInstance } from "../modules/tts/TTSInstance.ts";
 import { sendGuildAnnouncement } from "../modules/sendGuildAnnouncement.ts";
@@ -37,9 +38,7 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
             (g) => g.id === message.guildId,
           );
           if (!guild) {
-            console.error(
-              `Guild not found for message: ${message.id}, guildId: ${message.guildId}`,
-            );
+            invariant(guild, "Guild not found in installedGuilds");
             setUpExtendedGuild(message.guild, client).catch((error) => {
               throw new Error(
                 `Failed to set up guild ${message.guildId} (${message.guild?.name})`,
