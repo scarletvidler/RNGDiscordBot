@@ -16,6 +16,7 @@ import { channelWithPlayer, ExtendedGuild } from "../types.ts";
 import isRosie from "../helpers/isRosie.ts";
 import ElevenLabs from "./ElevenLabs.ts";
 import { DBGuildWithSettings } from "../../supabase/models/guilds.ts";
+import channelHasPlayer from "../helpers/channelHasPlayer.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
@@ -27,7 +28,7 @@ export async function joinAndPlay(
       channel.guild.id,
     );
 
-    /*  TODO: 
+    /*  TODO:
      - Refactor this to use a better state management system for
      - voice connections and players, rather than relying on the channel's player property
      - and fetching the channel every time. This is a band-aid to avoid multiple connections
@@ -35,7 +36,7 @@ export async function joinAndPlay(
      - get the channel from the cache to avoid creating multiple connections to the same guild
      */
 
-    const currentChannel: channelWithPlayer | false =
+    let currentChannel: channelWithPlayer | Channel | false =
       (await clientInstance.channels.fetch(channel.id).catch((err) => {
         console.error(`Error fetching channel ${channel.id}:`, err);
       })) || false;

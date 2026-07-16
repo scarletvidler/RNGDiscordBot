@@ -7,6 +7,7 @@
   "scripts": {
     "start:bot": "tsx watch server.js",
     "start:bot:dev": "tsx watch --env-file=.env.development server.js",
+    "start:bot:psy": "tsx watch --env-file=.env.psy server.js",
     "start:server": "tsx server.js",
     "release:patch": "npm version patch",
     "release:minor": "npm version minor",
