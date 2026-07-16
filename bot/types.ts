@@ -4,11 +4,11 @@ import type {
   SlashCommandOptionsOnlyBuilder,
   VoiceBasedChannel,
 } from "discord.js";
-import VoicePlayerClass from "./modules/VoicePlayer.ts";
+import VoicePlayer from "./modules/VoicePlayer.ts";
 import { DBGuildWithSettings } from "../supabase/models/guilds.ts";
 
 export type channelWithPlayer = VoiceBasedChannel & {
-  player?: VoicePlayerClass;
+  player?: VoicePlayer;
 };
 export interface BotCommand {
   guildId?: string;

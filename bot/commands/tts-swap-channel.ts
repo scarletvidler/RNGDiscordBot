@@ -15,7 +15,7 @@ import channelHasPlayer from "../helpers/channelHasPlayer.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("swap-channel")
+    .setName("tts-swap-channel")
     .setDescription(
       "Swaps the bot's current channel to be the user's current one.",
     ),

@@ -86,6 +86,22 @@ export async function DBGetGuild(guildId: string): Promise<DBGuild | null> {
   return data;
 }
 
+export async function DBGetGuildSetting<K extends keyof DBGuild>(
+  guildId: string,
+  setting: K,
+): Promise<DBGuild[K] | null> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase
+    .from("guilds")
+    .select(setting)
+    .eq("id", guildId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? (data as Pick<DBGuild, K>)[setting] : null;
+}
+
 /*
   Creates or updates a guild record in the database. If the guild already exists, it will update the existing record with the new information. If it does not exist, it will create a new record.
 */
@@ -179,6 +195,40 @@ export async function saveGuildSettings(
   if (error) throw error;
 
   return data;
+}
+
+export async function updateTokenLimit(
+  guildId: string,
+  newLimit: number,
+): Promise<DBGuild> {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    const updatedGuild = await saveGuildSettings(guildId, {
+      token_limit: newLimit,
+    });
+    if (!updatedGuild) throw new Error("Failed to update token limit");
+    return updatedGuild;
+  } catch (error) {
+    console.error("Error updating token limit:", error);
+    throw error;
+  }
+}
+
+export async function getGuildTokenLimit(
+  guildId: string,
+): Promise<number | boolean> {
+  try {
+    const tokenLimit = await DBGetGuildSetting(guildId, "token_limit");
+    if (tokenLimit === null) {
+      console.warn(`Token limit not found for guild ${guildId}`);
+      return false;
+    }
+    return tokenLimit;
+  } catch (error) {
+    console.error("Error getting guild token limit:", error);
+    return false;
+  }
 }
 
 /*

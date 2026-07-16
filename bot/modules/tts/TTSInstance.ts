@@ -8,6 +8,7 @@ import {
   DBGuildWithSettings,
   saveGuildSettings,
 } from "../../../supabase/models/guilds.ts";
+import { shouldSendUsageMessage, usageMessage } from "../supportMessages.ts";
 
 export class TTSInstance {
   private message: Message<boolean>;
@@ -135,17 +136,29 @@ https://top.gg/bot/1511773768438251660#reviews`,
 
   async updateUsage(tokensUsed: number): Promise<void> {
     try {
+      const previousTotalUsage = this.guild.settings.logging!.tokenTotalUsage;
       const newBalance =
         this.guild.settings.logging!.tokenBalance - tokensUsed >= 0
           ? this.guild.settings.logging!.tokenBalance - tokensUsed
           : 0;
+      const nextTotalUsage = previousTotalUsage + tokensUsed;
+
       this.guild.settings.logging!.tokenBalance = newBalance;
-      this.guild.settings.logging!.tokenTotalUsage += tokensUsed;
+      this.guild.settings.logging!.tokenTotalUsage = nextTotalUsage;
 
       await saveGuildSettings(this.guild.id, {
         token_balance: this.guild.settings.logging!.tokenBalance,
         token_total_usage: this.guild.settings.logging!.tokenTotalUsage,
       });
+
+      if (
+        shouldSendUsageMessage(previousTotalUsage, nextTotalUsage, this.guild)
+      ) {
+        console.log(
+          `Sending usage message. Previous total usage: ${previousTotalUsage}, Next total usage: ${nextTotalUsage}`,
+        );
+        await this.channel.send(usageMessage(nextTotalUsage, this.guild));
+      }
     } catch (error) {
       console.error("Error updating usage:", error);
       throw new Error("Failed to update usage.");
@@ -153,7 +166,6 @@ https://top.gg/bot/1511773768438251660#reviews`,
   }
 
   async logMessageToSupabase(text: string) {
-    console.log("Logging TTS message to Supabase:", text);
     try {
       if (this.message.member) {
         await upsertGuildMember(this.message.member);
