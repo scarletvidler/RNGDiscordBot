@@ -48,11 +48,6 @@ export default class VoicePlayer {
     this.connection = null;
   }
 
-  _removeConnection() {
-    this.connection?.destroy();
-    this.connection = null;
-  }
-
   _monitorIdleState() {
     this.timerChecker = setInterval(() => {
       if (this.hasIdledTooLong && this.isStopped && !this.isDisconnecting) {
