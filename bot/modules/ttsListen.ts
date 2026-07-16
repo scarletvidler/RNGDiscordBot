@@ -61,10 +61,6 @@ export async function joinAndPlay(
         selfDeaf: true,
       });
 
-      newConn.on("stateChange", (oldState, newState) => {
-        // console.debug(`[voice] ${oldState.status} -> ${newState.status}`);
-      });
-
       // Only attach disconnect handler AFTER we've reached Ready
       newConn.once(VoiceConnectionStatus.Ready, () => {
         newConn.on(VoiceConnectionStatus.Disconnected, async () => {

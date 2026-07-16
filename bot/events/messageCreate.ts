@@ -47,10 +47,8 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
             guild = await setUpExtendedGuild(message.guild, client);
           }
 
-          if (hasReachedUsageLimit(guild.settings.logging.tokenTotalUsage)) {
-            await message.channel.send(
-              usageLimitReachedMessage(guild.settings.logging.tokenTotalUsage),
-            );
+          if (hasReachedUsageLimit(guild)) {
+            await message.channel.send(usageLimitReachedMessage(guild));
             return;
           }
 
@@ -64,7 +62,7 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
         }
       }
     } catch (error) {
-      console.error("TTS validation error:", error);
+      console.error("TTS validation error:", getErrorMessage(error));
       await message.channel.send(
         `TTS validation failed: ${getErrorMessage(error)}`,
       );

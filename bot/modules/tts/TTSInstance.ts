@@ -151,11 +151,13 @@ https://top.gg/bot/1511773768438251660#reviews`,
         token_total_usage: this.guild.settings.logging!.tokenTotalUsage,
       });
 
-      if (shouldSendUsageMessage(previousTotalUsage, nextTotalUsage)) {
+      if (
+        shouldSendUsageMessage(previousTotalUsage, nextTotalUsage, this.guild)
+      ) {
         console.log(
           `Sending usage message. Previous total usage: ${previousTotalUsage}, Next total usage: ${nextTotalUsage}`,
         );
-        await this.channel.send(usageMessage(nextTotalUsage));
+        await this.channel.send(usageMessage(nextTotalUsage, this.guild));
       }
     } catch (error) {
       console.error("Error updating usage:", error);
