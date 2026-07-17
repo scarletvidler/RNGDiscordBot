@@ -98,7 +98,8 @@ export async function startBot(): Promise<void> {
       activities: [
         {
           type: 3,
-          name: process.env.BOT_DESCRIPTION! || "Watching over RNG",
+          name:
+            process.env.BOT_DESCRIPTION! || `${botVersion}: Watching over RNG`,
         },
       ],
       status: "online",
