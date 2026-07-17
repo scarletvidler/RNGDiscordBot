@@ -1,4 +1,5 @@
 import type { BotCommand, channelWithPlayer } from "../types.ts";
+import { ExtendedClient } from "../types";
 import {
   ChatInputCommandInteraction,
   MessageFlags,
@@ -14,7 +15,10 @@ const command: BotCommand = {
   requirements: {
     userPermissions: ["Administrator"],
   },
-  async execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  async execute(
+    interaction: ChatInputCommandInteraction,
+    client: ExtendedClient,
+  ): Promise<void> {
     await interaction.deferReply({
       flags: MessageFlags.Ephemeral,
     });
@@ -23,24 +27,20 @@ const command: BotCommand = {
       return;
     }
 
-    const channel = interaction.member?.voice.channel as
-      | channelWithPlayer
-      | null;
-    if (!channel) {
+    let voiceInstance = client.activeVoiceConnections.get(interaction.guildId!);
+
+    if (!voiceInstance) {
       await interaction.editReply(
-        "You need to be in a voice channel to use this command.",
-      );
-      return;
-    }
-    // get the player for the current guild        const player = channel.player;
-    if (!channel.player) {
-      await interaction.editReply(
-        "I'm not currently playing anything in your voice channel.",
+        "No active TTS playback found in this guild.",
       );
       return;
     }
 
-    channel.player.forceStop();
+    voiceInstance.destroy({
+      destroyConnection: true,
+      playDisconnectSound: false,
+    });
+
     await interaction.editReply("TTS playback stopped and queue cleared.");
   },
 };

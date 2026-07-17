@@ -39,33 +39,18 @@ const command: BotCommand = {
 
       invariant(interaction.guildId, "Command must be used in a server.");
 
-      if (!channelHasPlayer(voiceChannel)) {
-        const cachedChannel = ClientInstance.channels.cache.find(
-          (channel): channel is channelWithPlayer => {
-            return channelHasPlayer(channel);
-          },
-        );
+      const voiceInstance = ClientInstance.activeVoiceConnections.get(
+        interaction.guildId,
+      );
 
-        invariant(cachedChannel, "No channel with a player found in cache.");
-        const voiceChannelWithPlayer = {
-          voiceChannel,
-          player: cachedChannel.player,
-        };
+      invariant(voiceInstance, "Lerche is sleeping, no voice instance found.");
 
-        if (cachedChannel.player) {
-          voiceChannelWithPlayer.player = cachedChannel.player;
-          voiceChannelWithPlayer.player._removeConnection();
-          const newConn = joinVoiceChannel({
-            channelId: voiceChannel.id,
-            guildId: interaction.guildId,
-            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-            selfDeaf: true,
-          });
-          await entersState(newConn, VoiceConnectionStatus.Ready, 30_000);
-          voiceChannelWithPlayer.player._setConnection(newConn);
-          newConn.subscribe(voiceChannelWithPlayer.player.audioInstance);
-        }
-      }
+      await voiceInstance.destroy({
+        destroyConnection: true,
+        playDisconnectSound: false,
+      });
+      voiceInstance.currentChannel = voiceChannel;
+      voiceInstance.setVoiceConnection();
 
       await interaction.reply(`Moved to ${voiceChannel.name}.`);
     } catch (error) {

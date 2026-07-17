@@ -7,7 +7,7 @@ import {
   createAudioResource,
 } from "@discordjs/voice";
 import { Readable } from "stream";
-import getDirectoryRoot from "../helpers/getDirectoryRoot.ts";
+import getDirectoryRoot from "../../helpers/getDirectoryRoot.ts";
 import path from "path";
 import fs from "fs";
 
@@ -150,13 +150,17 @@ export default class VoicePlayer {
 
   async playSoundFileDirect(sound: string): Promise<void> {
     const soundResource = createAudioResource(sound);
-    this.audioInstance.play(soundResource);
-    return new Promise((resolve, reject) => {
-      try {
-        setTimeout(() => resolve(), 7000);
-      } catch (error) {
-        reject(error);
-      }
+    await new Promise<void>((resolve, reject) => {
+      const handleIdle = () => {
+        cleanup();
+        resolve();
+      };
+
+      const cleanup = () => {
+        this.audioInstance.off(AudioPlayerStatus.Idle, handleIdle);
+      };
+      this.audioInstance.once(AudioPlayerStatus.Idle, handleIdle);
+      this.audioInstance.play(soundResource);
     });
   }
 
@@ -168,6 +172,15 @@ export default class VoicePlayer {
   forceStop() {
     this.soundQueue = [];
     this.audioInstance.stop();
-    this._removeConnection();
+  }
+
+  destroy() {
+    this.soundQueue = [];
+    this.connection = null;
+    if (this.timerChecker) {
+      clearInterval(this.timerChecker);
+      this.timerChecker = null;
+    }
+    this.audioInstance.stop();
   }
 }

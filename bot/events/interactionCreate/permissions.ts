@@ -18,7 +18,6 @@ export async function ensureCommandPermissions(
   ) {
     await interaction.reply({
       content: `You lack the following permissions to use this command: ${missingPermissions.join(", ")}`,
-      flags: MessageFlags.Ephemeral,
     });
     return false;
   }

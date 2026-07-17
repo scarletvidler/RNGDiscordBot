@@ -1,25 +1,32 @@
 import { Message, TextChannel } from "discord.js";
-import { joinAndPlay } from "../ttsListen.ts";
-import { ExtendedGuild } from "../../types.ts";
+import type { ExtendedClient } from "../../types.ts";
 import { insertGuildChatLog } from "../../../supabase/models/chatLogs.ts";
 import { upsertGuildMember } from "../../../supabase/models/users.ts";
 import {
-  DBGuild,
   DBGuildWithSettings,
   saveGuildSettings,
 } from "../../../supabase/models/guilds.ts";
 import { shouldSendUsageMessage, usageMessage } from "../supportMessages.ts";
+import VoiceInstance from "../voice/VoiceInstance.ts";
+import convertToSpeech from "./convertToSpeech.ts";
+import invariant from "tiny-invariant";
 
 export class TTSInstance {
   private message: Message<boolean>;
   public channel: TextChannel;
   public reply?: Message;
   private guild: DBGuildWithSettings;
+  private client: ExtendedClient;
 
-  constructor(message: Message<boolean>, guild: DBGuildWithSettings) {
+  constructor(
+    message: Message<boolean>,
+    guild: DBGuildWithSettings,
+    client: ExtendedClient,
+  ) {
     this.message = message;
     this.guild = guild;
     this.channel = message.channel as TextChannel;
+    this.client = client;
   }
 
   checkIfRepliesAreEnabled(): boolean {
@@ -29,22 +36,23 @@ export class TTSInstance {
   static async create(
     message: Message<boolean>,
     guild: DBGuildWithSettings,
+    client: ExtendedClient,
   ): Promise<TTSInstance> {
-    const instance = new TTSInstance(message, guild);
+    const instance = new TTSInstance(message, guild, client);
     instance.reply = await instance.sendMessage(
       "Listening for TTS messages...",
     );
     return instance;
   }
 
-  async sendMessage(messageToSet: string) {
+  async sendMessage(messageToSend: string) {
     try {
       if (!this.checkIfRepliesAreEnabled()) {
         console.log("Replies are disabled for this guild. Skipping reply.");
         return;
       }
       // Create an ephemeral reply to the user to confirm that their TTS message is being processed
-      return await this.channel.send(messageToSet);
+      return await this.channel.send(messageToSend);
     } catch (error) {
       console.error("Error sending TTS message:", error);
       throw new Error("Failed to send TTS message.");
@@ -52,14 +60,33 @@ export class TTSInstance {
   }
 
   async run() {
+    let voiceInstance = this.client.activeVoiceConnections.get(this.guild.id);
     try {
-      // Placeholder for TTS logic, e.g., converting text to speech and playing it in a voice channel
+      // Get or create a VoiceInstance for the guild and join the user's voice channel to play the TTS message
+
       if (this.message.member && this.message.member.voice.channel) {
-        const { messagePlayed, tokensUsed } = await joinAndPlay(
-          this.message.member.voice.channel,
-          this.message,
-          this.guild,
-        );
+        if (!voiceInstance) {
+          voiceInstance = new VoiceInstance(
+            this.guild,
+            this.client,
+            this.message.member.voice.channel!,
+          );
+        }
+        voiceInstance.resetIdleCountdown();
+
+        if (
+          voiceInstance.player.soundQueue.length === 0 &&
+          !voiceInstance.player.isPlaying
+        ) {
+          const pingAsset = voiceInstance.player.getSoundAsset("ping.ogg");
+          if (pingAsset) voiceInstance.player.playSoundFile(pingAsset);
+        }
+
+        const { audio, playedMessage, tokensUsed } =
+          await this.convertToTTSMessage(this.message);
+        voiceInstance.player.playSoundFile(audio);
+        voiceInstance.resetIdleCountdown();
+
         if (this.reply) {
           await this.reply.edit("Message played in voice channel.");
         }
@@ -70,8 +97,8 @@ export class TTSInstance {
 https://top.gg/bot/1511773768438251660#reviews`,
           );
         }
-        this.logMessageDetails(messagePlayed);
-        await this.logMessageToSupabase(messagePlayed);
+        this.logMessageDetails(playedMessage);
+        await this.logMessageToSupabase(playedMessage);
         await this.updateUsage(tokensUsed);
       } else {
         console.warn("User is not in a voice channel. Cannot play TTS.");
@@ -83,6 +110,16 @@ https://top.gg/bot/1511773768438251660#reviews`,
       console.error("Error running TTS:", error);
       throw new Error("Failed to run TTS.");
     }
+  }
+
+  async convertToTTSMessage(
+    message: Message<boolean>,
+  ): Promise<{ audio: any; playedMessage: string; tokensUsed: number }> {
+    const { audio, playedMessage, tokensUsed } = await convertToSpeech(message);
+    console.log(
+      `Audio stream received from ElevenLabs with ${tokensUsed} tokens used.`,
+    );
+    return { audio, playedMessage, tokensUsed };
   }
 
   // TODO: MOVE TO GUILD CLASS

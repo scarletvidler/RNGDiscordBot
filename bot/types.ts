@@ -4,7 +4,8 @@ import type {
   SlashCommandOptionsOnlyBuilder,
   VoiceBasedChannel,
 } from "discord.js";
-import VoicePlayer from "./modules/VoicePlayer.ts";
+import type VoiceInstance from "./modules/voice/VoiceInstance.ts";
+import VoicePlayer from "./modules/voice/VoicePlayer.ts";
 import { DBGuildWithSettings } from "../supabase/models/guilds.ts";
 
 export type channelWithPlayer = VoiceBasedChannel & {
@@ -42,9 +43,11 @@ export class ExtendedClient extends Client {
   prefix!: string;
   commands: Collection<string, BotCommand>;
   installedGuilds!: DBGuildWithSettings[];
+  activeVoiceConnections: Map<Guild["id"], VoiceInstance> = new Map();
   constructor(options: any) {
     super(options);
     this.commands = new Collection();
+    this.activeVoiceConnections = new Map();
   }
 }
 

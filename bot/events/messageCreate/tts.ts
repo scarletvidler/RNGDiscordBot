@@ -8,7 +8,7 @@ import {
   hasReachedUsageLimit,
   usageLimitReachedMessage,
 } from "../../modules/supportMessages.ts";
-import { getErrorMessage } from "./errors.ts";
+import { getErrorMessage } from "../../helpers/errors.ts";
 
 export async function handleTtsMessage(
   message: Message<true>,
@@ -32,7 +32,7 @@ export async function handleTtsMessage(
         return;
       }
 
-      const tts = await TTSInstance.create(message, guild);
+      const tts = await TTSInstance.create(message, guild, client);
       await tts.run();
     } catch (error) {
       console.error("Error processing TTS message:", error);
