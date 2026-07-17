@@ -5,13 +5,10 @@ import { registerSlashCommands } from "./modules/registerSlashCommands.ts";
 import "dotenv/config";
 import getDirectoryRoot from "./helpers/getDirectoryRoot.ts";
 import { pathToFileURL } from "url";
-import { ExtendedGuild, type BotCommand, type BotEvent } from "./types.ts";
-import { getGuilds } from "./api/getGuilds.ts";
-import clientInstance from "./modules/client.ts";
+import { type BotCommand, type BotEvent } from "./types.ts";
+import ClientInstance from "./modules/ClientInstance.ts";
 import setUpGuilds from "./modules/setUpGuilds.ts";
 import { botVersion } from "./version.ts";
-
-const client = clientInstance;
 
 console.log(`Starting Lerche Discord Bot v${botVersion}`);
 
@@ -32,7 +29,10 @@ async function loadCommands(dir: string): Promise<void> {
       const module = await import(moduleUrl);
       const raw = module.default ?? module;
       if (raw?.data?.name && typeof raw.execute === "function") {
-        client.commands.set((raw as BotCommand).data.name, raw as BotCommand);
+        ClientInstance.commands.set(
+          (raw as BotCommand).data.name,
+          raw as BotCommand,
+        );
         console.log(`Registering command: ⚡ ${(raw as BotCommand).data.name}`);
       } else {
         console.warn(
@@ -56,18 +56,20 @@ async function loadEvents(dir: string): Promise<void> {
       await loadEvents(fullPath);
     } else if (
       dirent.isFile() &&
-      (dirent.name.endsWith(".js") || dirent.name.endsWith(".ts"))
+      (dirent.name.endsWith(".event.js") || dirent.name.endsWith(".event.ts"))
     ) {
       const moduleUrl = pathToFileURL(fullPath).href;
       const module = await import(moduleUrl);
-      console.log(
-        `Registering event: 📒 ${dirent.name.replace(/\.(js|ts)$/, "")}`,
-      );
+      const eventLabel = path
+        .relative(eventsDir, fullPath)
+        .replace(/\\/g, "/")
+        .replace(/\.(js|ts)$/, "");
+      console.log(`Registering event: 📒 ${eventLabel}`);
       const raw = module.default ?? module;
       if (typeof raw?.type === "string" && typeof raw.execute === "function") {
         const event = raw as BotEvent;
-        client.on(event.type, (...args: unknown[]) =>
-          (event.execute as (...a: unknown[]) => void)(...args, client),
+        ClientInstance.on(event.type, (...args: unknown[]) =>
+          (event.execute as (...a: unknown[]) => void)(...args, ClientInstance),
         );
       } else {
         console.warn(
@@ -81,18 +83,18 @@ async function loadEvents(dir: string): Promise<void> {
 loadEvents(eventsDir).catch(console.error);
 
 export async function startBot(): Promise<void> {
-  client.once("clientReady", async () => {
-    console.log(`🤖 Logged in as ${client.user?.tag}`);
+  ClientInstance.once("clientReady", async () => {
+    console.log(`🤖 Logged in as ${ClientInstance.user?.tag}`);
 
-    const guildIds = await setUpGuilds(client);
+    const guildIds = await setUpGuilds(ClientInstance);
     registerSlashCommands(
-      client,
+      ClientInstance,
       process.env.CLIENT_ID!,
       guildIds,
       process.env.BOT_TOKEN!,
     );
 
-    client.user!.setPresence({
+    ClientInstance.user!.setPresence({
       activities: [
         {
           type: 3,
@@ -102,10 +104,10 @@ export async function startBot(): Promise<void> {
       status: "online",
     });
 
-    client.user!.setStatus("online");
+    ClientInstance.user!.setStatus("online");
   });
 
-  client.login(process.env.BOT_TOKEN!);
+  ClientInstance.login(process.env.BOT_TOKEN!);
 
   return Promise.resolve();
 }

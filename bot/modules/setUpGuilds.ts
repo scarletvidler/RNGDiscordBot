@@ -1,5 +1,5 @@
 import { Guild } from "discord.js";
-import { APIGuild, ExtendedClient, ExtendedGuild } from "../types.ts";
+import { APIGuild, ExtendedClient } from "../types.ts";
 import { getGuilds } from "../api/getGuilds.ts";
 import {
   DBGetGuild,
@@ -8,10 +8,7 @@ import {
   ensureGuildTtsSettings,
   getOrCreateDBGuild,
 } from "../../supabase/models/guilds.ts";
-import { upsertDiscordUser } from "../../supabase/models/users.ts";
-import { APIGetUserByGuild } from "../api/getUser.ts";
-import invariant from "tiny-invariant";
-import client from "./client.ts";
+import ClientInstance from "./ClientInstance.ts";
 
 export default async function setUpGuilds(
   client: ExtendedClient,
@@ -60,10 +57,10 @@ function defaultGuildSettings() {
     tts: {
       repliesEnabled: true,
       roomPrefixEnabled: false,
-      femaleVoiceId: client.femaleRoleId,
-      maleVoiceId: client.maleRoleId,
-      ttsChannelName: client.ttsChannelName,
-      idleTimeout: client.idleTimeout,
+      femaleVoiceId: ClientInstance.femaleRoleId,
+      maleVoiceId: ClientInstance.maleRoleId,
+      ttsChannelName: ClientInstance.ttsChannelName,
+      idleTimeout: ClientInstance.idleTimeout,
     },
     logging: {
       messageCount: 0,

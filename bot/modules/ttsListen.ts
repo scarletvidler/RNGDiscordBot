@@ -7,16 +7,12 @@ import {
   VoiceConnection,
 } from "@discordjs/voice";
 import { Channel, type Message, type VoiceBasedChannel } from "discord.js";
-import { Readable } from "stream";
 import VoicePlayer from "./VoicePlayer.ts";
-import clientInstance from "./client.ts";
-import { getCleanName } from "../helpers/getClean.ts";
+import ClientInstance from "./ClientInstance.ts";
 import invariant from "tiny-invariant";
-import { channelWithPlayer, ExtendedGuild } from "../types.ts";
-import isRosie from "../helpers/isRosie.ts";
-import ElevenLabs from "./ElevenLabs.ts";
+import { channelWithPlayer } from "../types.ts";
 import { DBGuildWithSettings } from "../../supabase/models/guilds.ts";
-import channelHasPlayer from "../helpers/channelHasPlayer.ts";
+import convertMessageToSpeech from "./tts/convertToSpeech.ts";
 
 export async function joinAndPlay(
   channel: VoiceBasedChannel,
@@ -37,7 +33,7 @@ export async function joinAndPlay(
      */
 
     let currentChannel: channelWithPlayer | Channel | false =
-      (await clientInstance.channels.fetch(channel.id).catch((err) => {
+      (await ClientInstance.channels.fetch(channel.id).catch((err) => {
         console.error(`Error fetching channel ${channel.id}:`, err);
       })) || false;
     invariant(currentChannel, "Channel not found in cache");
@@ -104,128 +100,4 @@ export async function joinAndPlay(
     console.error("Error in joinAndPlay:", error);
     throw error;
   }
-}
-
-function validateMessageContent(message: Message<boolean>): string {
-  try {
-    let content = message.content.trim();
-    const roomPrefixEnabled =
-      clientInstance.installedGuilds.find((g) => g.id === message.guildId)
-        ?.settings.tts.roomPrefixEnabled ?? false;
-
-    if (roomPrefixEnabled) {
-      content = content.replace(/^\/t(?:\s+|$)/i, "").trim();
-    }
-
-    content = content.replace(/\n/g, " ");
-
-    message.mentions.users.forEach((user) => {
-      console.log(user.globalName?.match(/^[\x00-\x7F]+$/));
-      const name = getCleanName(user);
-      content = content.replace(`<@${user.id}>`, name);
-    });
-
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    content = content.replace(urlRegex, (match) => {
-      const url = new URL(match);
-      return `A link to $${url.hostname} was sent by ${getCleanName(
-        message.author,
-      )}`;
-    });
-
-    return content;
-  } catch (error) {
-    const err = error as Error;
-    console.error("Error processing message content:", err);
-    return `Sorry, I couldn't process that message. Here is why: ${err.message}`;
-  }
-}
-
-async function convertMessageToSpeech(
-  message: Message<boolean>,
-): Promise<{ audio: Readable; playedMessage: string; tokensUsed: number }> {
-  let voiceId = clientInstance.installedGuilds.find(
-    (g) => g.id === message.guildId,
-  )?.settings.tts.femaleVoiceId;
-  // if the user has a role called "male" change to using the male voice (Adam - 21mL7)
-  const member = message.member;
-  if (member) {
-    const hasMaleRole = member.roles.cache.some(
-      (role) => role.name.toLowerCase() === "male",
-    );
-    if (hasMaleRole) {
-      voiceId = clientInstance.installedGuilds.find(
-        (g) => g.id === message.guildId,
-      )?.settings.tts.maleVoiceId as string;
-    }
-  }
-
-  if (isRosie(member as any) && process.env.ADMIN_OVERRIDE === "true") {
-    voiceId = "kdmDKE6EkgrWrrykO9Qt";
-  }
-
-  if (!voiceId) {
-    throw new Error("No voiceId configured for this guild.");
-  }
-
-  const text = validateMessageContent(message);
-  const elevenlabs = ElevenLabs.getInstance();
-
-  try {
-    const { data, rawResponse } = await elevenlabs.convertTextToSpeech(
-      voiceId,
-      text,
-    );
-    if (!data) {
-      console.error(
-        `ElevenLabs returned no audio stream for voice ${voiceId} (status ${rawResponse.status}).`,
-      );
-      throw new Error(
-        `ElevenLabs returned no audio stream for voice ${voiceId} (status ${rawResponse.status}).`,
-      );
-    }
-    const content = await streamToBuffer(data);
-    const tokensUsed = rawResponse.headers.get("character-cost") ?? 0; // Example calculation, replace with actual token usage logic
-
-    console.log(`TTS conversion successful. Tokens used: ${tokensUsed}`);
-
-    // convert the buffer to a Readable stream
-    const audio = Readable.from([content]);
-    return { audio, playedMessage: text, tokensUsed: Number(tokensUsed) };
-  } catch (error) {
-    console.error("❌ Error converting text to speech:", error);
-    throw error;
-  }
-}
-
-async function streamToBuffer(
-  stream:
-    | ReadableStream<Uint8Array<ArrayBufferLike>>
-    | AsyncIterable<Uint8Array<ArrayBufferLike>>,
-): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-
-  if (!stream) {
-    throw new Error("Cannot read audio stream from ElevenLabs response.");
-  }
-
-  if (Symbol.asyncIterator in stream) {
-    for await (const chunk of stream) {
-      chunks.push(Buffer.from(chunk));
-    }
-    return Buffer.concat(chunks);
-  }
-
-  const reader = stream.getReader();
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(Buffer.from(value));
-    }
-  } finally {
-    reader.releaseLock();
-  }
-
-  return Buffer.concat(chunks);
 }

@@ -3,7 +3,7 @@ import {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
-import clientInstance from "../modules/client.ts";
+import ClientInstance from "../modules/ClientInstance.ts";
 import invariant from "tiny-invariant";
 import { BotCommand, channelWithPlayer } from "../types.ts";
 import {
@@ -40,7 +40,7 @@ const command: BotCommand = {
       invariant(interaction.guildId, "Command must be used in a server.");
 
       if (!channelHasPlayer(voiceChannel)) {
-        const cachedChannel = clientInstance.channels.cache.find(
+        const cachedChannel = ClientInstance.channels.cache.find(
           (channel): channel is channelWithPlayer => {
             return channelHasPlayer(channel);
           },

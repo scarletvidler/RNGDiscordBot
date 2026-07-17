@@ -1,0 +1,2 @@
+export const ANNOUNCE_GUILD_ID = "1179157503766962176";
+export const ANNOUNCE_CHANNEL_NAME = "announce";

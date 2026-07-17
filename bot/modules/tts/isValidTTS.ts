@@ -1,9 +1,9 @@
 import { Message, Role } from "discord.js";
-import clientInstance from "../client.ts";
+import ClientInstance from "../ClientInstance.ts";
 import isRosie from "../../helpers/isRosie.ts";
 
 export default function isValidTTS(message: Message<true>): boolean {
-  const guild = clientInstance.installedGuilds.find(
+  const guild = ClientInstance.installedGuilds.find(
     (g) => g.id === message.guildId,
   );
   const ttsChannel = guild?.settings.tts.ttsChannelName || "tts";
@@ -41,7 +41,7 @@ export default function isValidTTS(message: Message<true>): boolean {
   if (ttsContent.length === 0) throw new Error("TTS message cannot be empty.");
   if (
     ttsContent.length > maxLength &&
-    message.member?.id !== clientInstance.ownerId
+    message.member?.id !== ClientInstance.ownerId
   )
     throw new Error(
       `TTS message exceeds maximum length of ${maxLength} characters.`,
