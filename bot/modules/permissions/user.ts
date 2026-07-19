@@ -2,28 +2,31 @@ import {
   GuildMember,
   PermissionsBitField,
   PermissionResolvable,
-  Role,
 } from "discord.js";
+import {
+  getPermission,
+  hasRole,
+  listPermissions,
+  listRoles,
+} from "./api.ts";
 
 export function getUserRoles(member: GuildMember): string[] {
-  const roles = member.roles.cache.map((role: Role) => role.name);
-  return roles;
+  return listRoles(member);
 }
 
 export function userHasRole(member: GuildMember, roleName: string): boolean {
-  return member.roles.cache.some((role: Role) => role.name === roleName);
+  return hasRole(member, roleName);
 }
 
 export function userHasPermission(
   member: GuildMember,
   permission: PermissionResolvable,
 ): boolean {
-  return member.permissions.has(permission);
+  return getPermission(member, permission);
 }
 
 export function getUserPermissions(member: GuildMember): string[] {
-  const permissions = member.permissions.toArray();
-  return permissions;
+  return listPermissions(member);
 }
 
 export function userIsAdmin(member: GuildMember): boolean {

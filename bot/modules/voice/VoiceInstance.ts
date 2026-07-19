@@ -218,6 +218,7 @@ export default class VoiceInstance {
 
     try {
       await this.player.playSoundFileDirect(asset);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (error) {
       console.warn("Failed to play disconnect sound before teardown:", error);
     }

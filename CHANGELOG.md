@@ -14,6 +14,18 @@ The bot's event and TTS systems have been split into smaller, clearer modules, w
 
 Thank you again for using Lerche and for reporting the odd little voice gremlins when you find them 😊
 
+## VERSION 1.3.0
+
+Lerche has grown much faster than I expected, and the running costs have grown with her. Version 1.3.0 introduces Patreon support for heavier users so that I can keep the bot available without paying every server's voice-generation costs entirely out of pocket.
+
+TTS usage is now tracked separately for each server, with its own configurable token allowance. Lerche will start posting occasional notices as a server approaches its allowance and will pause TTS once the limit is reached. The warning thresholds have been adjusted so that the messages arrive at useful intervals without becoming spammy.
+
+If your server reaches its limit and you would like to keep using Lerche, please contact me on Discord at `o._rosie_.o`. Patreon supporters can receive an increased allowance based on their usage, and I will always try to keep the cost as small and fair as possible.
+
+This update also fixes the Discord username formatting in usage notices and includes a refreshed README explaining Lerche's commands, permissions, usage tracking, and current limits.
+
+Thank you for supporting Lerche and helping me keep her running ❤️
+
 ## 0.1.0
 
 - Added project versioning through `package.json`.
