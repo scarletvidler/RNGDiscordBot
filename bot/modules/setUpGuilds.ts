@@ -77,7 +77,22 @@ export async function getExtendedGuild(
   const DBGuild = await DBGetGuild(guildId);
   if (!DBGuild) {
     console.error(`Guild with ID ${guildId} not found in database.`);
-    throw new Error(`Guild with ID ${guildId} not found in database.`);
+    return setUpGuild(
+      {
+        id: guildId,
+        name: "Unknown Guild",
+        owner_id: "Unknown Owner",
+        joined_at: new Date().toISOString(),
+        left_at: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        message_count: 0,
+        token_total_usage: 0,
+        token_balance: 10000,
+        token_limit: 10000,
+      },
+      defaultGuildSettings(),
+    );
   }
   const settings = await ensureGuildTtsSettings(
     guildId,

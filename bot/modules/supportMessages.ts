@@ -18,7 +18,8 @@ export function usageMessage(
       `**🛑 Please note the following:**
 - Lerche will stop processing TTS once **${allowance.toLocaleString()} total tokens** have been used.
 - The bot is still in early development, and all costs are currently coming directly from my bank account.
-- I simply cannot cover these costs alone, so a **small Patreon subscription for power users** will be introduced soon.
+- I simply cannot cover these costs alone, If you really love the bot and want to keep using her, please reach out to me on Discord at **o._rosie_.o**.
+- I have a Patreon at https://www.patreon.com/cw/LercheTTS where you can support the bot's development and get more tokens monthly,
 - I am sorry about this, and I do plan to add other ways to help when I can.
 
 **‼️ Please note:**
@@ -59,7 +60,7 @@ export function usageLimitReachedMessage(
         "I simply cannot cover these costs alone, so a **small Patreon subscription for power users** will be introduced soon.",
         "",
         "If you really love the bot and want to keep using her, please reach out to me on Discord at `o._rosie_.o`.",
-        "I have a Buy Me a Coffee link and can provide a temporary token allowance.",
+        "I have a Patreon at https://www.patreon.com/cw/LercheTTS where you can support the bot's development and get more tokens monthly",
         "",
         "I am sorry about this, and I do plan to add other ways to help when I can.",
       ].join("\n"),
