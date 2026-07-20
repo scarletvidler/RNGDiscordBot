@@ -65,8 +65,8 @@ function defaultGuildSettings() {
     logging: {
       messageCount: 0,
       tokenTotalUsage: 0,
-      tokenBalance: 0,
-      tokenLimit: 0,
+      tokenBalance: 10000,
+      tokenLimit: 10000,
     },
   };
 }
