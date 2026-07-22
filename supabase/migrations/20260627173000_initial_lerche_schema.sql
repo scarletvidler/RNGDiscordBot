@@ -13,7 +13,7 @@ create table if not exists public.user (
 
 create table if not exists public.guild (
   id text unique not null,
-  guild_name text not null,
+  name text not null,
   owner_id text references public.user(id) on delete set null,
   joined_at timestamptz not null default now(),
   left_at timestamptz,

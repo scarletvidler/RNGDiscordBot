@@ -19,7 +19,7 @@ export async function upsertGuild(
     .upsert(
       {
         id: guild.id,
-        guild_name: guild.name,
+        name: guild.name,
         ...rows,
       },
       {

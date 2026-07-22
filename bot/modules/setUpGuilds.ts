@@ -3,10 +3,10 @@ import { ExtendedClient, ExtendedGuild } from "../types.ts";
 import { getGuilds } from "../api/getGuilds.ts";
 import client from "./client.ts";
 import {
-  DBGuild,
   ensureGuildTtsSettings,
   upsertGuild,
 } from "../../supabase/modules/guild.ts";
+import { DBGuild } from "../../supabase/types/guild.ts";
 
 export default async function setUpGuilds(
   client: ExtendedClient,
