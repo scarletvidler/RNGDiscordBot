@@ -18,13 +18,24 @@ create table if not exists public.pokemon (
   unique (pokedex_id, form_id)
 );
 
+
 create table if not exists public.user_pokemon (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
-  user_id text not null references public.guild_members(user_id) on delete cascade,
-  pokemon_id bigint not null references public.pokemon(id) on delete cascade,
+
+  guild_id text not null,
+  user_id text not null,
+
+  pokemon_id bigint not null
+    references public.pokemon(id) on delete cascade,
+
   shiny boolean not null default false,
-  unique (user_id, pokemon_id, shiny)
+
+  foreign key (guild_id, user_id)
+    references public.guild_members(guild_id, user_id)
+    on delete cascade,
+
+  unique (guild_id, user_id, pokemon_id, shiny)
 );
 
 
