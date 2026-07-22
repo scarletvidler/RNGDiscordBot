@@ -15,7 +15,7 @@ export async function upsertGuild(
   if (!supabase) throw new Error("Supabase client not initialized");
   onConflictRows = ["id", ...onConflictRows];
   const { data, error } = await supabase
-    .from("guild")
+    .from("guilds")
     .upsert(
       {
         id: guild.id,
@@ -94,7 +94,7 @@ export async function saveGuildSettings(
   if (!supabase) throw new Error("Supabase client not initialized");
   // Update the guild settings and return the updated row
   const { data, error } = await supabase
-    .from("guild")
+    .from("guilds")
     .update(rows)
     .eq("id", guildId)
     .select()

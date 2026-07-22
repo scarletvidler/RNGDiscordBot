@@ -33,7 +33,7 @@ export const getUserProfile = async (
       .throwOnError();
 
     await supabase
-      .from("guild")
+      .from("guilds")
       .upsert(
         { id: discordServerId, name: serverName ?? "Unknown Server" },
         { onConflict: "id" },
