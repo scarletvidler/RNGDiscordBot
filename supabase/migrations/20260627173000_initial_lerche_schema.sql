@@ -149,6 +149,9 @@ alter table public.guild_tts_settings enable row level security;
 alter table public.guild_command_settings enable row level security;
 alter table public.guild_chat_logs enable row level security;
 
+alter table public.pokemon enable row level security;
+alter table public.user_pokemon enable row level security;
+
 create policy "Profiles are readable by authenticated users"
   on public.profiles for select
   to authenticated
