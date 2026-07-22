@@ -41,3 +41,9 @@ create table if not exists public.user_pokemon (
 
 alter table public.pokemon enable row level security;
 alter table public.user_pokemon enable row level security;
+
+-- add constraint unique (guild_id, user_id, pokemon_id, shiny)
+alter table public.user_pokemon
+  add constraint user_pokemon_unique unique (guild_id, user_id, pokemon_id, shiny);
+
+
