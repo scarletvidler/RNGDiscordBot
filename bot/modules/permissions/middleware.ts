@@ -1,4 +1,9 @@
-import { Guild, type PermissionResolvable } from "discord.js";
+import {
+  Guild,
+  GuildChannel,
+  GuildChannelResolvable,
+  type PermissionResolvable,
+} from "discord.js";
 import { type PermissionIdentifier } from "./permissionNames.ts";
 
 export interface LerchePermissionCheckResult {
@@ -6,19 +11,34 @@ export interface LerchePermissionCheckResult {
   missingPermissions: string[];
 }
 
-async function getLercheMemberPermissions(
+export async function getLercheMemberPermissions(
   guild: Guild,
 ): Promise<PermissionResolvable[] | null> {
-  const me = guild.members.me ?? (await guild.members.fetchMe().catch(() => null));
+  const me =
+    guild.members.me ?? (await guild.members.fetchMe().catch(() => null));
   if (!me) return null;
   return me.permissions.toArray();
+}
+
+export async function getLercheMemberPermissionsInChannel(
+  guild: Guild,
+  channel: GuildChannelResolvable,
+): Promise<PermissionResolvable[] | null> {
+  const me =
+    guild.members.me ?? (await guild.members.fetchMe().catch(() => null));
+  if (!me) return null;
+  const permissionsInChannel = me.permissionsIn(channel);
+  return permissionsInChannel.toArray();
 }
 
 export async function canLerchePerformAction(
   guild: Guild,
   requiredPermissions: PermissionIdentifier[],
+  channel?: GuildChannelResolvable,
 ): Promise<LerchePermissionCheckResult> {
-  const lerchePermissions = await getLercheMemberPermissions(guild);
+  const lerchePermissions = channel
+    ? await getLercheMemberPermissionsInChannel(guild, channel)
+    : await getLercheMemberPermissions(guild);
   if (!lerchePermissions) {
     return {
       allowed: false,
@@ -28,7 +48,9 @@ export async function canLerchePerformAction(
     };
   }
 
-  const permissions = new Set(lerchePermissions.map((permission) => permission.toString()));
+  const permissions = new Set(
+    lerchePermissions.map((permission) => permission.toString()),
+  );
   const missingPermissions = requiredPermissions
     .map((permission) => permission.toString())
     .filter((permission) => !permissions.has(permission));
@@ -42,12 +64,22 @@ export async function canLerchePerformAction(
 export async function assertLercheCanPerformAction(
   guild: Guild,
   requiredPermissions: PermissionIdentifier[],
-  actionName = "this action",
-): Promise<void> {
+): Promise<boolean> {
   const result = await canLerchePerformAction(guild, requiredPermissions);
-  if (result.allowed) return;
+  if (result.allowed) return true;
+  return false;
+}
 
-  throw new Error(
-    `Lerche cannot perform ${actionName}. Missing permissions: ${result.missingPermissions.join(", ")}`,
+export async function assertLercheCanPerformActionInChannel(
+  guild: Guild,
+  channel: GuildChannelResolvable,
+  requiredPermissions: PermissionIdentifier[],
+): Promise<boolean> {
+  const result = await canLerchePerformAction(
+    guild,
+    requiredPermissions,
+    channel,
   );
+  if (result.allowed) return true;
+  return false;
 }

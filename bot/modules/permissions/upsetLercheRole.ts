@@ -1,33 +1,38 @@
 import { Guild, type Role } from "discord.js";
 import { PermissionName } from "./permissionNames.ts";
 import { upsetRole, setRolePermissions } from "./roles/api.ts";
-import { assertLercheCanManageRole, assertLercheCanManageRoles } from "./roles/middleware.ts";
+import {
+  assertLercheCanManageRole,
+  assertLercheCanManageRoles,
+} from "./roles/middleware.ts";
 
 const LERCHE_LISTENS_ROLE_NAME = "Lerche Listens";
 
 const LERCHE_LISTENS_ROLE_PERMISSIONS: PermissionName[] = [
-	PermissionName.ViewChannel,
-	PermissionName.SendMessages,
-	PermissionName.ReadMessageHistory,
-	PermissionName.Connect,
-	PermissionName.Speak,
+  PermissionName.ViewChannel,
+  PermissionName.SendMessages,
+  PermissionName.ReadMessageHistory,
+  PermissionName.Connect,
+  PermissionName.Speak,
 ];
 
-export async function upsetLercheRole(guild: Guild): Promise<Role> {
-	await assertLercheCanManageRoles(guild);
+export async function upsetLercheRole(
+  guild: Guild,
+  lercheListenRoleName: string = LERCHE_LISTENS_ROLE_NAME,
+): Promise<Role> {
+  await assertLercheCanManageRoles(guild);
 
-	const role = await upsetRole(guild, LERCHE_LISTENS_ROLE_NAME, {
-		mentionable: false,
-		hoist: false,
-		reason: "Ensure Lerche listens role exists",
-	});
+  const role = await upsetRole(guild, lercheListenRoleName, {
+    mentionable: false,
+    hoist: false,
+    reason: "Ensure Lerche listens role exists",
+  });
 
-	await assertLercheCanManageRole(guild, role);
+  await assertLercheCanManageRole(guild, role);
 
-	return setRolePermissions(
-		role,
-		LERCHE_LISTENS_ROLE_PERMISSIONS,
-		"Ensure Lerche listens role permissions",
-	);
+  return setRolePermissions(
+    role,
+    LERCHE_LISTENS_ROLE_PERMISSIONS,
+    "Ensure Lerche listens role permissions",
+  );
 }
-
