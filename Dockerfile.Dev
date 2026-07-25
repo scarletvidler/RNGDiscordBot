@@ -35,4 +35,4 @@ COPY . .
 # but "bash -c" will run both in background properly).
 # -----------------------------------------------------
 
-CMD ["bash", "-c", "npm run start:server"]
+CMD ["sh", "-c", "npm run start:server"]
