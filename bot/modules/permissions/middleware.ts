@@ -60,26 +60,3 @@ export async function canLerchePerformAction(
     missingPermissions,
   };
 }
-
-export async function assertLercheCanPerformAction(
-  guild: Guild,
-  requiredPermissions: PermissionIdentifier[],
-): Promise<boolean> {
-  const result = await canLerchePerformAction(guild, requiredPermissions);
-  if (result.allowed) return true;
-  return false;
-}
-
-export async function assertLercheCanPerformActionInChannel(
-  guild: Guild,
-  channel: GuildChannelResolvable,
-  requiredPermissions: PermissionIdentifier[],
-): Promise<boolean> {
-  const result = await canLerchePerformAction(
-    guild,
-    requiredPermissions,
-    channel,
-  );
-  if (result.allowed) return true;
-  return false;
-}

@@ -5,7 +5,7 @@ import { saveGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-male-voice")
+    .setName("tts-m-voice-paid-feature")
     .setDescription("Sets the male TTS voice ID for this guild.")
     .addStringOption((option) =>
       option
@@ -18,32 +18,29 @@ const command: BotCommand = {
   },
   async execute(interaction, client) {
     await interaction.deferReply();
-    const guild = client.installedGuilds.find(
+    const extendedGuild = client.installedGuilds.find(
       (g) => g.id === interaction.guildId,
     );
-    if (!guild) {
+    if (!extendedGuild) {
       await interaction.editReply("This command can only be used in a guild.");
       return;
     }
-    // const voiceId = interaction.options.getString("voice-id", true);
-    // const extendedGuild = guild as any;
+    let voiceId = interaction.options.getString("voice-id", true);
+    const ElevenLabsInstance = ElevenLabs.getInstance();
 
-    // await ElevenLabs.getInstance()
-    //   .getVoiceName(voiceId)
-    //   .catch(async (error) => {
-    //     console.error("Error fetching voice name:", error);
-    //     await interaction.editReply(
-    //       `Failed to fetch voice name for ID: ${voiceId}. Please ensure the voice ID is valid.`,
-    //     );
-    //     throw new Error(`Failed to fetch voice name for ID: ${voiceId}`);
-    //   });
+    try {
+      voiceId = await ElevenLabsInstance.ensureVoiceAvailable(voiceId);
+    } catch (error) {
+      console.error("Error ensuring voice availability:", error);
+      await interaction.editReply(
+        `Failed to ensure voice availability for ID: ${voiceId}. Please ensure the voice ID is valid.`,
+      );
+      return;
+    }
 
-    // extendedGuild.settings.tts.maleVoiceId = voiceId;
-    // await saveGuildTTSSettings(guild.id, extendedGuild.settings.tts);
-    // await interaction.editReply(`Male voice ID set to: ${voiceId}`);
-    await interaction.editReply(
-      "This command is currently disabled. Sorry! I'll be re-enabling it soon.",
-    );
+    extendedGuild.settings.tts.maleVoiceId = voiceId;
+    await saveGuildTTSSettings(extendedGuild.id, extendedGuild.settings.tts);
+    await interaction.editReply(`Male voice ID set to: ${voiceId}`);
   },
 };
 

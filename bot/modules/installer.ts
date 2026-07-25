@@ -8,10 +8,7 @@ import {
   ChatInputCommandInteraction,
 } from "discord.js";
 import { ExtendedClient } from "../types.ts";
-import {
-  assertLercheCanPerformActionInChannel,
-  getLercheMemberPermissions,
-} from "./permissions/index.ts";
+import { canLerchePerformAction, getPermission } from "./permissions/index.ts";
 import { PermissionName } from "./permissions/permissionNames.ts";
 
 export async function installer(
@@ -102,17 +99,20 @@ async function getWhereToSendInstallerMessage(
     guild.channels.cache.find(
       (c) =>
         c.isTextBased() &&
-        c.permissionsFor(guild.members.me!).has("SendMessages") &&
-        c.permissionsFor(guild.members.me!).has("ViewChannel") &&
+        getPermission(guild.members.me!, [
+          PermissionName.SendMessages,
+          PermissionName.ViewChannel,
+        ]) &&
         c.type === 0, // Text channel
     );
 
   if (
     channel &&
-    (await assertLercheCanPerformActionInChannel(guild, channel, [
-      PermissionName.SendMessages,
-      PermissionName.ViewChannel,
-    ]))
+    (await canLerchePerformAction(
+      guild,
+      [PermissionName.SendMessages, PermissionName.ViewChannel],
+      channel,
+    ))
   ) {
     if (channel.isSendable()) {
       return channel;
