@@ -5,6 +5,7 @@ import {
   DBGetGuild,
   DBGuild,
   DBGuildWithSettings,
+  DBUpsertGuild,
   ensureGuildTtsSettings,
   getOrCreateDBGuild,
 } from "../../supabase/models/guilds.ts";
@@ -65,8 +66,8 @@ function defaultGuildSettings() {
     logging: {
       messageCount: 0,
       tokenTotalUsage: 0,
-      tokenBalance: 10000,
-      tokenLimit: 10000,
+      tokenBalance: 5000,
+      tokenLimit: 5000,
     },
   };
 }
@@ -74,25 +75,18 @@ function defaultGuildSettings() {
 export async function getExtendedGuild(
   guildId: string,
 ): Promise<DBGuildWithSettings> {
-  const DBGuild = await DBGetGuild(guildId);
+  let DBGuild = await DBGetGuild(guildId);
   if (!DBGuild) {
     console.error(`Guild with ID ${guildId} not found in database.`);
-    return setUpGuild(
-      {
+    DBGuild = await DBUpsertGuild({
+      rows: {
         id: guildId,
         name: "Unknown Guild",
         owner_id: "Unknown Owner",
-        joined_at: new Date().toISOString(),
-        left_at: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        message_count: 0,
-        token_total_usage: 0,
-        token_balance: 10000,
-        token_limit: 10000,
       },
-      defaultGuildSettings(),
-    );
+      onConflictColumn: "id",
+      ignoreDuplicates: false,
+    });
   }
   const settings = await ensureGuildTtsSettings(
     guildId,
