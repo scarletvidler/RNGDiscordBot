@@ -57,6 +57,7 @@ export default async function convertToSpeech(
     return { audio, playedMessage: text, tokensUsed: Number(tokensUsed) };
   } catch (error) {
     console.error("❌ Error converting text to speech:", error);
+    console.error(`Text Attempted: ${text}`);
     throw error;
   }
 }
