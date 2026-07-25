@@ -1,11 +1,11 @@
 import type { ExtendedClient } from "../../types.ts";
 import { registerSlashCommands } from "../../modules/registerSlashCommands.ts";
 
-export function registerGuildCommands(
+export async function registerGuildCommands(
   client: ExtendedClient,
   guildId: string,
-): void {
-  registerSlashCommands(
+): Promise<void> {
+  await registerSlashCommands(
     client,
     process.env.CLIENT_ID!,
     [guildId],

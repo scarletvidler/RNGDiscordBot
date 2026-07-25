@@ -1,9 +1,12 @@
 import type { APIGuild, Guild } from "discord.js";
 import { getSupabaseAdmin } from "../client.ts";
+import { APIGetUserByGuild } from "../../bot/api/getUser.ts";
+import invariant from "tiny-invariant";
 
 export interface DBGuildTtsSettings {
   repliesEnabled: boolean;
   roomPrefixEnabled: boolean;
+  pingSoundEnabled: boolean;
   ttsChannelName: string;
   femaleVoiceId: string;
   maleVoiceId: string;
@@ -48,6 +51,7 @@ function setTTSRows(guildId: string, settings: DBGuildTtsSettings) {
     guild_id: guildId,
     replies_enabled: settings.repliesEnabled,
     room_prefix_enabled: settings.roomPrefixEnabled,
+    tts_ping_sound_enabled: settings.pingSoundEnabled,
     tts_channel_name: settings.ttsChannelName,
     female_voice_id: settings.femaleVoiceId ?? null,
     male_voice_id: settings.maleVoiceId ?? null,
@@ -58,6 +62,7 @@ function setTTSRows(guildId: string, settings: DBGuildTtsSettings) {
 function getTTSRows(row: {
   replies_enabled: boolean;
   room_prefix_enabled: boolean;
+  tts_ping_sound_enabled: boolean;
   tts_channel_name: string;
   female_voice_id: string | null;
   male_voice_id: string | null;
@@ -66,6 +71,7 @@ function getTTSRows(row: {
   return {
     repliesEnabled: row.replies_enabled,
     roomPrefixEnabled: row.room_prefix_enabled,
+    pingSoundEnabled: row.tts_ping_sound_enabled,
     ttsChannelName: row.tts_channel_name,
     femaleVoiceId: row.female_voice_id ?? "",
     maleVoiceId: row.male_voice_id ?? "",
@@ -255,16 +261,25 @@ export async function getOrCreateDBGuild(guild: Guild): Promise<DBGuild> {
   console.log(`Existing DB record: ${existingDB ? "Found" : "Not Found"}`);
   console.log(existingDB ? existingDB : "No existing record found.");
 
+  console.log("Guild Object:");
+  console.log(guild);
+
   if (!existingDB) {
     console.log(
       `Guild ${guild.id} not found in database. Creating new record...`,
+    );
+
+    const user = await APIGetUserByGuild(guild);
+    invariant(
+      user?.id,
+      `User ID is not defined. Cannot create guild record without owner ID. ${guild.id} (${guild.name}), user: ${user?.id}, user object: ${JSON.stringify(user)}`,
     );
 
     const newDBGuild = await DBUpsertGuild({
       rows: {
         id: guild.id,
         name: guild.name,
-        owner_id: guild.ownerId,
+        owner_id: user.id,
       },
       onConflictColumn: "id",
       ignoreDuplicates: false,
