@@ -251,14 +251,29 @@ export async function checkDBGuildExists(
 export async function getOrCreateDBGuild(guild: Guild): Promise<DBGuild> {
   const existingDB = await checkDBGuildExists(guild.id);
 
+  console.log(`Checking if guild ${guild.id} exists in the database...`);
+  console.log(`Existing DB record: ${existingDB ? "Found" : "Not Found"}`);
+  console.log(existingDB ? existingDB : "No existing record found.");
+
   if (!existingDB) {
+    console.log(
+      `Guild ${guild.id} not found in database. Creating new record...`,
+    );
+
     const newDBGuild = await DBUpsertGuild({
       rows: {
         id: guild.id,
         name: guild.name,
         owner_id: guild.ownerId,
       },
+      onConflictColumn: "id",
+      ignoreDuplicates: false,
     });
+
+    console.log(
+      `New guild record created: ${newDBGuild ? "Success" : "Failed"}`,
+    );
+    console.log(newDBGuild ? newDBGuild : "No new record created.");
     return newDBGuild;
   }
 
