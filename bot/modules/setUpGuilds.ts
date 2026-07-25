@@ -58,6 +58,7 @@ function defaultGuildSettings() {
     tts: {
       repliesEnabled: true,
       roomPrefixEnabled: false,
+      pingSoundEnabled: true,
       femaleVoiceId: ClientInstance.femaleRoleId,
       maleVoiceId: ClientInstance.maleRoleId,
       ttsChannelName: ClientInstance.ttsChannelName,
