@@ -1,6 +1,6 @@
 {
   "name": "lerche-discord-bot",
-  "version": "1.4.6",
+  "version": "1.5.1-beta.1",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -9,9 +9,15 @@
     "start:bot:dev": "tsx watch --env-file=.env.development server.js",
     "start:bot:psy": "tsx watch --env-file=.env.psy server.js",
     "start:server": "tsx server.js",
+    "backup:prod": "node --env-file=.env supabase/run-backup.js prod",
+    "backup:beta": "node --env-file=.env supabase/run-backup.js beta",
     "release:patch": "npm version patch",
     "release:minor": "npm version minor",
     "release:major": "npm version major",
+    "release:patch:beta": "npm version patch --preid=beta",
+    "release:minor:beta": "npm version minor --preid=beta",
+    "release:major:beta": "npm version major --preid=beta",
+    "release:beta": "npm version prerelease --preid=beta",
     "typecheck": "tsc && tsc -p tsconfig.json --noEmit",
     "typecheck:bot": "tsc -p tsconfig.json --noEmit"
   },

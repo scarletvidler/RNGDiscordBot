@@ -82,6 +82,41 @@ class ElevenLabs {
       throw error;
     }
   }
+
+  async ensureVoiceAvailable(voiceId: string): Promise<string> {
+    // It is already accessible to this account
+    try {
+      const voice = await this.client.voices.get(voiceId);
+      return voice.voiceId ?? voiceId;
+    } catch {
+      // Continue and search the public Voice Library
+    }
+
+    const result = await this.client.voices.getShared({
+      search: voiceId,
+      pageSize: 10,
+    });
+
+    const sharedVoice = result.voices.find(
+      (voice) => voice.voiceId === voiceId,
+    );
+
+    if (!sharedVoice) {
+      throw new Error(
+        "That voice is not accessible. It may be private, unshared, deleted, or unavailable to Lerche currently. Please reach out to Lerche's support (`/help`) if you feel this is a bug.",
+      );
+    }
+
+    await this.client.voices.share(
+      sharedVoice.publicOwnerId,
+      sharedVoice.voiceId,
+      {
+        newName: sharedVoice.name ?? `Discord-${voiceId}`,
+      },
+    );
+
+    return sharedVoice.voiceId ?? voiceId;
+  }
 }
 
 export default ElevenLabs;

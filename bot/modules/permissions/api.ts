@@ -8,8 +8,14 @@ import { type PermissionIdentifier } from "./permissionNames.ts";
 
 export function getPermission(
   member: GuildMember,
-  permission: PermissionIdentifier,
+  permission: PermissionIdentifier | PermissionIdentifier[],
 ): boolean {
+  if (Array.isArray(permission)) {
+    return permission.every((perm) =>
+      member.permissions.has(perm as PermissionResolvable),
+    );
+  }
+
   return member.permissions.has(permission as PermissionResolvable);
 }
 

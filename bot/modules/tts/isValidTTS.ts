@@ -18,21 +18,17 @@ export default function isValidTTS(message: Message<true>): boolean {
   }
 
   const memberRoles = message.member?.roles.cache;
-  // Test if any of the users has a role named "Lerche  Listens or Amelia Listens, to allow for more flexible role management
+  // Test if any of the users has a role named "Lerche  Listens, to allow for more flexible role management
   const hasLercheListensRole = memberRoles?.some(
     (role: Role) => role.name === "Lerche Listens",
   );
-  const hasAmeliaListensRole = memberRoles?.some(
-    (role: Role) => role.name === "Amelia Listens",
-  );
 
-  if (
-    !hasLercheListensRole &&
-    !hasAmeliaListensRole &&
-    isRosie(message.member as any) === false
-  ) {
+  if (!hasLercheListensRole && isRosie(message.member as any) === false) {
+    console.log(
+      `User ${message.author.username} from guild: ${message.guild?.name} (ID: ${message.guildId}) does not have permission to use TTS. Must have either Lerche Listens role or be Rosie.`,
+    );
     throw new Error(
-      "User does not have permission to use TTS. Must have either Lerche or Amelia role.",
+      "User does not have permission to use TTS. Must have either Lerche Listens",
     );
   }
 

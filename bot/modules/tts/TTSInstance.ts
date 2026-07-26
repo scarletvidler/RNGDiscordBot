@@ -75,6 +75,7 @@ export class TTSInstance {
         voiceInstance.resetIdleCountdown();
 
         if (
+          this.guild.settings.tts.pingSoundEnabled &&
           voiceInstance.player.soundQueue.length === 0 &&
           !voiceInstance.player.isPlaying
         ) {
