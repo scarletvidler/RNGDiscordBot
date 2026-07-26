@@ -1,14 +1,40 @@
 import type { Message } from "discord.js";
 import type { BotEvent, ExtendedClient } from "../../types.ts";
+import { PermissionName } from "../../modules/permissions/permissionNames.ts";
 import { tryHandleAnnouncement } from "./announcement.ts";
 import { isProcessableGuildMessage } from "./guards.ts";
 import { handleTtsMessage } from "./tts.ts";
+import { canLerchePerformAction } from "../../modules/permissions/index.ts";
 
 const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
   type: "messageCreate",
   execute: async (message, client) => {
     if (!isProcessableGuildMessage(message)) return;
     if (await tryHandleAnnouncement(message, client)) return;
+
+    // Check if Lerche has permissions to send messages in the channel
+    const me = await message.guild.members.fetchMe();
+    const result = await canLerchePerformAction(
+      message.guild,
+      [PermissionName.SendMessages, PermissionName.ViewChannel],
+      message.channel,
+    );
+
+    if (!result.allowed) {
+      // Attempt to send a DM to the user informing them of the missing permissions
+      try {
+        await message.author.send(
+          `Lerche does not have the required permissions to send messages in the channel "${message.channel.name}". Missing permissions: ${result.missingPermissions.join(", ")}`,
+        );
+      } catch (dmError) {
+        console.error(
+          `Failed to send DM to user ${message.author.tag} about missing permissions:`,
+          dmError,
+        );
+      }
+      return; // Stop further execution if Lerche doesn't have the required permissions
+    }
+
     await handleTtsMessage(message, client);
   },
 };

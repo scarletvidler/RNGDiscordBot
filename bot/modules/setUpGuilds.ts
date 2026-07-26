@@ -24,7 +24,7 @@ export default async function setUpGuilds(
       console.log(`Connected to guild: 🏯 ${guild.name} (ID: ${guild.id})`);
 
       try {
-        const extendedGuild = await getExtendedGuild(guild.id);
+        const extendedGuild = await getExtendedGuild(guild);
 
         // if client.installedGuilds does not already contain this guild, add it
         if (!client.installedGuilds.find((g) => g.id === guild.id)) {
@@ -74,23 +74,16 @@ function defaultGuildSettings() {
 }
 
 export async function getExtendedGuild(
-  guildId: string,
+  guild: APIGuild,
 ): Promise<DBGuildWithSettings> {
-  let DBGuild = await DBGetGuild(guildId);
+  let DBGuild = await DBGetGuild(guild.id);
   if (!DBGuild) {
-    console.error(`Guild with ID ${guildId} not found in database.`);
-    DBGuild = await DBUpsertGuild({
-      rows: {
-        id: guildId,
-        name: "Unknown Guild",
-        owner_id: "Unknown Owner",
-      },
-      onConflictColumn: "id",
-      ignoreDuplicates: false,
-    });
+    throw new Error(
+      `Guild with ID ${guild.id} & name ${guild.name} not found in database.`,
+    );
   }
   const settings = await ensureGuildTtsSettings(
-    guildId,
+    guild.id,
     defaultGuildSettings().tts,
   );
   const extendedGuild: DBGuildWithSettings = {
