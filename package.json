@@ -1,6 +1,6 @@
 {
   "name": "lerche-discord-bot",
-  "version": "1.6.0",
+  "version": "1.5.2",
   "private": true,
   "sideEffects": false,
   "type": "module",
