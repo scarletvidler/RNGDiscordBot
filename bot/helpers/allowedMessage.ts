@@ -18,8 +18,6 @@ export default async function allowedMessage(
     message.channel,
   );
 
-  console.log(result); // Added closing parenthesis and semicolon
-
   return result;
 }
 
