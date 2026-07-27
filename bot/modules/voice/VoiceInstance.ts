@@ -90,14 +90,17 @@ export default class VoiceInstance {
 
     try {
       await Promise.race([
-        entersState(this.connection, VoiceConnectionStatus.Signalling, 5_000),
-        entersState(this.connection, VoiceConnectionStatus.Connecting, 5_000),
+        entersState(this.connection, VoiceConnectionStatus.Signalling, 2000),
+        entersState(this.connection, VoiceConnectionStatus.Connecting, 2000),
       ]);
     } catch {
       try {
+        console.log(
+          `Connection for guild ${this.DBGuild} did not reconnect in time. Destroying VoiceInstance.`,
+        );
         await this.destroy({
           destroyConnection: true,
-          playDisconnectSound: true,
+          playDisconnectSound: false,
         });
       } catch (error) {
         console.error(
@@ -192,8 +195,6 @@ export default class VoiceInstance {
     destroyConnection?: boolean;
     playDisconnectSound?: boolean;
   }) {
-    console.log("destroy called with options:", options);
-
     if (this.client.activeVoiceConnections.get(this.DBGuild.id) === this) {
       this.client.activeVoiceConnections.delete(this.DBGuild.id);
     }
@@ -205,7 +206,11 @@ export default class VoiceInstance {
     this.isActive = false;
     this._stopIdleCountdown();
 
-    if (options?.playDisconnectSound) {
+    if (
+      options?.playDisconnectSound &&
+      this.connection.state.status !== VoiceConnectionStatus.Destroyed &&
+      this.connection.state.status !== VoiceConnectionStatus.Disconnected
+    ) {
       await this._playDisconnectSound();
     }
     this._destroyPlayer();

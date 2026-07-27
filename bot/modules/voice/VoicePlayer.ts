@@ -176,7 +176,6 @@ export default class VoicePlayer {
 
   destroy() {
     this.soundQueue = [];
-    this.connection = null;
     if (this.timerChecker) {
       clearInterval(this.timerChecker);
       this.timerChecker = null;

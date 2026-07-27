@@ -10,6 +10,11 @@ const event: BotEvent<[Guild, ExtendedClient]> = {
         `Left guild: ${guild.name} (ID: ${guild.id}), owner: ${guild.ownerId})`,
       );
       await setLeftAtForDBGuild(guild.id);
+      // Remove the voice connection for this guild if it exists
+      const voiceInstance = extendedClient.activeVoiceConnections.get(guild.id);
+      if (voiceInstance) {
+        await voiceInstance.destroy({ destroyConnection: true });
+      }
     } catch (error) {
       console.error("Error in guildDelete event:", error);
     }
