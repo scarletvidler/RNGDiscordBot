@@ -11,7 +11,7 @@ const command: BotCommand = {
     userPermissions: ["Administrator"],
   },
 
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await installer(
       client,
       interaction,

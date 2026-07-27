@@ -7,7 +7,7 @@ import {
 } from "./sendWelcome.ts";
 import { setupUser } from "./setupUser.ts";
 import { APIGetUserByGuild } from "../../api/getUser.ts";
-import { setUpExtendedGuild } from "../../modules/setUpGuilds.ts";
+import { setUpExtendedGuild } from "../../modules/startGuilds.ts";
 
 const event: BotEvent<[Guild, ExtendedClient]> = {
   type: "guildCreate",

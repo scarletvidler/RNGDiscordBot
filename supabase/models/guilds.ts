@@ -261,9 +261,6 @@ export async function getOrCreateDBGuild(guild: Guild): Promise<DBGuild> {
   console.log(`Existing DB record: ${existingDB ? "Found" : "Not Found"}`);
   console.log(existingDB ? existingDB : "No existing record found.");
 
-  console.log("Guild Object:");
-  console.log(guild);
-
   if (!existingDB) {
     console.log(
       `Guild ${guild.id} not found in database. Creating new record...`,
@@ -293,4 +290,21 @@ export async function getOrCreateDBGuild(guild: Guild): Promise<DBGuild> {
   }
 
   return existingDB;
+}
+
+export async function deleteDBGuild(guildId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { error } = await supabase.from("guilds").delete().eq("id", guildId);
+  if (error) throw error;
+}
+
+export async function setLeftAtForDBGuild(guildId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { error } = await supabase
+    .from("guilds")
+    .update({ left_at: new Date().toISOString() })
+    .eq("id", guildId);
+  if (error) throw error;
 }

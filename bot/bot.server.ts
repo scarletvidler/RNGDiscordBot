@@ -7,7 +7,7 @@ import getDirectoryRoot from "./helpers/getDirectoryRoot.ts";
 import { pathToFileURL } from "url";
 import { type BotCommand, type BotEvent } from "./types.ts";
 import ClientInstance from "./modules/ClientInstance.ts";
-import setUpGuilds from "./modules/setUpGuilds.ts";
+import startGuilds from "./modules/startGuilds.ts";
 import { botVersion } from "./version.ts";
 
 console.log(`Starting Lerche Discord Bot v${botVersion}`);
@@ -68,9 +68,16 @@ async function loadEvents(dir: string): Promise<void> {
       const raw = module.default ?? module;
       if (typeof raw?.type === "string" && typeof raw.execute === "function") {
         const event = raw as BotEvent;
-        ClientInstance.on(event.type, (...args: unknown[]) =>
-          (event.execute as (...a: unknown[]) => void)(...args, ClientInstance),
-        );
+        ClientInstance.on(event.type, (...args: unknown[]) => {
+          try {
+            (event.execute as (...a: unknown[]) => void)(
+              ...args,
+              ClientInstance,
+            );
+          } catch (error) {
+            console.error(`Error executing event ${eventLabel}:`, error);
+          }
+        });
       } else {
         console.warn(
           `Invalid events module at ${moduleUrl}. Missing required properties.`,
@@ -86,7 +93,7 @@ export async function startBot(): Promise<void> {
   ClientInstance.once("clientReady", async () => {
     console.log(`🤖 Logged in as ${ClientInstance.user?.tag}`);
 
-    const guildIds = await setUpGuilds(ClientInstance);
+    const guildIds = await startGuilds(ClientInstance);
     registerSlashCommands(
       ClientInstance,
       process.env.CLIENT_ID!,

@@ -18,19 +18,11 @@ const command: BotCommand = {
   requirements: {
     userPermissions: ["Administrator"],
   },
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
-    const guild = client.installedGuilds.find(
-      (g) => g.id === interaction.guildId,
-    );
-    if (!guild) {
-      await interaction.editReply("This command can only be used in a guild.");
-      return;
-    }
     const seconds = interaction.options.getInteger("seconds", true);
-    const extendedGuild = guild as any;
     extendedGuild.settings.tts.idleTimeout = seconds;
-    await saveGuildTTSSettings(guild.id, extendedGuild.settings.tts);
+    await saveGuildTTSSettings(extendedGuild.id, extendedGuild.settings.tts);
     await interaction.editReply(`TTS idle timeout set to: ${seconds} seconds`);
   },
 };

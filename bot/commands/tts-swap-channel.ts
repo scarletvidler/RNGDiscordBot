@@ -12,6 +12,8 @@ import {
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import channelHasPlayer from "../helpers/channelHasPlayer.ts";
+import { canLerchePerformAction } from "../modules/permissions/index.ts";
+import { allowedToJoinChannel } from "../helpers/allowedMessage.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -43,7 +45,25 @@ const command: BotCommand = {
         interaction.guildId,
       );
 
-      invariant(voiceInstance, "Lerche is sleeping, no voice instance found.");
+      if (!voiceInstance) {
+        await interaction.reply(
+          "Lerche is not currently in a voice channel. Type in her TTS chanenel to make her join your channel first.",
+        );
+        return;
+      }
+
+      const allowedResults = await allowedToJoinChannel(
+        ClientInstance,
+        interaction.guild,
+        voiceChannel,
+      );
+
+      if (!allowedResults) {
+        await interaction.reply(
+          `Lerche does not have the required permissions to join, view or speak in ${voiceChannel.name}.`,
+        );
+        return;
+      }
 
       await voiceInstance.destroy({
         destroyConnection: true,
@@ -55,9 +75,15 @@ const command: BotCommand = {
       await interaction.reply(`Moved to ${voiceChannel.name}.`);
     } catch (error) {
       console.error("Error executing swap-channel command:", error);
-      await interaction.reply(
-        "An error occurred while trying to swap channels. Please try again later.",
-      );
+      if (error instanceof Error) {
+        await interaction.reply(
+          error.message || "An error occurred while trying to swap channels.",
+        );
+      } else {
+        await interaction.reply(
+          "An unknown error occurred while trying to swap channels.",
+        );
+      }
     }
   },
 };
