@@ -10,27 +10,31 @@ import allowedMessage from "../../helpers/allowedMessage.ts";
 const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
   type: "messageCreate",
   execute: async (message, client) => {
-    if (!isProcessableGuildMessage(message)) return;
-    if (await tryHandleAnnouncement(message, client)) return;
+    try {
+      if (!isProcessableGuildMessage(message)) return;
+      if (await tryHandleAnnouncement(message, client)) return;
 
-    const allowed = await allowedMessage(message);
+      const allowed = await allowedMessage(message);
 
-    if (!allowed) {
-      // Attempt to send a DM to the user informing them of the missing permissions
-      try {
-        await message.author.send(
-          `Lerche does not have the required permissions to send messages in the channel "${message.channel.name}". Missing permissions: ${result.missingPermissions.join(", ")}`,
-        );
-      } catch (dmError) {
-        console.error(
-          `Failed to send DM to user ${message.author.tag} about missing permissions:`,
-          dmError,
-        );
+      if (!allowed) {
+        // Attempt to send a DM to the user informing them of the missing permissions
+        try {
+          await message.author.send(
+            `Lerche does not have the required permissions to send messages in the channel "${message.channel.name}". Missing permissions: ${result.missingPermissions.join(", ")}`,
+          );
+        } catch (dmError) {
+          console.error(
+            `Failed to send DM to user ${message.author.tag} about missing permissions:`,
+            dmError,
+          );
+        }
+        return; // Stop further execution if Lerche doesn't have the required permissions
       }
-      return; // Stop further execution if Lerche doesn't have the required permissions
-    }
 
-    await handleTtsMessage(message, client);
+      await handleTtsMessage(message, client);
+    } catch (error) {
+      console.error("Error in messageCreate event:", error);
+    }
   },
 };
 
