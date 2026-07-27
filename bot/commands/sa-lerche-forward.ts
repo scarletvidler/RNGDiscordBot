@@ -28,7 +28,7 @@ const command: BotCommand = {
   requirements: {
     userPermissions: ["Administrator"],
   },
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await interaction.deferReply({
       flags: MessageFlags.Ephemeral,
     });
