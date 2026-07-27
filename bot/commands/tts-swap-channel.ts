@@ -1,18 +1,7 @@
-import {
-  Channel,
-  ChatInputCommandInteraction,
-  SlashCommandBuilder,
-} from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import ClientInstance from "../modules/ClientInstance.ts";
 import invariant from "tiny-invariant";
-import { BotCommand, channelWithPlayer } from "../types.ts";
-import {
-  entersState,
-  joinVoiceChannel,
-  VoiceConnectionStatus,
-} from "@discordjs/voice";
-import channelHasPlayer from "../helpers/channelHasPlayer.ts";
-import { canLerchePerformAction } from "../modules/permissions/index.ts";
+import { BotCommand } from "../types.ts";
 import { allowedToJoinChannel } from "../helpers/allowedMessage.ts";
 
 const command: BotCommand = {

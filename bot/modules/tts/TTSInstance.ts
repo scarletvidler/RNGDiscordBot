@@ -11,6 +11,7 @@ import VoiceInstance from "../voice/VoiceInstance.ts";
 import convertToSpeech from "./convertToSpeech.ts";
 import invariant from "tiny-invariant";
 import allowedMessage from "../../helpers/allowedMessage.ts";
+import { canLerchePerformAction } from "../permissions/index.ts";
 
 export class TTSInstance {
   private message: Message<true>;
@@ -74,6 +75,22 @@ export class TTSInstance {
     let voiceInstance = this.client.activeVoiceConnections.get(this.guild.id);
     try {
       // Get or create a VoiceInstance for the guild and join the user's voice channel to play the TTS message
+
+      const canJoin = await canLerchePerformAction(
+        this.message.guild,
+        ["Connect", "Speak", "ViewChannel"],
+        this.message.member?.voice.channel!,
+      );
+
+      if (!canJoin.allowed) {
+        console.warn(
+          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
+        );
+        await this.reply?.edit(
+          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
+        );
+        return;
+      }
 
       if (this.message.member && this.message.member.voice.channel) {
         if (!voiceInstance) {
