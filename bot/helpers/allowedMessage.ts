@@ -8,8 +8,8 @@ import {
 
 export default async function allowedMessage(
   message: Message<true>,
-): Promise<boolean> {
-  if (!message.guild) return false;
+): Promise<{ allowed: boolean; missingPermissions: string[] }> {
+  if (!message.guild) return { allowed: false, missingPermissions: [] };
 
   // Check if Lerche has permissions to send messages in the channel
   const result = await canLerchePerformAction(
@@ -17,7 +17,10 @@ export default async function allowedMessage(
     [PermissionName.SendMessages, PermissionName.ViewChannel],
     message.channel,
   );
-  return result.allowed;
+
+  console.log(result); // Added closing parenthesis and semicolon
+
+  return result;
 }
 
 export async function allowedToJoinChannel(
