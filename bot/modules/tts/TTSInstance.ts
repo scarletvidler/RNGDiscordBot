@@ -10,16 +10,17 @@ import { shouldSendUsageMessage, usageMessage } from "../supportMessages.ts";
 import VoiceInstance from "../voice/VoiceInstance.ts";
 import convertToSpeech from "./convertToSpeech.ts";
 import invariant from "tiny-invariant";
+import allowedMessage from "../../helpers/allowedMessage.ts";
 
 export class TTSInstance {
-  private message: Message<boolean>;
+  private message: Message<true>;
   public channel: TextChannel;
   public reply?: Message;
   private guild: DBGuildWithSettings;
   private client: ExtendedClient;
 
   constructor(
-    message: Message<boolean>,
+    message: Message<true>,
     guild: DBGuildWithSettings,
     client: ExtendedClient,
   ) {
@@ -34,7 +35,7 @@ export class TTSInstance {
   }
 
   static async create(
-    message: Message<boolean>,
+    message: Message<true>,
     guild: DBGuildWithSettings,
     client: ExtendedClient,
   ): Promise<TTSInstance> {
@@ -52,6 +53,13 @@ export class TTSInstance {
         return;
       }
       // Create an ephemeral reply to the user to confirm that their TTS message is being processed
+      const allowed = await allowedMessage(this.message);
+      if (!allowed) {
+        console.warn(
+          `Lerche does not have permission to send messages in the channel "${this.channel.name}". Skipping reply.`,
+        );
+        return;
+      }
       return await this.channel.send(messageToSend);
     } catch (error) {
       console.error("Error sending TTS message:", error);
@@ -114,7 +122,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
   }
 
   async convertToTTSMessage(
-    message: Message<boolean>,
+    message: Message<true>,
   ): Promise<{ audio: any; playedMessage: string; tokensUsed: number }> {
     const { audio, playedMessage, tokensUsed } = await convertToSpeech(message);
     console.log(

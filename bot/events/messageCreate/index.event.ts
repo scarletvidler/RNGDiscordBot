@@ -5,6 +5,7 @@ import { tryHandleAnnouncement } from "./announcement.ts";
 import { isProcessableGuildMessage } from "./guards.ts";
 import { handleTtsMessage } from "./tts.ts";
 import { canLerchePerformAction } from "../../modules/permissions/index.ts";
+import allowedMessage from "../../helpers/allowedMessage.ts";
 
 const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
   type: "messageCreate",
@@ -12,15 +13,9 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
     if (!isProcessableGuildMessage(message)) return;
     if (await tryHandleAnnouncement(message, client)) return;
 
-    // Check if Lerche has permissions to send messages in the channel
-    const me = await message.guild.members.fetchMe();
-    const result = await canLerchePerformAction(
-      message.guild,
-      [PermissionName.SendMessages, PermissionName.ViewChannel],
-      message.channel,
-    );
+    const allowed = await allowedMessage(message);
 
-    if (!result.allowed) {
+    if (!allowed) {
       // Attempt to send a DM to the user informing them of the missing permissions
       try {
         await message.author.send(
