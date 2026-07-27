@@ -53,14 +53,15 @@ export class TTSInstance {
         return;
       }
       // Create an ephemeral reply to the user to confirm that their TTS message is being processed
-      const allowed = await allowedMessage(this.message);
-      if (!allowed) {
+      const results = await allowedMessage(this.message);
+      if (!results.allowed) {
         console.warn(
-          `Lerche does not have permission to send messages in the channel "${this.channel.name}". Skipping reply.`,
+          `Lerche does not have permission to send messages in the channel "${this.channel.name}". Missing permissions: ${results.missingPermissions.join(", ")}. Skipping reply.`,
         );
         return;
       }
-      return await this.channel.send(messageToSend);
+      const sentMessage = await this.channel.send(messageToSend);
+      return sentMessage;
     } catch (error) {
       console.log(
         `Failed to send message in channel ${this.channel.id} (${this.channel.name}, guild: ${this.guild.name}, message: ${this.message.id})`,

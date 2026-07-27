@@ -91,19 +91,27 @@ export async function setUpExtendedGuild(
   guild: Guild,
   client: ExtendedClient,
 ): Promise<DBGuildWithSettings> {
-  const defaultSettings = defaultGuildSettings();
-
   try {
     const DBGuild = await getOrCreateDBGuild(guild);
-    defaultSettings.tts = await ensureGuildTtsSettings(
-      guild.id,
-      defaultSettings.tts,
-    );
 
+    const TTSsettings = await ensureGuildTtsSettings(
+      guild.id,
+      defaultGuildSettings().tts,
+    );
     const extendedGuild: DBGuildWithSettings = {
       ...DBGuild,
-      settings: defaultSettings,
+      settings: {
+        tts: TTSsettings,
+        logging: {
+          messageCount: DBGuild.message_count,
+          tokenTotalUsage: DBGuild.token_total_usage,
+          tokenBalance: DBGuild.token_balance,
+          tokenLimit: DBGuild.token_limit,
+        },
+      },
     };
+
+    console.log(extendedGuild);
 
     client.installedGuilds.push(extendedGuild);
 

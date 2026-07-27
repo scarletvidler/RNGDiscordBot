@@ -94,20 +94,31 @@ export default class VoiceInstance {
         entersState(this.connection, VoiceConnectionStatus.Connecting, 5_000),
       ]);
     } catch {
-      await this.destroy({
-        destroyConnection: true,
-        playDisconnectSound: true,
-      });
+      try {
+        await this.destroy({
+          destroyConnection: true,
+          playDisconnectSound: true,
+        });
+      } catch (error) {
+        console.error(
+          `Error destroying VoiceInstance for guild ${this.DBGuild.id} after disconnect:`,
+          error,
+        );
+      }
     }
   }
 
   _handleConnectionReady() {}
 
   async _handleConnectionDestroyed() {
-    await this.destroy({
-      destroyConnection: false,
-      playDisconnectSound: false,
-    });
+    try {
+      await this.destroy({
+        destroyConnection: true,
+        playDisconnectSound: false,
+      });
+    } catch (error) {
+      console.error(`Error destroying VoiceInstance`, error);
+    }
   }
 
   _getVoiceConnection(): VoiceConnection | undefined {
@@ -181,16 +192,18 @@ export default class VoiceInstance {
     destroyConnection?: boolean;
     playDisconnectSound?: boolean;
   }) {
+    console.log("destroy called with options:", options);
+
+    if (this.client.activeVoiceConnections.get(this.DBGuild.id) === this) {
+      this.client.activeVoiceConnections.delete(this.DBGuild.id);
+    }
+
     if (this.isDestroying) return;
     if (!this.isActive && this.isConnectionDestroyed()) return;
 
     this.isDestroying = true;
     this.isActive = false;
     this._stopIdleCountdown();
-
-    if (this.client.activeVoiceConnections.get(this.DBGuild.id) === this) {
-      this.client.activeVoiceConnections.delete(this.DBGuild.id);
-    }
 
     if (options?.playDisconnectSound) {
       await this._playDisconnectSound();

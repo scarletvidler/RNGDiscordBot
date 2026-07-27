@@ -16,11 +16,11 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
 
       const allowed = await allowedMessage(message);
 
-      if (!allowed) {
+      if (!allowed.allowed) {
         // Attempt to send a DM to the user informing them of the missing permissions
         try {
           await message.author.send(
-            `Lerche does not have the required permissions to send messages in the channel "${message.channel.name}". Missing permissions: ${result.missingPermissions.join(", ")}`,
+            `Lerche does not have the required permissions to send messages in the channel "${message.channel.name}". Missing permissions: ${allowed.missingPermissions.join(", ")}`,
           );
         } catch (dmError) {
           console.error(
