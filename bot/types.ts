@@ -20,6 +20,7 @@ export interface BotCommand {
   execute(
     interaction: ChatInputCommandInteraction,
     client: ExtendedClient,
+    guild: DBGuildWithSettings,
   ): Promise<void>;
 }
 
