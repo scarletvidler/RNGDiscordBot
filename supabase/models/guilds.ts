@@ -257,9 +257,11 @@ export async function checkDBGuildExists(
 export async function getOrCreateDBGuild(guild: Guild): Promise<DBGuild> {
   const existingDB = await checkDBGuildExists(guild.id);
 
-  console.log(`Checking if guild ${guild.id} exists in the database...`);
-  console.log(`Existing DB record: ${existingDB ? "Found" : "Not Found"}`);
-
+  console.log(
+    existingDB
+      ? `Guild ${guild.id} found in database.`
+      : `Guild ${guild.id} not found in database.`,
+  );
   if (!existingDB) {
     console.log(
       `Guild ${guild.id} not found in database. Creating new record...`,
