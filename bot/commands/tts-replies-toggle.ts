@@ -11,20 +11,12 @@ const command: BotCommand = {
   requirements: {
     userPermissions: ["Administrator"],
   },
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
-    const guild = client.installedGuilds.find(
-      (g) => g.id === interaction.guildId,
-    );
-    if (!guild) {
-      await interaction.editReply("This command can only be used in a guild.");
-      return;
-    }
     // Update the guild settings to toggle TTS replies
-    const extendedGuild = guild as any;
     extendedGuild.settings.tts.repliesEnabled =
       !extendedGuild.settings.tts.repliesEnabled;
-    await saveGuildTTSSettings(guild.id, extendedGuild.settings.tts);
+    await saveGuildTTSSettings(extendedGuild.id, extendedGuild.settings.tts);
     await interaction.editReply(
       `TTS replies have been ${extendedGuild.settings.tts.repliesEnabled ? "enabled" : "disabled"} for this guild.`,
     );

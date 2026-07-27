@@ -21,7 +21,7 @@ const command: BotCommand = {
   requirements: {
     userPermissions: ["Administrator"],
   },
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     const user = interaction.options.getUser("user");
     const message = interaction.options.getString("message");
     if (user && message) {

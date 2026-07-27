@@ -15,7 +15,7 @@ const command: BotCommand = {
         .setDescription("The message to send.")
         .setRequired(true),
     ),
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await interaction.deferReply({
       flags: MessageFlags.Ephemeral,
     });

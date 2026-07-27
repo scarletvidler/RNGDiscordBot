@@ -5,7 +5,7 @@ const helpCommand: BotCommand = {
   data: new SlashCommandBuilder()
     .setName("help")
     .setDescription("Explains how to use the bot and its commands."),
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
     const helpMessage = `
 **Hi! I'm Lerche, a Discord bot that can read messages aloud in voice channels.**

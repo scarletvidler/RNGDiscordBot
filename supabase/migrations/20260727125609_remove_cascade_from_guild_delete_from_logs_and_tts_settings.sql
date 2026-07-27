@@ -1,0 +1,3 @@
+alter table public.guild_tts_settings drop constraint guild_tts_settings_guild_id_fkey;
+alter table public.guild_chat_logs drop constraint guild_chat_logs_guild_id_fkey;
+drop table if exists public.guild_command_settings;

@@ -15,19 +15,11 @@ const command: BotCommand = {
   requirements: {
     userPermissions: ["Administrator"],
   },
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await interaction.deferReply({});
-    const guild = client.installedGuilds.find(
-      (g) => g.id === interaction.guildId,
-    );
-    if (!guild) {
-      await interaction.editReply("This command can only be used in a guild.");
-      return;
-    }
     const channelName = interaction.options.getString("channel-name", true);
-    const extendedGuild = guild as any;
     extendedGuild.settings.tts.ttsChannelName = channelName;
-    await saveGuildTTSSettings(guild.id, extendedGuild.settings.tts);
+    await saveGuildTTSSettings(extendedGuild.id, extendedGuild.settings.tts);
     await interaction.editReply(`TTS channel name set to: ${channelName}`);
   },
 };

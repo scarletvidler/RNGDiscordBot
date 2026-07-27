@@ -16,15 +16,9 @@ const command: BotCommand = {
   requirements: {
     userPermissions: ["Administrator"],
   },
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
-    const extendedGuild = client.installedGuilds.find(
-      (g) => g.id === interaction.guildId,
-    );
-    if (!extendedGuild) {
-      await interaction.editReply("This command can only be used in a guild.");
-      return;
-    }
+
     let voiceId = interaction.options.getString("voice-id", true);
     const ElevenLabsInstance = ElevenLabs.getInstance();
 

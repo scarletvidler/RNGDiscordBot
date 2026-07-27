@@ -3,7 +3,7 @@ import invariant from "tiny-invariant";
 import type { ExtendedClient } from "../../types.ts";
 import isValidTTS from "../../modules/tts/isValidTTS.ts";
 import { TTSInstance } from "../../modules/tts/TTSInstance.ts";
-import { setUpExtendedGuild } from "../../modules/setUpGuilds.ts";
+import { setUpExtendedGuild } from "../../modules/startGuilds.ts";
 import {
   hasReachedUsageLimit,
   usageLimitReachedMessage,

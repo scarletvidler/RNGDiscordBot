@@ -11,21 +11,11 @@ const command: BotCommand = {
   requirements: {
     userPermissions: ["Administrator"],
   },
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
-
-    const guild = client.installedGuilds.find(
-      (installedGuild) => installedGuild.id === interaction.guildId,
-    );
-
-    if (!guild) {
-      await interaction.editReply("This command can only be used in a guild.");
-      return;
-    }
-
-    const nextValue = !guild.settings.tts.pingSoundEnabled;
-    guild.settings.tts.pingSoundEnabled = nextValue;
-    await saveGuildTTSSettings(guild.id, guild.settings.tts);
+    const nextValue = !extendedGuild.settings.tts.pingSoundEnabled;
+    extendedGuild.settings.tts.pingSoundEnabled = nextValue;
+    await saveGuildTTSSettings(extendedGuild.id, extendedGuild.settings.tts);
 
     await interaction.editReply(
       `The TTS jingle has been ${nextValue ? "enabled" : "disabled"} for this guild.`,

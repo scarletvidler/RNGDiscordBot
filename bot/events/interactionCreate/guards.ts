@@ -11,7 +11,8 @@ export async function getGuildChatInputInteraction(
 
   if (!interaction.inCachedGuild()) {
     await interaction.reply({
-      content: "This command can only be used in a guild.",
+      content:
+        "Well, that shouldn't happen. Lerche doesn't think your server exists. Please reinstall her. If this error contuines, please reach out on the support server: https://discord.gg/EvRpWuj7We",
       flags: MessageFlags.Ephemeral,
     });
     return null;

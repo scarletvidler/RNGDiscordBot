@@ -1,5 +1,5 @@
 import type { BotCommand, channelWithPlayer } from "../types.ts";
-import { ExtendedClient } from "../types";
+import type { ExtendedClient } from "../types.ts";
 import {
   ChatInputCommandInteraction,
   MessageFlags,
@@ -18,12 +18,15 @@ const command: BotCommand = {
   async execute(
     interaction: ChatInputCommandInteraction,
     client: ExtendedClient,
+    extendedGuild,
   ): Promise<void> {
     await interaction.deferReply({
       flags: MessageFlags.Ephemeral,
     });
     if (!interaction.inCachedGuild()) {
-      await interaction.editReply("This command can only be used in a guild.");
+      await interaction.editReply(
+        "Well, that shouldn't happen. Lerche doesn't think your server exists. Please reinstall her. If this error contuines, please reach out on the support server: https://discord.gg/EvRpWuj7We",
+      );
       return;
     }
 

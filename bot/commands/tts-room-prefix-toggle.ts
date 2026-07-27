@@ -11,28 +11,19 @@ const command: BotCommand = {
   requirements: {
     userPermissions: ["Administrator"],
   },
-  async execute(interaction, client) {
+  async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
 
-    const guild = client.installedGuilds.find(
-      (g) => g.id === interaction.guildId,
-    );
-
-    if (!guild) {
-      await interaction.editReply("This command can only be used in a guild.");
-      return;
-    }
-
     const nextValue = await toggleGuildRoomPrefixMode(
-      guild.id,
-      guild.settings.tts,
+      extendedGuild.id,
+      extendedGuild.settings.tts,
     );
-    guild.settings.tts.roomPrefixEnabled = nextValue;
+    extendedGuild.settings.tts.roomPrefixEnabled = nextValue;
 
     await interaction.editReply(
       nextValue
         ? "TTS room mode is enabled. Lerche will read messages from your current voice room when they start with `/t`."
-        : `TTS room mode is disabled. Lerche will use #${guild.settings.tts.ttsChannelName}.`,
+        : `TTS room mode is disabled. Lerche will use #${extendedGuild.settings.tts.ttsChannelName}.`,
     );
   },
 };
