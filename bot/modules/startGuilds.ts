@@ -111,8 +111,6 @@ export async function setUpExtendedGuild(
       },
     };
 
-    console.log(extendedGuild);
-
     client.installedGuilds.push(extendedGuild);
 
     return extendedGuild;
