@@ -69,6 +69,7 @@ export interface Database {
           replies_enabled: boolean;
           room_prefix_enabled: boolean;
           tts_ping_sound_enabled: boolean;
+          tts_say_users_name: boolean;
           tts_channel_name: string;
           female_voice_id: string | null;
           male_voice_id: string | null;
@@ -81,6 +82,7 @@ export interface Database {
           replies_enabled?: boolean;
           room_prefix_enabled?: boolean;
           tts_ping_sound_enabled?: boolean;
+          tts_say_users_name?: boolean;
           tts_channel_name?: string;
           female_voice_id?: string | null;
           male_voice_id?: string | null;

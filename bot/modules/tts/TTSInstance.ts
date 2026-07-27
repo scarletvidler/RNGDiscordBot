@@ -111,6 +111,11 @@ export class TTSInstance {
           if (pingAsset) voiceInstance.player.playSoundFile(pingAsset);
         }
 
+        if (this.guild.settings.tts.ttsSayUsersName) {
+          const userName = this.message.member.displayName;
+          this.message.content = `${userName} says: ${this.message.content}`;
+        }
+
         const { audio, playedMessage, tokensUsed } =
           await this.convertToTTSMessage(this.message);
         voiceInstance.player.playSoundFile(audio);

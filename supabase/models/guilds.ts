@@ -7,6 +7,7 @@ export interface DBGuildTtsSettings {
   repliesEnabled: boolean;
   roomPrefixEnabled: boolean;
   pingSoundEnabled: boolean;
+  ttsSayUsersName: boolean;
   ttsChannelName: string;
   femaleVoiceId: string;
   maleVoiceId: string;
@@ -52,6 +53,7 @@ function setTTSRows(guildId: string, settings: DBGuildTtsSettings) {
     replies_enabled: settings.repliesEnabled,
     room_prefix_enabled: settings.roomPrefixEnabled,
     tts_ping_sound_enabled: settings.pingSoundEnabled,
+    tts_say_users_name: settings.ttsSayUsersName,
     tts_channel_name: settings.ttsChannelName,
     female_voice_id: settings.femaleVoiceId ?? null,
     male_voice_id: settings.maleVoiceId ?? null,
@@ -63,6 +65,7 @@ function getTTSRows(row: {
   replies_enabled: boolean;
   room_prefix_enabled: boolean;
   tts_ping_sound_enabled: boolean;
+  tts_say_users_name: boolean;
   tts_channel_name: string;
   female_voice_id: string | null;
   male_voice_id: string | null;
@@ -72,6 +75,7 @@ function getTTSRows(row: {
     repliesEnabled: row.replies_enabled,
     roomPrefixEnabled: row.room_prefix_enabled,
     pingSoundEnabled: row.tts_ping_sound_enabled,
+    ttsSayUsersName: row.tts_say_users_name,
     ttsChannelName: row.tts_channel_name,
     femaleVoiceId: row.female_voice_id ?? "",
     maleVoiceId: row.male_voice_id ?? "",
