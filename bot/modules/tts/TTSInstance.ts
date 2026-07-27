@@ -62,6 +62,9 @@ export class TTSInstance {
       }
       return await this.channel.send(messageToSend);
     } catch (error) {
+      console.log(
+        `Failed to send message in channel ${this.channel.id} (${this.channel.name}, guild: ${this.guild.name}, message: ${this.message.id})`,
+      );
       console.error("Error sending TTS message:", error);
     }
   }
