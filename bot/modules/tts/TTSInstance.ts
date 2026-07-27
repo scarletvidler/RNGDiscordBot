@@ -63,7 +63,6 @@ export class TTSInstance {
       return await this.channel.send(messageToSend);
     } catch (error) {
       console.error("Error sending TTS message:", error);
-      throw new Error("Failed to send TTS message.");
     }
   }
 
