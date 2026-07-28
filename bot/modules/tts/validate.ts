@@ -26,6 +26,9 @@ export default function validateMessageContent(
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     content = content.replace(urlRegex, (match) => {
       const url = new URL(match);
+      console.log(
+        `Cleaned Display Name: ${getCleanDisplayName(message.member ?? message.author.username)}`,
+      );
       return `A link to $${url.hostname} was sent by ${getCleanDisplayName(message.member ?? message.author.username)}`;
     });
 

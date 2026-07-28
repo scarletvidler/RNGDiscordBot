@@ -12,6 +12,7 @@ import convertToSpeech from "./convertToSpeech.ts";
 import invariant from "tiny-invariant";
 import allowedMessage from "../../helpers/allowedMessage.ts";
 import { canLerchePerformAction } from "../permissions/index.ts";
+import { getCleanDisplayName } from "../../helpers/getClean.ts";
 
 export class TTSInstance {
   private message: Message<true>;
@@ -112,7 +113,7 @@ export class TTSInstance {
         }
 
         if (this.guild.settings.tts.ttsSayUsersName == true) {
-          const userName = this.message.member.displayName;
+          const userName = getCleanDisplayName(this.message.member);
           this.message.content = `${userName} says: ${this.message.content}`;
         }
 

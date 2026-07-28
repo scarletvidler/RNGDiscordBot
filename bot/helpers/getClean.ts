@@ -8,10 +8,14 @@ export function getCleanName(user: User): string {
 
 export function getCleanDisplayName(member: GuildMember | string): string {
   if (typeof member === "string") {
-    return member && /^[\x00-\x7F]+$/.test(member) ? member : "User";
+    console.log(`Member is a string: ${member}`);
+
+    return member.replace(/[^a-zA-Z0-9 ]/g, "");
   }
 
-  return member.displayName && /^[\x00-\x7F]+$/.test(member.displayName)
-    ? member.displayName
-    : member.user.username;
+  console.log(`Member is a GuildMember: ${member.displayName}`);
+
+  // return the displaname but only alphanumeric characters and spaces, if the displayname is empty or only contains non-alphanumeric characters, return the username
+  const cleanDisplayName = member.displayName.replace(/[^a-zA-Z0-9 ]/g, "");
+  return cleanDisplayName;
 }
