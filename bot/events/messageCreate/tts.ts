@@ -9,6 +9,10 @@ import {
   usageLimitReachedMessage,
 } from "../../modules/supportMessages.ts";
 import { getErrorMessage } from "../../helpers/errors.ts";
+import { violatesLercheRules } from "../../modules/tts/textModeration.ts";
+
+const TTS_RULES_VIOLATION_MESSAGE =
+  "This message was not translated as it violated Lerche's allowed rules.";
 
 export async function handleTtsMessage(
   message: Message<true>,
@@ -18,6 +22,12 @@ export async function handleTtsMessage(
     if (!isValidTTS(message)) return;
 
     try {
+      if (await violatesLercheRules(message.content)) {
+        console.warn(`Lerche AI Text Violated: "${message.content}"`);
+        await message.reply(TTS_RULES_VIOLATION_MESSAGE);
+        return;
+      }
+
       let guild = client.installedGuilds.find((g) => g.id === message.guildId);
       if (!guild) {
         console.error(
