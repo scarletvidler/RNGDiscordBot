@@ -1,4 +1,4 @@
-FROM node:25-alpine3.21
+FROM node:25-bookworm-slim
 
 # Work directory inside the container
 WORKDIR /app
@@ -6,9 +6,9 @@ WORKDIR /app
 # -----------------------------------------------------
 # 2) Install system dependencies (FFMPEG!)
 # -----------------------------------------------------
-RUN apk update && \
-    apk add --no-cache ffmpeg && \
-    rm -rf /var/cache/apk/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------
 # 3) Install dependencies
