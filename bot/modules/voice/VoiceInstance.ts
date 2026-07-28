@@ -96,7 +96,7 @@ export default class VoiceInstance {
     } catch {
       try {
         console.log(
-          `Connection for guild ${this.DBGuild} did not reconnect in time. Destroying VoiceInstance.`,
+          `Connection for guild ${this.DBGuild.name} did not reconnect in time. Destroying VoiceInstance.`,
         );
         await this.destroy({
           destroyConnection: true,
