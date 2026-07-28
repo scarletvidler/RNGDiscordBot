@@ -12,6 +12,7 @@ import convertToSpeech from "./convertToSpeech.ts";
 import invariant from "tiny-invariant";
 import allowedMessage from "../../helpers/allowedMessage.ts";
 import { canLerchePerformAction } from "../permissions/index.ts";
+import { getCleanDisplayName } from "../../helpers/getClean.ts";
 
 export class TTSInstance {
   private message: Message<true>;
@@ -109,6 +110,11 @@ export class TTSInstance {
         ) {
           const pingAsset = voiceInstance.player.getSoundAsset("ping.ogg");
           if (pingAsset) voiceInstance.player.playSoundFile(pingAsset);
+        }
+
+        if (this.guild.settings.tts.ttsSayUsersName == true) {
+          const userName = getCleanDisplayName(this.message.member);
+          this.message.content = `${userName} says: ${this.message.content}`;
         }
 
         const { audio, playedMessage, tokensUsed } =

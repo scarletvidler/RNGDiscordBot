@@ -1,6 +1,6 @@
 import type { Message } from "discord.js";
 import ClientInstance from "../ClientInstance.ts";
-import { getCleanName } from "../../helpers/getClean.ts";
+import { getCleanDisplayName, getCleanName } from "../../helpers/getClean.ts";
 
 export default function validateMessageContent(
   message: Message<boolean>,
@@ -26,9 +26,10 @@ export default function validateMessageContent(
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     content = content.replace(urlRegex, (match) => {
       const url = new URL(match);
-      return `A link to $${url.hostname} was sent by ${getCleanName(
-        message.author,
-      )}`;
+      console.log(
+        `Cleaned Display Name: ${getCleanDisplayName(message.member ?? message.author.username)}`,
+      );
+      return `A link to $${url.hostname} was sent by ${getCleanDisplayName(message.member ?? message.author.username)}`;
     });
 
     return content;

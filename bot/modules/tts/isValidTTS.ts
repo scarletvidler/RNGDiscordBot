@@ -11,6 +11,7 @@ export default function isValidTTS(message: Message<true>): boolean {
   const maxLength = 300;
 
   if (message.pinned) return false;
+
   if (roomPrefixEnabled) {
     if (!message.content.trim().startsWith("/t")) return false;
   } else if (message.channel.name !== ttsChannel) {
