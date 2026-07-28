@@ -17,17 +17,6 @@ const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
       const allowed = await allowedMessage(message);
 
       if (!allowed.allowed) {
-        // Attempt to send a DM to the user informing them of the missing permissions
-        try {
-          await message.author.send(
-            `Lerche does not have the required permissions to send messages in the channel "${message.channel.name}". Missing permissions: ${allowed.missingPermissions.join(", ")}. if this is spamming you, please use tts-channel-name to set a channel for tts messages to something that doesn't exist`,
-          );
-        } catch (dmError) {
-          console.error(
-            `Failed to send DM to user ${message.author.tag} about missing permissions:`,
-            dmError,
-          );
-        }
         return; // Stop further execution if Lerche doesn't have the required permissions
       }
 
