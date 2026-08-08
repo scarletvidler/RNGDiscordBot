@@ -13,6 +13,11 @@ import invariant from "tiny-invariant";
 import allowedMessage from "../../helpers/allowedMessage.ts";
 import { canLerchePerformAction } from "../permissions/index.ts";
 import { getCleanDisplayName } from "../../helpers/getClean.ts";
+import type {
+  DBVoiceUser,
+  DBVoiceRole,
+} from "../../../supabase/models/voice.ts";
+import { getUserVoice } from "../../../supabase/models/voice.ts";
 
 export class TTSInstance {
   private message: Message<true>;
@@ -76,20 +81,7 @@ export class TTSInstance {
     let voiceInstance = this.client.activeVoiceConnections.get(this.guild.id);
     try {
       // Get or create a VoiceInstance for the guild and join the user's voice channel to play the TTS message
-
-      const canJoin = await canLerchePerformAction(
-        this.message.guild,
-        ["Connect", "Speak", "ViewChannel"],
-        this.message.member?.voice.channel!,
-      );
-
-      if (!canJoin.allowed) {
-        console.warn(
-          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
-        );
-        await this.reply?.edit(
-          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
-        );
+      if (!(await this._canRunTTS())) {
         return;
       }
 
@@ -145,6 +137,48 @@ https://top.gg/bot/1511773768438251660#reviews`,
       console.error("Error running TTS:", error);
       throw new Error("Failed to run TTS.");
     }
+  }
+
+  async _canRunTTS(): Promise<boolean> {
+    try {
+      const canJoin = await canLerchePerformAction(
+        this.message.guild,
+        ["Connect", "Speak", "ViewChannel"],
+        this.message.member?.voice.channel!,
+      );
+
+      if (!canJoin.allowed) {
+        console.warn(
+          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
+        );
+        await this.reply?.edit(
+          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
+        );
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error checking if TTS can run:", error);
+      return false;
+    }
+  }
+
+  async _getVoiceData(): Promise<{ DBVoice: DBVoiceUser | DBVoiceRole }> {
+    // Check  message's user id for voice
+    // if not found, check the user's roles for voice
+    const userId = this.message.author.id;
+    const userVoice = await getUserVoice(userId);
+
+    if (userVoice) {
+      return { DBVoice: userVoice };
+    }
+    const roleVoice = await getRolesVoices(
+      this.message.member!.roles.cache.keys(),
+    );
+    if (roleVoice.length > 0) {
+      return { DBVoice: roleVoice[0] };
+    }
+    return { DBVoice: null };
   }
 
   async convertToTTSMessage(
