@@ -1,5 +1,5 @@
-import { getSupabaseAdmin } from "../client";
 import invariant from "tiny-invariant";
+import { getSupabaseAdmin } from "../client.js";
 
 export type VoiceOwnerType = "user" | "role";
 
@@ -35,6 +35,7 @@ export async function createVoice(voice: DBVoice): Promise<DBVoice> {
     .maybeSingle();
 
   if (error) throw error;
+  invariant(data != null, "Voice not created in database");
   return data;
 }
 
