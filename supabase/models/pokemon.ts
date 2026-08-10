@@ -1,8 +1,10 @@
 import { getSupabaseAdmin } from "../client.ts";
+import { Tables } from "../../supabase/types.ts";
 
 export interface Profile {
   id: string;
   last_rolled_at: string | null;
+  guild_id: string;
 }
 
 export interface CooldownStatus {
@@ -55,6 +57,7 @@ const COOLDOWN_HOURS = 4;
 const SHINY_CHANCE = 0.01;
 
 const supabase = getSupabaseAdmin();
+if (!supabase) throw new Error("Supabase client not initialized");
 
 const cooldownStatus = (lastRolledAt: Profile["last_rolled_at"]) => {
   const status: CooldownStatus = {
@@ -127,7 +130,7 @@ export const rollPokemon = async (
   }
 
   let dynamicQuery = supabase
-    .from("profiles")
+    .from("guild_members")
     .update({ last_rolled_at: new Date().toISOString() })
     .eq("id", profile.id);
 
@@ -151,9 +154,9 @@ export const rollPokemon = async (
 
   const revertCooldown = async () => {
     await supabase
-      .from("profiles")
+      .from("guild_members")
       .update({ last_rolled_at: profile.last_rolled_at })
-      .eq("id", profile.id);
+      .eq("guild_id", profile.id);
   };
 
   try {
@@ -162,14 +165,14 @@ export const rollPokemon = async (
     const { data: ownedPokemon } = await supabase
       .from("user_pokemon")
       .select("pokemon_id")
-      .eq("profile_id", profile.id)
+      .eq("user_id", profile.id)
       .eq("shiny", isShiny)
       .throwOnError();
 
     const ownedPokemonIds =
       ownedPokemon?.map((pokemon) => pokemon.pokemon_id) ?? [];
 
-    const query = supabase.from("pokemon2").select("*").throwOnError();
+    const query = supabase.from("pokemon").select("*").throwOnError();
 
     const { data: available } = await (ownedPokemonIds.length > 0
       ? query.not("id", "in", `(${ownedPokemonIds.join(",")})`)
@@ -185,9 +188,10 @@ export const rollPokemon = async (
     await supabase
       .from("user_pokemon")
       .insert({
-        profile_id: profile.id,
+        user_id: profile.id,
         pokemon_id: randomPokemon.id,
         shiny: isShiny,
+        guild_id: profile.guild_id,
       })
       .throwOnError();
 
@@ -214,7 +218,7 @@ export const getUserPokemon = async (
   const { data, error } = await supabase
     .from("user_pokemon")
     .select("id, shiny, pokemon(*)")
-    .eq("profile_id", profile.id);
+    .eq("user_id", profile.id);
 
   if (error) return { data: null, error };
   if (!data) return { data: [], error: null };

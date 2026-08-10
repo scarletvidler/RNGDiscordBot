@@ -1,20 +1,20 @@
 import { getSupabaseAdmin } from "../client.ts";
-import { Tables } from "../database.types.ts";
+import { Tables } from "../../supabase/types.ts";
 
 export const getUserProfile = async (
   discordUserId: string,
-  username: string | null,
+  username: string,
   discordServerId: string,
-  serverName: string | null,
-): Promise<{ data: Tables<"profiles"> | null; error: any }> => {
+  serverName: string,
+): Promise<{ data: Tables<"guild_members"> | null; error: any }> => {
   try {
     const supabase = getSupabaseAdmin();
-    if (!supabase) return;
+    if (!supabase) throw new Error("Supabase client not initialized");
 
     const { data: user } = await supabase
-      .from("users")
+      .from("discord_users")
       .upsert(
-        { discord_id: discordUserId, username: username },
+        { id: discordUserId, username: username },
         { onConflict: "discord_id" },
       )
       .select("id")
@@ -22,9 +22,9 @@ export const getUserProfile = async (
       .throwOnError();
 
     const { data: server } = await supabase
-      .from("servers")
+      .from("guilds")
       .upsert(
-        { discord_server_id: discordServerId, server_name: serverName },
+        { id: discordServerId, name: serverName },
         { onConflict: "discord_server_id" },
       )
       .select("id")
@@ -32,9 +32,9 @@ export const getUserProfile = async (
       .throwOnError();
 
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("guild_members")
       .upsert(
-        { user_id: user.id, server_id: server.id },
+        { user_id: user.id, guild_id: server.id },
         { onConflict: "user_id, server_id" },
       )
       .select("*")
