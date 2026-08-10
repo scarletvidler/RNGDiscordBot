@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import type { BotCommand } from "../types.ts";
-import { saveGuildTTSSettings } from "../../supabase/models/guilds.ts";
+import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -13,9 +13,9 @@ const command: BotCommand = {
   },
   async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
-    const nextValue = !extendedGuild.settings.tts.pingSoundEnabled;
-    extendedGuild.settings.tts.pingSoundEnabled = nextValue;
-    await saveGuildTTSSettings(extendedGuild.id, extendedGuild.settings.tts);
+    const nextValue = !extendedGuild.settings.tts.tts_ping_sound_enabled;
+    extendedGuild.settings.tts.tts_ping_sound_enabled = nextValue;
+    await DBUpsertGuildTTSSettings(extendedGuild.settings.tts);
 
     await interaction.editReply(
       `The TTS jingle has been ${nextValue ? "enabled" : "disabled"} for this guild.`,

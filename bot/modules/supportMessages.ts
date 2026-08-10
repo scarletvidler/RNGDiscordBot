@@ -1,5 +1,5 @@
 import { EmbedBuilder, type MessageCreateOptions } from "discord.js";
-import { DBGuild, DBGuildWithSettings } from "../../supabase/models/guilds.ts";
+import { DBGuildWithSettings } from "../../supabase/models/guilds.ts";
 
 export const TOKEN_WARNING_START = 2000;
 export const TOKEN_WARNING_INTERVAL = 1000;
@@ -9,7 +9,7 @@ export function usageMessage(
   totalUsage: number,
   guild: DBGuildWithSettings,
 ): MessageCreateOptions {
-  const allowance = guild.settings.logging.tokenLimit;
+  const allowance = guild.settings.logging.token_limit;
   const remainingTokens = Math.max(allowance - totalUsage, 0);
   const embed = new EmbedBuilder()
     .setColor(0xffb347)
@@ -47,8 +47,8 @@ If you really love the bot and want to keep using her, please reach out to me on
 export function usageLimitReachedMessage(
   guild: DBGuildWithSettings,
 ): MessageCreateOptions {
-  const totalUsage = guild.settings.logging.tokenTotalUsage;
-  const allowance = guild.settings.logging.tokenLimit;
+  const totalUsage = guild.settings.logging.token_total_usage;
+  const allowance = guild.settings.logging.token_limit;
   const embed = new EmbedBuilder()
     .setColor(0xe74c3c)
     .setTitle("Lerche TTS Paused")
@@ -80,7 +80,7 @@ export function shouldSendUsageMessage(
   nextTotalUsage: number,
   guild: DBGuildWithSettings,
 ): boolean {
-  const allowance = guild.settings.logging.tokenLimit;
+  const allowance = guild.settings.logging.token_limit;
   const warningThreshold = allowance - TOKEN_WARNING_START;
 
   // Do not send anything until usage has reached the first warning point.
@@ -100,7 +100,7 @@ export function shouldSendUsageMessage(
 }
 
 export function hasReachedUsageLimit(guild: DBGuildWithSettings): boolean {
-  const allowance = guild.settings.logging.tokenLimit;
-  const totalUsage = guild.settings.logging.tokenTotalUsage;
+  const allowance = guild.settings.logging.token_limit;
+  const totalUsage = guild.settings.logging.token_total_usage;
   return totalUsage >= allowance;
 }

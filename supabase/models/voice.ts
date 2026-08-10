@@ -30,7 +30,7 @@ export async function createVoice(voice: DBVoice): Promise<DBVoice> {
   if (!supabase) throw new Error("Supabase client not initialized");
   const { data, error } = await supabase
     .from("guild_voices")
-    .upsert(voice, { onConflict: "voice_id" })
+    .upsert(voice, { onConflict: "guild_id,owner_type,owner_id" })
     .select()
     .maybeSingle();
 
@@ -96,19 +96,21 @@ export async function getGuildVoices(
 }
 
 export async function getUserVoice(
+  guildId: DBVoice["guild_id"],
   userId: DBVoice["owner_id"],
-): Promise<DBVoiceUser> {
+): Promise<DBVoiceUser | null> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error("Supabase client not initialized");
   const { data, error } = await supabase
     .from("guild_voices")
     .select()
+    .eq("guild_id", guildId)
     .eq("owner_id", userId)
     .eq("owner_type", "user")
     .maybeSingle();
   if (error) throw error;
-  invariant(data != null, "User voice not found");
-  return data;
+
+  return data as DBVoiceUser | null;
 }
 
 export async function getRoleVoices(
@@ -122,11 +124,11 @@ export async function getRoleVoices(
     .eq("owner_id", roleId)
     .eq("owner_type", "role");
   if (error) throw error;
-  invariant(data != null, "Role voices not found");
-  return data;
+  return data as DBVoiceRole[];
 }
 
 export async function getRolesVoices(
+  guildId: DBVoice["guild_id"],
   roleIds: DBVoice["owner_id"][],
 ): Promise<DBVoiceRole[]> {
   const supabase = getSupabaseAdmin();
@@ -134,9 +136,10 @@ export async function getRolesVoices(
   const { data, error } = await supabase
     .from("guild_voices")
     .select()
+    .eq("guild_id", guildId)
     .in("owner_id", roleIds)
     .eq("owner_type", "role");
   if (error) throw error;
   invariant(data != null, "Roles voices not found");
-  return data;
+  return data as DBVoiceRole[];
 }

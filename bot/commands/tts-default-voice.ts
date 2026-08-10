@@ -1,16 +1,16 @@
 import { SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
 import ElevenLabs from "../modules/ElevenLabs.ts";
-import { saveGuildTTSSettings } from "../../supabase/models/guilds.ts";
+import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-m-voice-paid-feature")
-    .setDescription("Sets the male TTS voice ID for this guild.")
+    .setName("tts-default-voice")
+    .setDescription("Sets the default TTS voice ID for this guild.")
     .addStringOption((option) =>
       option
         .setName("voice-id")
-        .setDescription("The ElevenLabs voice ID to use for male voices.")
+        .setDescription("The ElevenLabs voice ID to use for the default voice.")
         .setRequired(true),
     ),
   requirements: {
@@ -18,7 +18,6 @@ const command: BotCommand = {
   },
   async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
-
     let voiceId = interaction.options.getString("voice-id", true);
     const ElevenLabsInstance = ElevenLabs.getInstance();
 
@@ -32,9 +31,9 @@ const command: BotCommand = {
       return;
     }
 
-    extendedGuild.settings.tts.maleVoiceId = voiceId;
-    await saveGuildTTSSettings(extendedGuild.id, extendedGuild.settings.tts);
-    await interaction.editReply(`Male voice ID set to: ${voiceId}`);
+    extendedGuild.settings.tts.elevenlabs_female_voice_id = voiceId;
+    await DBUpsertGuildTTSSettings(extendedGuild.settings.tts);
+    await interaction.editReply(`Female voice ID set to: ${voiceId}`);
   },
 };
 

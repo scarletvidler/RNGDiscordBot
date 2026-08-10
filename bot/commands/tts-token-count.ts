@@ -16,8 +16,8 @@ const command: BotCommand = {
     await interaction.deferReply();
     const embed = new EmbedBuilder().setColor(0xe74c3c);
     const extendedGuild = await setUpExtendedGuild(interaction.guild!, client);
-    const tokenUsage = extendedGuild.token_total_usage;
-    const tokenLimit = extendedGuild.token_limit;
+    const tokenUsage = extendedGuild.settings.logging.token_total_usage;
+    const tokenLimit = extendedGuild.settings.logging.token_limit;
     const tokenBalance = tokenLimit - tokenUsage;
     // Update the guild settings to toggle TTS replies
 

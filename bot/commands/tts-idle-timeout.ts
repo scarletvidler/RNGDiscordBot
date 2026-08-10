@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
-import { saveGuildTTSSettings } from "../../supabase/models/guilds.ts";
+import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -21,8 +21,8 @@ const command: BotCommand = {
   async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
     const seconds = interaction.options.getInteger("seconds", true);
-    extendedGuild.settings.tts.idleTimeout = seconds;
-    await saveGuildTTSSettings(extendedGuild.id, extendedGuild.settings.tts);
+    extendedGuild.settings.tts.idle_timeout_seconds = seconds;
+    await DBUpsertGuildTTSSettings(extendedGuild.settings.tts);
     await interaction.editReply(`TTS idle timeout set to: ${seconds} seconds`);
   },
 };

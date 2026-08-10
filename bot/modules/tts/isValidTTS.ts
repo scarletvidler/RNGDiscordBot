@@ -6,8 +6,8 @@ export default function isValidTTS(message: Message<true>): boolean {
   const guild = ClientInstance.installedGuilds.find(
     (g) => g.id === message.guildId,
   );
-  const ttsChannel = guild?.settings.tts.ttsChannelName || "tts";
-  const roomPrefixEnabled = guild?.settings.tts.roomPrefixEnabled ?? false;
+  const ttsChannel = guild?.settings.tts.tts_channel_name || "tts";
+  const roomPrefixEnabled = guild?.settings.tts.room_prefix_enabled ?? false;
   const maxLength = 300;
 
   if (message.pinned) return false;
