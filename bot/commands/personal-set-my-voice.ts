@@ -5,7 +5,7 @@ import { createVoice } from "../../supabase/models/voice.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-set-personal-voice")
+    .setName("personal-set-my-voice")
     .setDescription("Sets your personal TTS voice ID for this guild.")
     .addStringOption((option) =>
       option

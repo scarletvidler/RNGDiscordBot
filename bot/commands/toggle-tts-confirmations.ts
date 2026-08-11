@@ -6,8 +6,8 @@ import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-replies-toggle")
-    .setDescription("Toggles TTS replies for this guild."),
+    .setName("toggle-tts-confirmations")
+    .setDescription("Toggles TTS confirmation replies for this guild."),
   requirements: {
     userPermissions: ["Administrator"],
   },

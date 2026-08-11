@@ -4,8 +4,10 @@ import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-idle-timeout")
-    .setDescription("Sets the TTS idle timeout for this guild.")
+    .setName("config-afk-timeout")
+    .setDescription(
+      "Sets the time before the bot leaves the voice channel due to inactivity.",
+    )
     .addIntegerOption((option) =>
       option
         .setName("seconds")

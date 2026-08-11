@@ -7,7 +7,7 @@ import { setUpExtendedGuild } from "../modules/startGuilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-token-count")
+    .setName("info-token-count")
     .setDescription("Shows the remaining TTS token balance for this guild."),
   requirements: {
     userPermissions: ["Administrator"],

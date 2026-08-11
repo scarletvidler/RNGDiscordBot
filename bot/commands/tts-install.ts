@@ -5,7 +5,7 @@ import { installer } from "../modules/installer.ts";
 const command: BotCommand = {
   guildId: "1179157503766962176",
   data: new SlashCommandBuilder()
-    .setName("tts-install")
+    .setName("info-version")
     .setDescription("Runs the TTS installation process for this guild."),
   requirements: {
     userPermissions: ["Administrator"],

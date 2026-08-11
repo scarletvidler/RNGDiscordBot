@@ -4,7 +4,7 @@ import { toggleGuildRoomPrefixMode } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-room-prefix-toggle")
+    .setName("toggle-tts-mode")
     .setDescription(
       "Toggles /t room mode instead of using the configured TTS channel.",
     ),

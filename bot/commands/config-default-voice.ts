@@ -5,7 +5,7 @@ import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-default-voice")
+    .setName("config-default-voice")
     .setDescription("Sets the default TTS voice ID for this guild.")
     .addStringOption((option) =>
       option

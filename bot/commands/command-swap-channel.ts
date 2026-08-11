@@ -6,7 +6,7 @@ import { allowedToJoinChannel } from "../helpers/allowedMessage.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-swap-channel")
+    .setName("command-swap-channel")
     .setDescription(
       "Swaps the bot's current channel to be the user's current one.",
     ),

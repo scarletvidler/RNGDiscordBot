@@ -4,21 +4,21 @@ import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-jingle-toggle")
+    .setName("toggle-say-users-name")
     .setDescription(
-      "Toggles the jingle that plays before the first TTS message.",
+      "Toggles whether the TTS message includes the user's name.",
     ),
   requirements: {
     userPermissions: ["Administrator"],
   },
   async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
-    const nextValue = !extendedGuild.settings.tts.tts_ping_sound_enabled;
-    extendedGuild.settings.tts.tts_ping_sound_enabled = nextValue;
+    const nextValue = !extendedGuild.settings.tts.tts_say_users_name;
+    extendedGuild.settings.tts.tts_say_users_name = nextValue;
     await DBUpsertGuildTTSSettings(extendedGuild.settings.tts);
 
     await interaction.editReply(
-      `The TTS jingle has been ${nextValue ? "enabled" : "disabled"} for this guild.`,
+      `TTS messages will now ${nextValue ? "include" : "not include"} the user's name for this guild. `,
     );
   },
 };

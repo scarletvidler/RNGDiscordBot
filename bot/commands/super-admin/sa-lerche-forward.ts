@@ -1,8 +1,8 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { Readable } from "stream";
-import type { BotCommand } from "../types.ts";
-import ElevenLabs from "../modules/ElevenLabs.ts";
-import { getErrorMessage } from "../helpers/errors.ts";
+import type { BotCommand } from "../../types.ts";
+import ElevenLabs from "../../modules/ElevenLabs.ts";
+import { getErrorMessage } from "../../helpers/errors.ts";
 
 const SUPPORT_GUILD_ID = "1179157503766962176";
 

@@ -4,12 +4,14 @@ import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-channel-name")
-    .setDescription("Sets the TTS channel name for this guild.")
+    .setName("config-channel-name")
+    .setDescription("Sets the TTS channel name")
     .addStringOption((option) =>
       option
         .setName("channel-name")
-        .setDescription("The name of the voice channel to use for TTS.")
+        .setDescription(
+          "The name of the voice channel to use for TTS. (Without the # prefix)",
+        )
         .setRequired(true),
     ),
   requirements: {
