@@ -37,8 +37,6 @@ export async function handleTtsMessage(
         invariant(guild, "Guild not found in installedGuilds");
       }
 
-      message.reply(`Processing TTS message: "${message.content}"...`);
-
       if (hasReachedUsageLimit(guild)) {
         await message.reply(usageLimitReachedMessage(guild));
         return;

@@ -55,13 +55,17 @@ class ElevenLabs {
     return this.defaultDictionaryLocator;
   }
 
-  async convertTextToSpeech(voiceId: string, text: string) {
+  async convertTextToSpeech(
+    voiceId: string,
+    text: string,
+    modelType: string = "eleven_v3",
+  ): Promise<AudioWithRawResponse> {
     const dictionary = await this.getDefaultDictionaryLocator();
 
     return this.client.textToSpeech
       .convert(voiceId, {
         text,
-        modelId: "eleven_v3",
+        modelId: modelType,
         outputFormat: "mp3_44100_128",
         pronunciationDictionaryLocators: [dictionary],
       })
