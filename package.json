@@ -1,12 +1,13 @@
 {
   "name": "lerche-discord-bot",
-  "version": "1.5.3",
+  "version": "1.6.1",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "scripts": {
     "start:bot": "tsx watch server.js",
     "start:bot:dev": "tsx watch --env-file=.env.development server.js",
+    "start:bot:beta": "tsx watch --env-file=.env.beta server.js",
     "start:bot:psy": "tsx watch --env-file=.env.psy server.js",
     "start:server": "tsx server.js",
     "backup:prod": "node --env-file=.env supabase/run-backup.js prod",

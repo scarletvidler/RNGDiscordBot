@@ -4,7 +4,7 @@ import { insertGuildChatLog } from "../../../supabase/models/chatLogs.ts";
 import { upsertGuildMember } from "../../../supabase/models/users.ts";
 import {
   DBGuildWithSettings,
-  saveGuildSettings,
+  DBupdateGuild,
 } from "../../../supabase/models/guilds.ts";
 import { shouldSendUsageMessage, usageMessage } from "../supportMessages.ts";
 import VoiceInstance from "../voice/VoiceInstance.ts";
@@ -13,6 +13,14 @@ import invariant from "tiny-invariant";
 import allowedMessage from "../../helpers/allowedMessage.ts";
 import { canLerchePerformAction } from "../permissions/index.ts";
 import { getCleanDisplayName } from "../../helpers/getClean.ts";
+import type {
+  DBVoiceUser,
+  DBVoiceRole,
+} from "../../../supabase/models/voice.ts";
+import {
+  getRolesVoices,
+  getUserVoice,
+} from "../../../supabase/models/voice.ts";
 
 export class TTSInstance {
   private message: Message<true>;
@@ -76,20 +84,7 @@ export class TTSInstance {
     let voiceInstance = this.client.activeVoiceConnections.get(this.guild.id);
     try {
       // Get or create a VoiceInstance for the guild and join the user's voice channel to play the TTS message
-
-      const canJoin = await canLerchePerformAction(
-        this.message.guild,
-        ["Connect", "Speak", "ViewChannel"],
-        this.message.member?.voice.channel!,
-      );
-
-      if (!canJoin.allowed) {
-        console.warn(
-          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
-        );
-        await this.reply?.edit(
-          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
-        );
+      if (!(await this._canRunTTS())) {
         return;
       }
 
@@ -104,7 +99,7 @@ export class TTSInstance {
         voiceInstance.resetIdleCountdown();
 
         if (
-          this.guild.settings.tts.pingSoundEnabled &&
+          this.guild.settings.tts.tts_ping_sound_enabled &&
           voiceInstance.player.soundQueue.length === 0 &&
           !voiceInstance.player.isPlaying
         ) {
@@ -112,13 +107,19 @@ export class TTSInstance {
           if (pingAsset) voiceInstance.player.playSoundFile(pingAsset);
         }
 
-        if (this.guild.settings.tts.ttsSayUsersName == true) {
+        if (this.guild.settings.tts.tts_say_users_name == true) {
           const userName = getCleanDisplayName(this.message.member);
           this.message.content = `${userName} says: ${this.message.content}`;
         }
 
+        const voice = (await this._getVoiceData()).DBVoice;
+
+        console.log(
+          `Using voice: ${voice?.voice_name} from provider: ${voice?.voice_provider}`,
+        );
+
         const { audio, playedMessage, tokensUsed } =
-          await this.convertToTTSMessage(this.message);
+          await this.convertToTTSMessage(this.message, voice);
         voiceInstance.player.playSoundFile(audio);
         voiceInstance.resetIdleCountdown();
 
@@ -147,10 +148,59 @@ https://top.gg/bot/1511773768438251660#reviews`,
     }
   }
 
+  async _canRunTTS(): Promise<boolean> {
+    try {
+      const canJoin = await canLerchePerformAction(
+        this.message.guild,
+        ["Connect", "Speak", "ViewChannel"],
+        this.message.member?.voice.channel!,
+      );
+
+      if (!canJoin.allowed) {
+        console.warn(
+          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
+        );
+        await this.reply?.edit(
+          `Lerche does not have permission to join the voice channel "${this.message.member?.voice.channel?.name}". Missing permissions: ${canJoin.missingPermissions.join(", ")}. Cannot play TTS.`,
+        );
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error checking if TTS can run:", error);
+      return false;
+    }
+  }
+
+  async _getVoiceData(): Promise<{
+    DBVoice: DBVoiceUser | DBVoiceRole | null;
+  }> {
+    // Check  message's user id for voice
+    // if not found, check the user's roles for voice
+    const userId = this.message.author.id;
+    const userVoice = await getUserVoice(this.guild.id, userId);
+
+    if (userVoice) {
+      return { DBVoice: userVoice };
+    }
+    const roleVoice = await getRolesVoices(
+      this.guild.id,
+      Array.from(this.message.member!.roles.cache.keys()),
+    );
+    if (roleVoice.length > 0) {
+      return { DBVoice: roleVoice[0] };
+    }
+    return { DBVoice: null };
+  }
+
   async convertToTTSMessage(
     message: Message<true>,
+    voice: DBVoiceUser | DBVoiceRole | null,
   ): Promise<{ audio: any; playedMessage: string; tokensUsed: number }> {
-    const { audio, playedMessage, tokensUsed } = await convertToSpeech(message);
+    const { audio, playedMessage, tokensUsed } = await convertToSpeech(
+      message,
+      voice,
+    );
     console.log(
       `Audio stream received from ElevenLabs with ${tokensUsed} tokens used.`,
     );
@@ -160,7 +210,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
   // TODO: MOVE TO GUILD CLASS
   getMessageCount(): number {
     try {
-      return this.guild.settings.logging?.messageCount ?? 0;
+      return this.guild.settings.logging?.message_count ?? 0;
     } catch (error) {
       console.error("Error retrieving message count:", error);
       throw new Error("Failed to retrieve message count.");
@@ -170,8 +220,8 @@ https://top.gg/bot/1511773768438251660#reviews`,
   updateMessageCount(count?: number): number {
     try {
       const newCount = count ?? this.getMessageCount() + 1;
-      this.guild.settings.logging!.messageCount = newCount;
-      saveGuildSettings(this.guild.id, { message_count: newCount });
+      this.guild.settings.logging.message_count = newCount;
+      DBupdateGuild({ id: this.guild.id, message_count: newCount });
       return newCount;
     } catch (error) {
       console.error("Error setting message count:", error);
@@ -181,8 +231,8 @@ https://top.gg/bot/1511773768438251660#reviews`,
 
   getUsageLimits(): number {
     try {
-      const { tokenBalance } = this.guild.settings.logging;
-      return tokenBalance;
+      const { token_balance } = this.guild.settings.logging;
+      return token_balance;
     } catch (error) {
       console.error("Error retrieving usage limits:", error);
       throw new Error("Failed to retrieve usage limits.");
@@ -208,19 +258,20 @@ https://top.gg/bot/1511773768438251660#reviews`,
 
   async updateUsage(tokensUsed: number): Promise<void> {
     try {
-      const previousTotalUsage = this.guild.settings.logging!.tokenTotalUsage;
+      const previousTotalUsage = this.guild.settings.logging!.token_total_usage;
       const newBalance =
-        this.guild.settings.logging!.tokenBalance - tokensUsed >= 0
-          ? this.guild.settings.logging!.tokenBalance - tokensUsed
+        this.guild.settings.logging!.token_balance - tokensUsed >= 0
+          ? this.guild.settings.logging!.token_balance - tokensUsed
           : 0;
       const nextTotalUsage = previousTotalUsage + tokensUsed;
 
-      this.guild.settings.logging!.tokenBalance = newBalance;
-      this.guild.settings.logging!.tokenTotalUsage = nextTotalUsage;
+      this.guild.settings.logging!.token_balance = newBalance;
+      this.guild.settings.logging!.token_total_usage = nextTotalUsage;
 
-      await saveGuildSettings(this.guild.id, {
-        token_balance: this.guild.settings.logging!.tokenBalance,
-        token_total_usage: this.guild.settings.logging!.tokenTotalUsage,
+      await DBupdateGuild({
+        id: this.guild.id,
+        token_balance: this.guild.settings.logging!.token_balance,
+        token_total_usage: this.guild.settings.logging!.token_total_usage,
       });
 
       if (
@@ -246,7 +297,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
       await insertGuildChatLog({
         message: this.message,
         spokenMessage: text,
-        ttsMode: this.guild.settings.tts.roomPrefixEnabled
+        ttsMode: this.guild.settings.tts.room_prefix_enabled
           ? "room_prefix"
           : "channel",
       });
@@ -261,7 +312,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
         `⚔️ Guild: ${this.message.guild?.name}`,
         `📢 User: ${this.message.author.username}`,
         `📜 Message: ${text}`,
-        `🎙️ Count: ${this.guild.settings.logging?.messageCount ?? 0}`,
+        `🎙️ Count: ${this.guild.settings.logging?.message_count ?? 0}`,
       );
     } catch (error) {
       console.error("Error logging TTS message details:", error);

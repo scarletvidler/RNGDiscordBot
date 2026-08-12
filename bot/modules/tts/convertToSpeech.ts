@@ -5,13 +5,15 @@ import isRosie from "../../helpers/isRosie.ts";
 import ElevenLabs from "../ElevenLabs.ts";
 import streamToBuffer from "../../helpers/streamToBuffer.ts";
 import validateMessageContent from "./validate.ts";
+import { DBVoiceRole, DBVoiceUser } from "../../../supabase/models/voice.ts";
 
 export default async function convertToSpeech(
   message: Message<boolean>,
+  voice: DBVoiceUser | DBVoiceRole | null,
 ): Promise<{ audio: Readable; playedMessage: string; tokensUsed: number }> {
   let voiceId = ClientInstance.installedGuilds.find(
     (g) => g.id === message.guildId,
-  )?.settings.tts.femaleVoiceId;
+  )?.settings.tts.elevenlabs_female_voice_id;
   // if the user has a role called "male" change to using the male voice (Adam - 21mL7)
   const member = message.member;
   if (member) {
@@ -21,12 +23,16 @@ export default async function convertToSpeech(
     if (hasMaleRole) {
       voiceId = ClientInstance.installedGuilds.find(
         (g) => g.id === message.guildId,
-      )?.settings.tts.maleVoiceId as string;
+      )?.settings.tts.elevenlabs_male_voice_id;
     }
   }
 
   if (isRosie(member as any) && process.env.ADMIN_OVERRIDE === "true") {
     voiceId = "kdmDKE6EkgrWrrykO9Qt";
+  }
+
+  if (voice) {
+    voiceId = voice.voice_id;
   }
 
   if (!voiceId) {

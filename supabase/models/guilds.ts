@@ -1,87 +1,41 @@
-import type { APIGuild, Guild } from "discord.js";
+import type { Guild } from "discord.js";
 import { getSupabaseAdmin } from "../client.ts";
 import { APIGetUserByGuild } from "../../bot/api/getUser.ts";
 import invariant from "tiny-invariant";
+import { Tables, TablesInsert, TablesUpdate } from "../types.ts";
 
-export interface DBGuildTtsSettings {
-  repliesEnabled: boolean;
-  roomPrefixEnabled: boolean;
-  pingSoundEnabled: boolean;
-  ttsSayUsersName: boolean;
-  ttsChannelName: string;
-  femaleVoiceId: string;
-  maleVoiceId: string;
-  idleTimeout: number;
-}
-
-export interface DBGuildLogging {
-  messageCount: number;
-  tokenTotalUsage: number;
-  tokenBalance: number;
-  tokenLimit: number;
-}
-export interface DBGuild {
-  id: string;
-  name: string;
-  owner_id: string;
-  message_count: number;
-  token_total_usage: number;
-  token_balance: number;
-  token_limit: number;
-  joined_at: string;
-  left_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type DBGuild = Tables<"guilds">;
+export type DBGuildTtsSettings = Tables<"guild_tts_settings">;
+export type DBGuildLogging = Tables<"guild_chat_logs">;
 
 export type DBGuildWithSettings = DBGuild & {
   settings: {
     tts: DBGuildTtsSettings;
-    logging: DBGuildLogging;
+    logging: Pick<
+      DBGuild,
+      "message_count" | "token_total_usage" | "token_balance" | "token_limit"
+    >;
   };
 };
 
-type DBUpsertGuild = {
-  rows: Partial<DBGuild> & { id: string; owner_id: string; name: string };
+type DBUpdateGuild = {
+  rows: TablesUpdate<"guilds"> & Required<Pick<DBGuild, "id">>;
   onConflictColumn?: string;
   ignoreDuplicates?: boolean;
 };
 
-function setTTSRows(guildId: string, settings: DBGuildTtsSettings) {
-  return {
-    guild_id: guildId,
-    replies_enabled: settings.repliesEnabled,
-    room_prefix_enabled: settings.roomPrefixEnabled,
-    tts_ping_sound_enabled: settings.pingSoundEnabled,
-    tts_say_users_name: settings.ttsSayUsersName,
-    tts_channel_name: settings.ttsChannelName,
-    female_voice_id: settings.femaleVoiceId ?? null,
-    male_voice_id: settings.maleVoiceId ?? null,
-    idle_timeout_seconds: settings.idleTimeout,
-  };
-}
+type DBUpsertGuild = {
+  rows: TablesInsert<"guilds"> & Required<Pick<DBGuild, "id">>;
+  onConflictColumn?: string;
+  ignoreDuplicates?: boolean;
+};
 
-function getTTSRows(row: {
-  replies_enabled: boolean;
-  room_prefix_enabled: boolean;
-  tts_ping_sound_enabled: boolean;
-  tts_say_users_name: boolean;
-  tts_channel_name: string;
-  female_voice_id: string | null;
-  male_voice_id: string | null;
-  idle_timeout_seconds: number;
-}): DBGuildTtsSettings {
-  return {
-    repliesEnabled: row.replies_enabled,
-    roomPrefixEnabled: row.room_prefix_enabled,
-    pingSoundEnabled: row.tts_ping_sound_enabled,
-    ttsSayUsersName: row.tts_say_users_name,
-    ttsChannelName: row.tts_channel_name,
-    femaleVoiceId: row.female_voice_id ?? "",
-    maleVoiceId: row.male_voice_id ?? "",
-    idleTimeout: row.idle_timeout_seconds,
-  };
-}
+type DBUpsertGuildTtsSettings = {
+  rows: Required<Pick<DBGuildTtsSettings, "guild_id">> &
+    Partial<Omit<DBGuildTtsSettings, "guild_id">>;
+  onConflictColumn?: string;
+  ignoreDuplicates?: boolean;
+};
 
 export async function DBGetGuild(guildId: string): Promise<DBGuild | null> {
   const supabase = getSupabaseAdmin();
@@ -118,6 +72,7 @@ export async function DBGetGuildSetting<K extends keyof DBGuild>(
 export async function DBUpsertGuild(input: DBUpsertGuild): Promise<DBGuild> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error("Supabase client not initialized");
+
   const { data, error } = await supabase
     .from("guilds")
     .upsert(input.rows, {
@@ -131,67 +86,58 @@ export async function DBUpsertGuild(input: DBUpsertGuild): Promise<DBGuild> {
   return data;
 }
 
-export async function ensureGuildTtsSettings(
-  guildId: string,
-  defaults: DBGuildTtsSettings,
+export async function DBUpsertGuildTTSSettings(
+  settings: DBUpsertGuildTtsSettings["rows"],
 ): Promise<DBGuildTtsSettings> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error("Supabase client not initialized");
 
-  const { data: existing, error: readError } = await supabase
+  const { data, error } = await supabase
     .from("guild_tts_settings")
-    .select()
-    .eq("guild_id", guildId)
-    .maybeSingle();
-
-  if (readError) throw readError;
-  if (existing) return getTTSRows(existing);
-
-  const { data: inserted, error: insertError } = await supabase
-    .from("guild_tts_settings")
-    .insert(setTTSRows(guildId, defaults))
+    .upsert(settings, {
+      onConflict: "guild_id",
+      ignoreDuplicates: false,
+    })
     .select()
     .single();
 
-  if (insertError) throw insertError;
-  return getTTSRows(inserted);
-}
-
-export async function saveGuildTTSSettings(
-  guildId: string,
-  settings: DBGuildTtsSettings,
-): Promise<void> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return;
-
-  const { error } = await supabase
-    .from("guild_tts_settings")
-    .upsert(setTTSRows(guildId, settings), { onConflict: "guild_id" });
-
   if (error) throw error;
+  return data;
 }
 
 export async function toggleGuildRoomPrefixMode(
-  guildId: string,
-  currentSettings: DBGuildTtsSettings,
+  extendedGuild: DBGuildWithSettings,
 ): Promise<boolean> {
-  const nextValue = !currentSettings.roomPrefixEnabled;
-  await saveGuildTTSSettings(guildId, {
-    ...currentSettings,
-    roomPrefixEnabled: nextValue,
+  const guild_id = extendedGuild.id;
+  const currentValue = extendedGuild.settings.tts.room_prefix_enabled;
+  const nextValue = !currentValue;
+
+  console.log(
+    `Toggling room prefix mode for guild ${guild_id} from ${currentValue} to ${nextValue}`,
+  );
+
+  const result = await DBUpsertGuildTTSSettings({
+    guild_id,
+    room_prefix_enabled: nextValue,
   });
+  syncGuildTTSSettingsWithDB(result, extendedGuild);
   return nextValue;
 }
 
+export function syncGuildTTSSettingsWithDB(
+  TTSsettings: DBGuildTtsSettings,
+  extendedGuild: DBGuildWithSettings,
+) {
+  extendedGuild.settings.tts = TTSsettings;
+}
 /*
   Saves the provided guild settings to the database. If the guild does not exist, it will create a new record. If it does exist, it will update the existing record with the new settings.
   @param guildId - The ID of the Discord guild to save settings for.
   @param rows - An object containing the settings to save for the guild.
   @returns A promise that resolves to the updated guild record from the database.
 */
-export async function saveGuildSettings(
-  guildId: string,
-  rows: Partial<DBGuild>,
+export async function DBupdateGuild(
+  rows: DBUpdateGuild["rows"],
 ): Promise<DBGuild> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error("Supabase client not initialized");
@@ -199,30 +145,12 @@ export async function saveGuildSettings(
   const { data, error } = await supabase
     .from("guilds")
     .update(rows)
-    .eq("id", guildId)
+    .eq("id", rows.id)
     .select()
     .single();
   if (error) throw error;
 
   return data;
-}
-
-export async function updateTokenLimit(
-  guildId: string,
-  newLimit: number,
-): Promise<DBGuild> {
-  try {
-    const supabase = getSupabaseAdmin();
-    if (!supabase) throw new Error("Supabase client not initialized");
-    const updatedGuild = await saveGuildSettings(guildId, {
-      token_limit: newLimit,
-    });
-    if (!updatedGuild) throw new Error("Failed to update token limit");
-    return updatedGuild;
-  } catch (error) {
-    console.error("Error updating token limit:", error);
-    throw error;
-  }
 }
 
 export async function getGuildTokenLimit(
@@ -306,9 +234,9 @@ export async function deleteDBGuild(guildId: string): Promise<void> {
 export async function setLeftAtForDBGuild(guildId: string): Promise<void> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error("Supabase client not initialized");
-  const { error } = await supabase
-    .from("guilds")
-    .update({ left_at: new Date().toISOString() })
-    .eq("id", guildId);
-  if (error) throw error;
+  try {
+    await DBupdateGuild({ id: guildId, left_at: new Date().toISOString() });
+  } catch (error) {
+    throw error;
+  }
 }

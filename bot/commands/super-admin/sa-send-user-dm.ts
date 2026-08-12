@@ -1,4 +1,4 @@
-import { BotCommand } from "../types.ts";
+import { BotCommand } from "../../types.ts";
 import { SlashCommandBuilder } from "@discordjs/builders";
 
 const command: BotCommand = {

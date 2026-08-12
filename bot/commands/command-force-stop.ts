@@ -8,7 +8,7 @@ import {
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-stop")
+    .setName("command-force-stop")
     .setDescription(
       "Stops the TTS playback and clears the queue. (used for when she gets stuck)",
     ),

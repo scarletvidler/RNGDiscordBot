@@ -1,15 +1,17 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
-import { saveGuildTTSSettings } from "../../supabase/models/guilds.ts";
+import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-channel-name")
-    .setDescription("Sets the TTS channel name for this guild.")
+    .setName("config-channel-name")
+    .setDescription("Sets the TTS channel name")
     .addStringOption((option) =>
       option
         .setName("channel-name")
-        .setDescription("The name of the voice channel to use for TTS.")
+        .setDescription(
+          "The name of the voice channel to use for TTS. (Without the # prefix)",
+        )
         .setRequired(true),
     ),
   requirements: {
@@ -18,8 +20,8 @@ const command: BotCommand = {
   async execute(interaction, client, extendedGuild) {
     await interaction.deferReply({});
     const channelName = interaction.options.getString("channel-name", true);
-    extendedGuild.settings.tts.ttsChannelName = channelName;
-    await saveGuildTTSSettings(extendedGuild.id, extendedGuild.settings.tts);
+    extendedGuild.settings.tts.tts_channel_name = channelName;
+    await DBUpsertGuildTTSSettings(extendedGuild.settings.tts);
     await interaction.editReply(`TTS channel name set to: ${channelName}`);
   },
 };

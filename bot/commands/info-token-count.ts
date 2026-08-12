@@ -7,7 +7,7 @@ import { setUpExtendedGuild } from "../modules/startGuilds.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
-    .setName("tts-token-count")
+    .setName("info-token-count")
     .setDescription("Shows the remaining TTS token balance for this guild."),
   requirements: {
     userPermissions: ["Administrator"],
@@ -16,8 +16,8 @@ const command: BotCommand = {
     await interaction.deferReply();
     const embed = new EmbedBuilder().setColor(0xe74c3c);
     const extendedGuild = await setUpExtendedGuild(interaction.guild!, client);
-    const tokenUsage = extendedGuild.token_total_usage;
-    const tokenLimit = extendedGuild.token_limit;
+    const tokenUsage = extendedGuild.settings.logging.token_total_usage;
+    const tokenLimit = extendedGuild.settings.logging.token_limit;
     const tokenBalance = tokenLimit - tokenUsage;
 
     const isFreeTier = tokenLimit <= 10000; // Assuming free tier has a limit of 1,000,000 tokens

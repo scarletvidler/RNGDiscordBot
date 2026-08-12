@@ -1,6 +1,6 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
-import { BotCommand } from "../types.ts";
-import { sendGuildAnnouncement } from "../modules/sendGuildAnnouncement.ts";
+import { BotCommand } from "../../types.ts";
+import { sendGuildAnnouncement } from "../../modules/sendGuildAnnouncement.ts";
 
 const command: BotCommand = {
   guildId: "1179157503766962176",
