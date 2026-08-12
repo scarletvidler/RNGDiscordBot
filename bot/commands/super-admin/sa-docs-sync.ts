@@ -1,8 +1,9 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
-import { syncHowToDocs } from "../modules/syncHowToDocs.ts";
-import type { BotCommand } from "../types.ts";
+import { BotCommand } from "../../types.ts";
+import { syncHowToDocs } from "../../modules/syncHowToDocs.ts";
 
 const command: BotCommand = {
+  guildId: "1514592087557804052",
   data: new SlashCommandBuilder()
     .setName("docs-please-ignore")
     .setDescription("Creates or updates the how-to docs forum posts.")
