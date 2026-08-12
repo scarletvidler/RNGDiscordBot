@@ -8,6 +8,12 @@ import type VoiceInstance from "./modules/voice/VoiceInstance.ts";
 import VoicePlayer from "./modules/voice/VoicePlayer.ts";
 import { DBGuildWithSettings } from "../supabase/models/guilds.ts";
 
+export enum TTSModels {
+  ElevenLabsV3 = "eleven_v3",
+  ElevenLabsFlashV2_5 = "eleven_flash_v2_5",
+  Fish = "fishAI (DOES NOT WORK YET!!!)",
+}
+
 export type channelWithPlayer = VoiceBasedChannel & {
   player?: VoicePlayer;
 };

@@ -1,5 +1,5 @@
 import { Message, TextChannel } from "discord.js";
-import type { ExtendedClient } from "../../types.ts";
+import { TTSModels, type ExtendedClient } from "../../types.ts";
 import { insertGuildChatLog } from "../../../supabase/models/chatLogs.ts";
 import { upsertGuildMember } from "../../../supabase/models/users.ts";
 import {
@@ -28,6 +28,8 @@ export class TTSInstance {
   public reply?: Message;
   private guild: DBGuildWithSettings;
   private client: ExtendedClient;
+  private voice: DBVoiceUser | DBVoiceRole | null = null;
+  private provider: string;
 
   constructor(
     message: Message<true>,
@@ -35,13 +37,14 @@ export class TTSInstance {
     client: ExtendedClient,
   ) {
     this.message = message;
+    this.provider = guild.settings.tts.tts_provider ?? TTSModels.ElevenLabsV3;
     this.guild = guild;
     this.channel = message.channel as TextChannel;
     this.client = client;
   }
 
   checkIfRepliesAreEnabled(): boolean {
-    return this.guild.settings.tts.repliesEnabled ?? true; // Default to true if not set
+    return this.guild.settings.tts.replies_enabled ?? true; // Default to true if not set
   }
 
   static async create(
@@ -112,14 +115,11 @@ export class TTSInstance {
           this.message.content = `${userName} says: ${this.message.content}`;
         }
 
-        const voice = (await this._getVoiceData()).DBVoice;
-
-        console.log(
-          `Using voice: ${voice?.voice_name} from provider: ${voice?.voice_provider}`,
-        );
+        await this._setVoiceData();
+        this._setVoiceProvider(this.voice);
 
         const { audio, playedMessage, tokensUsed } =
-          await this.convertToTTSMessage(this.message, voice);
+          await this.convertToTTSMessage(this.message);
         voiceInstance.player.playSoundFile(audio);
         voiceInstance.resetIdleCountdown();
 
@@ -172,34 +172,44 @@ https://top.gg/bot/1511773768438251660#reviews`,
     }
   }
 
-  async _getVoiceData(): Promise<{
-    DBVoice: DBVoiceUser | DBVoiceRole | null;
-  }> {
+  async _setVoiceData(): Promise<boolean> {
     // Check  message's user id for voice
     // if not found, check the user's roles for voice
     const userId = this.message.author.id;
     const userVoice = await getUserVoice(this.guild.id, userId);
 
     if (userVoice) {
-      return { DBVoice: userVoice };
+      this.voice = userVoice;
+      return true;
     }
     const roleVoice = await getRolesVoices(
       this.guild.id,
       Array.from(this.message.member!.roles.cache.keys()),
     );
     if (roleVoice.length > 0) {
-      return { DBVoice: roleVoice[0] };
+      this.voice = roleVoice[0];
+      return true;
     }
-    return { DBVoice: null };
+    this.voice = null;
+    return false;
+  }
+
+  _setVoiceProvider(voice: DBVoiceUser | DBVoiceRole | null) {
+    if (voice && voice.voice_provider) {
+      this.provider = voice.voice_provider;
+    } else {
+      this.provider =
+        this.guild.settings.tts.tts_provider ?? TTSModels.ElevenLabsV3;
+    }
   }
 
   async convertToTTSMessage(
     message: Message<true>,
-    voice: DBVoiceUser | DBVoiceRole | null,
   ): Promise<{ audio: any; playedMessage: string; tokensUsed: number }> {
     const { audio, playedMessage, tokensUsed } = await convertToSpeech(
       message,
-      voice,
+      this.voice,
+      this.provider,
     );
     console.log(
       `Audio stream received from ElevenLabs with ${tokensUsed} tokens used.`,
@@ -277,9 +287,6 @@ https://top.gg/bot/1511773768438251660#reviews`,
       if (
         shouldSendUsageMessage(previousTotalUsage, nextTotalUsage, this.guild)
       ) {
-        console.log(
-          `Sending usage message. Previous total usage: ${previousTotalUsage}, Next total usage: ${nextTotalUsage}`,
-        );
         await this.channel.send(usageMessage(nextTotalUsage, this.guild));
       }
     } catch (error) {

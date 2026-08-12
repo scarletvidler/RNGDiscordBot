@@ -1,8 +1,8 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { Readable } from "stream";
-import type { BotCommand } from "../../types.ts";
-import ElevenLabs from "../../modules/ElevenLabs.ts";
-import { getErrorMessage } from "../../helpers/errors.ts";
+import type { BotCommand } from "../types.ts";
+import ElevenLabs from "../modules/ElevenLabs.ts";
+import { getErrorMessage } from "../helpers/errors.ts";
 
 const SUPPORT_GUILD_ID = "1179157503766962176";
 
@@ -61,7 +61,7 @@ const command: BotCommand = {
       const guildSettings = client.installedGuilds.find(
         (g) => g.id === guild.id,
       );
-      const voiceId = guildSettings?.settings.tts.femaleVoiceId;
+      const voiceId = guildSettings?.settings.tts.elevenlabs_female_voice_id;
       if (!voiceId) {
         await interaction.editReply(
           `[skipped] ${guild.name} (No TTS voice configured for this server.)`,

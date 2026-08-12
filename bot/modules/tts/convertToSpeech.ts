@@ -10,26 +10,11 @@ import { DBVoiceRole, DBVoiceUser } from "../../../supabase/models/voice.ts";
 export default async function convertToSpeech(
   message: Message<boolean>,
   voice: DBVoiceUser | DBVoiceRole | null,
+  modelType: string = "eleven_v3",
 ): Promise<{ audio: Readable; playedMessage: string; tokensUsed: number }> {
   let voiceId = ClientInstance.installedGuilds.find(
     (g) => g.id === message.guildId,
   )?.settings.tts.elevenlabs_female_voice_id;
-  // if the user has a role called "male" change to using the male voice (Adam - 21mL7)
-  const member = message.member;
-  if (member) {
-    const hasMaleRole = member.roles.cache.some(
-      (role) => role.name.toLowerCase() === "male",
-    );
-    if (hasMaleRole) {
-      voiceId = ClientInstance.installedGuilds.find(
-        (g) => g.id === message.guildId,
-      )?.settings.tts.elevenlabs_male_voice_id;
-    }
-  }
-
-  if (isRosie(member as any) && process.env.ADMIN_OVERRIDE === "true") {
-    voiceId = "kdmDKE6EkgrWrrykO9Qt";
-  }
 
   if (voice) {
     voiceId = voice.voice_id;
@@ -46,6 +31,7 @@ export default async function convertToSpeech(
     const { data, rawResponse } = await elevenlabs.convertTextToSpeech(
       voiceId,
       text,
+      modelType,
     );
     if (!data) {
       console.error(
