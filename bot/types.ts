@@ -4,9 +4,9 @@ import type {
   SlashCommandOptionsOnlyBuilder,
   VoiceBasedChannel,
 } from "discord.js";
+import type { DBGuildWithSettings } from "../supabase/models/guilds.ts";
 import type VoiceInstance from "./modules/voice/VoiceInstance.ts";
 import VoicePlayer from "./modules/voice/VoicePlayer.ts";
-import { DBGuildWithSettings } from "../supabase/models/guilds.ts";
 
 export type channelWithPlayer = VoiceBasedChannel & {
   player?: VoicePlayer;

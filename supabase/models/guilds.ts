@@ -2,7 +2,7 @@ import type { Guild } from "discord.js";
 import { getSupabaseAdmin } from "../client.ts";
 import { APIGetUserByGuild } from "../../bot/api/getUser.ts";
 import invariant from "tiny-invariant";
-import { Tables, TablesInsert, TablesUpdate } from "../types.ts";
+import type { Tables, TablesInsert, TablesUpdate } from "../types.ts";
 
 export type DBGuild = Tables<"guilds">;
 export type DBGuildTtsSettings = Tables<"guild_tts_settings">;

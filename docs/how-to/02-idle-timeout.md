@@ -4,12 +4,12 @@ Lerche leaves the voice channel after a period of inactivity.
 
 Admins can change this with:
 
-`/tts-idle-timeout seconds: 600`
+`/config-afk-timeout seconds: 600`
 
 The minimum is 30 seconds.
 
 Example:
 
-`/tts-idle-timeout 300`
+`/config-afk-timeout seconds: 300`
 
 That makes Lerche leave after 5 minutes of silence.

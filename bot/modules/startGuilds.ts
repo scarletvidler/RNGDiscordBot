@@ -1,12 +1,12 @@
-import { Guild } from "discord.js";
-import { APIGuild, ExtendedClient } from "../types.ts";
-import { DBUpsertGuildTTSSettings } from "../../supabase/models/guilds.ts";
+import type { Guild } from "discord.js";
+import type { APIGuild, ExtendedClient } from "../types.ts";
 import { getGuilds } from "../api/getGuilds.ts";
+import ClientInstance from "./ClientInstance.ts";
 import {
-  DBGuildWithSettings,
+  DBUpsertGuildTTSSettings,
   getOrCreateDBGuild,
 } from "../../supabase/models/guilds.ts";
-import ClientInstance from "./ClientInstance.ts";
+import type { DBGuildWithSettings } from "../../supabase/models/guilds.ts";
 
 export default async function startGuilds(
   client: ExtendedClient,
