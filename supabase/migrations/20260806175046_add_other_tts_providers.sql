@@ -1,5 +1,5 @@
 alter table public.guild_tts_settings
-  add column if not exists tts_provider text not null default 'elevenlabs',
+  add column if not exists tts_provider text not null default 'eleven_v3',
   add column if not exists tts_provider_api_key text,
   add column if not exists fisher_female_voice_id text,
   add column if not exists fisher_male_voice_id text;
@@ -16,7 +16,7 @@ create table if not exists public.guild_voices (
   guild_id text not null,
   voice_id text not null,
   voice_name text not null,
-  voice_provider text not null default 'elevenlabs',
+  voice_provider text not null default 'eleven_v3',
   owner_type public.voice_owner_type not null default 'user',
   owner_id text not null,
   created_at timestamptz not null default now(),

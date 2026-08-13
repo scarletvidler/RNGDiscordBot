@@ -6,8 +6,8 @@ import {
 const MODEL = "Xenova/toxic-bert";
 
 const BLOCKED_LABEL_THRESHOLDS = {
-  identity_hate: 0.75,
-  severe_toxic: 0.75,
+  identity_hate: 0.7,
+  severe_toxic: 0.7,
   threat: 0.55,
 } as const;
 
