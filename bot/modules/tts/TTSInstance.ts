@@ -179,21 +179,10 @@ https://top.gg/bot/1511773768438251660#reviews`,
     console.log(
       `Checking voice data for user ${userId} in guild ${this.guild.id}`,
     );
-    console.log(this.guild.users);
-    if (!this.guild.users || this.guild.users.length === 0) {
-      console.warn(
-        `No users found in guild ${this.guild.id} (${this.guild.name}). Cannot determine voice settings.`,
-      );
-      this.voice = null;
-      return false;
-    }
 
     const cachedUser = this.guild.users.find((user) => user.id === userId);
-    const cachedVoice =
-      cachedUser?.voice ?? (await getUserVoice(this.guild.id, userId));
-
-    if (cachedVoice) {
-      this.voice = cachedVoice;
+    if (cachedUser?.voice) {
+      this.voice = cachedUser.voice;
       return true;
     }
 
