@@ -3,12 +3,17 @@ import { getSupabaseAdmin } from "../client.ts";
 import { APIGetUserByGuild } from "../../bot/api/getUser.ts";
 import invariant from "tiny-invariant";
 import type { Tables, TablesInsert, TablesUpdate } from "../types.ts";
+import { DBVoiceRole, DBVoiceUser } from "./voice.ts";
 
 export type DBGuild = Tables<"guilds">;
 export type DBGuildTtsSettings = Tables<"guild_tts_settings">;
 export type DBGuildLogging = Tables<"guild_chat_logs">;
 
 export type DBGuildWithSettings = DBGuild & {
+  users: {
+    id: string;
+    voice: DBVoiceUser | DBVoiceRole | null;
+  }[];
   settings: {
     tts: DBGuildTtsSettings;
     logging: Pick<

@@ -1,10 +1,8 @@
 import type { Message } from "discord.js";
 import type { BotEvent, ExtendedClient } from "../../types.ts";
-import { PermissionName } from "../../modules/permissions/permissionNames.ts";
 import { tryHandleAnnouncement } from "./announcement.ts";
 import { isProcessableGuildMessage } from "./guards.ts";
 import { handleTtsMessage } from "./tts.ts";
-import { canLerchePerformAction } from "../../modules/permissions/index.ts";
 import allowedMessage from "../../helpers/allowedMessage.ts";
 
 const event: BotEvent<[Message<boolean>, ExtendedClient]> = {

@@ -75,6 +75,7 @@ export async function setUpExtendedGuild(
     });
     const extendedGuild: DBGuildWithSettings = {
       ...DBGuild,
+      users: [], // Initialize users as an empty array; you may want to populate this based on your application's logic
       settings: {
         tts: TTSsettings,
         logging: {

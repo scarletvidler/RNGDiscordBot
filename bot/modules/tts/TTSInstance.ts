@@ -9,7 +9,6 @@ import {
 import { shouldSendUsageMessage, usageMessage } from "../supportMessages.ts";
 import VoiceInstance from "../voice/VoiceInstance.ts";
 import convertToSpeech from "./convertToSpeech.ts";
-import invariant from "tiny-invariant";
 import allowedMessage from "../../helpers/allowedMessage.ts";
 import { canLerchePerformAction } from "../permissions/index.ts";
 import { getCleanDisplayName } from "../../helpers/getClean.ts";
@@ -176,6 +175,24 @@ https://top.gg/bot/1511773768438251660#reviews`,
     // Check  message's user id for voice
     // if not found, check the user's roles for voice
     const userId = this.message.author.id;
+
+    if (!this.guild.users || this.guild.users.length === 0) {
+      console.warn(
+        `No users found in guild ${this.guild.id} (${this.guild.name}). Cannot determine voice settings.`,
+      );
+      this.voice = null;
+      return false;
+    }
+
+    const cachedUser = this.guild.users.find((user) => user.id === userId);
+    const cachedVoice =
+      cachedUser?.voice ?? (await getUserVoice(this.guild.id, userId));
+
+    if (cachedVoice) {
+      this.voice = cachedVoice;
+      return true;
+    }
+
     const userVoice = await getUserVoice(this.guild.id, userId);
 
     if (userVoice) {

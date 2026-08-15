@@ -7,6 +7,7 @@ import type {
 import type { DBGuildWithSettings } from "../supabase/models/guilds.ts";
 import type VoiceInstance from "./modules/voice/VoiceInstance.ts";
 import VoicePlayer from "./modules/voice/VoicePlayer.ts";
+import { DBVoiceRole, DBVoiceUser } from "../supabase/models/voice.ts";
 
 export enum TTSModels {
   ElevenLabsV3 = "eleven_v3",
@@ -55,25 +56,6 @@ export class ExtendedClient extends Client {
     this.commands = new Collection();
     this.activeVoiceConnections = new Map();
   }
-}
-
-export interface ExtendedGuild extends Guild {
-  settings: {
-    tts: {
-      repliesEnabled: boolean;
-      roomPrefixEnabled: boolean;
-      femaleVoiceId: string;
-      maleVoiceId: string;
-      ttsChannelName: string;
-      idleTimeout: number;
-    };
-  };
-  logging: {
-    messageCount: number;
-    tokenTotalUsage: number;
-    tokenBalance: number;
-    tokenLimit: number;
-  };
 }
 
 declare module "discord.js" {
