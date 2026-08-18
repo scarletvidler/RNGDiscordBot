@@ -118,7 +118,7 @@ export class TTSInstance {
         this._setVoiceProvider(this.voice);
 
         const { audio, playedMessage, tokensUsed } =
-          await this.convertToTTSMessage(this.message);
+          await this.getConvertedTTSMessage(this.message);
         voiceInstance.player.playSoundFile(audio);
         voiceInstance.resetIdleCountdown();
 
@@ -182,9 +182,15 @@ https://top.gg/bot/1511773768438251660#reviews`,
 
     const cachedUser = this.guild.users.find((user) => user.id === userId);
     if (cachedUser?.voice) {
+      console.log(
+        `Found cached voice data for user ${userId} in guild ${this.guild.id}`,
+      );
       this.voice = cachedUser.voice;
       return true;
     }
+    console.log(
+      `No cached voice data for user ${userId} in guild ${this.guild.id}. Checking database...`,
+    );
 
     const userVoice = await getUserVoice(this.guild.id, userId);
 
@@ -215,7 +221,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
     }
   }
 
-  async convertToTTSMessage(
+  async getConvertedTTSMessage(
     message: Message<true>,
   ): Promise<{ audio: any; playedMessage: string; tokensUsed: number }> {
     const { audio, playedMessage, tokensUsed } = await convertToSpeech(
@@ -224,7 +230,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
       this.provider,
     );
     console.log(
-      `Audio stream received from ElevenLabs with ${tokensUsed} tokens used.`,
+      `Audio stream received from ${this.provider} with ${tokensUsed} tokens used.`,
     );
     return { audio, playedMessage, tokensUsed };
   }

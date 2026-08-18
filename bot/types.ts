@@ -12,7 +12,13 @@ import { DBVoiceRole, DBVoiceUser } from "../supabase/models/voice.ts";
 export enum TTSModels {
   ElevenLabsV3 = "eleven_v3",
   ElevenLabsFlashV2_5 = "eleven_flash_v2_5",
-  Fish = "fishAI (DOES NOT WORK YET!!!)",
+  FishPro = "Fish: s2.1-pro",
+}
+
+export enum FishAudioModels {
+  FishS1 = "s1",
+  FishPro = "s2.1-pro",
+  FishProFree = "s2.1-pro-free",
 }
 
 export type channelWithPlayer = VoiceBasedChannel & {
@@ -43,8 +49,8 @@ export type APIGuild = {
 
 export class ExtendedClient extends Client {
   ownerId!: string;
-  femaleRoleId!: string;
-  maleRoleId!: string;
+  default_elevens_id!: string;
+  default_fish_id!: string;
   ttsChannelName!: string;
   idleTimeout!: number;
   prefix!: string;

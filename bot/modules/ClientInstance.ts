@@ -14,10 +14,8 @@ const ClientInstance = new ExtendedClient({
  */
 
 ClientInstance.ownerId = "122548971737579520";
-ClientInstance.femaleRoleId = `${
-  process.env.default_voice_id || "cgSgspJ2msm6clMCkdW9"
-}`;
-ClientInstance.maleRoleId = "2gPFXx8pN3Avh27Dw5Ma"; //"alFofuDn3cOwyoz1i44T";
+ClientInstance.default_elevens_id = "cgSgspJ2msm6clMCkdW9";
+ClientInstance.default_fish_id = "9a9cf47702da476aa4629e2506d4a857";
 ClientInstance.ttsChannelName = `${process.env.TTS_CHANNEL_NAME || "tts"}`;
 ClientInstance.prefix = "rng:";
 ClientInstance.idleTimeout = 600; // 10 minutes (seconds)

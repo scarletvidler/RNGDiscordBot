@@ -2,19 +2,13 @@ import { BotCommand, TTSModels } from "../types.ts";
 import { SlashCommandBuilder } from "discord.js";
 import ElevenLabs from "../modules/ElevenLabs.ts";
 import { createVoice } from "../../supabase/models/voice.ts";
+import ClientInstance from "../modules/ClientInstance.ts";
+import FishAudio from "../modules/FishAudio.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
     .setName("personal-set-my-voice")
     .setDescription("Sets your personal TTS voice ID for this guild.")
-    .addStringOption((option) =>
-      option
-        .setName("voice-id")
-        .setDescription(
-          "The ElevenLabs voice ID to use for your personal TTS voice.",
-        )
-        .setRequired(true),
-    )
     .addStringOption((option) =>
       option
         .setName("model-type")
@@ -27,20 +21,32 @@ const command: BotCommand = {
             value: model,
           })),
         ),
+    )
+    .addStringOption((option) =>
+      option
+        .setName("voice-id")
+        .setDescription("The voice ID to use for your personal TTS voice.")
+        .setRequired(false),
     ),
   async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
-    let voiceId = interaction.options.getString("voice-id", true);
-    let voiceName: string = "";
-    const ElevenLabsInstance = ElevenLabs.getInstance();
     const modelType = interaction.options.getString("model-type", true);
+    let voiceId = interaction.options.getString("voice-id");
+    let voiceName: string = "";
 
     try {
-      modelType == TTSModels.ElevenLabsV3 ||
-      modelType == TTSModels.ElevenLabsFlashV2_5
-        ? (voiceId = await ElevenLabsInstance.ensureVoiceAvailable(voiceId)) &&
-          (voiceName = await ElevenLabsInstance.getVoiceName(voiceId))
-        : voiceId && (voiceName = "Fish Voice");
+      if (
+        modelType == TTSModels.ElevenLabsV3 ||
+        modelType == TTSModels.ElevenLabsFlashV2_5
+      ) {
+        const ElevenLabsInstance = ElevenLabs.getInstance();
+        voiceId = voiceId == null ? ClientInstance.default_elevens_id : voiceId;
+        voiceId = await ElevenLabsInstance.ensureVoiceAvailable(voiceId);
+        voiceName = await ElevenLabsInstance.getVoiceName(voiceId);
+      } else {
+        voiceId = voiceId == null ? ClientInstance.default_fish_id : voiceId;
+        voiceName = await FishAudio.getInstance().ensureVoiceAvailable(voiceId);
+      }
     } catch (error) {
       console.error("Error ensuring voice availability:", error);
       await interaction.editReply(
@@ -48,6 +54,8 @@ const command: BotCommand = {
       );
       return;
     }
+
+    console.log(`Voice id: ${voiceId}`);
 
     await createVoice({
       owner_id: interaction.user.id,
