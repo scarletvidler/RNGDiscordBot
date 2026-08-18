@@ -1,5 +1,6 @@
 import { Message, TextChannel } from "discord.js";
 import { TTSModels, type ExtendedClient } from "../../types.ts";
+import { DEFAULTS, isTTSModel } from "../../config/defaults.ts";
 import { insertGuildChatLog } from "../../../supabase/models/chatLogs.ts";
 import { upsertGuildMember } from "../../../supabase/models/users.ts";
 import {
@@ -36,7 +37,9 @@ export class TTSInstance {
     client: ExtendedClient,
   ) {
     this.message = message;
-    this.provider = guild.settings.tts.tts_provider ?? TTSModels.ElevenLabsV3;
+    this.provider = isTTSModel(guild.settings.tts.tts_model)
+      ? guild.settings.tts.tts_model
+      : DEFAULTS.defaultModel;
     this.guild = guild;
     this.channel = message.channel as TextChannel;
     this.client = client;
@@ -217,7 +220,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
       this.provider = voice.voice_provider;
     } else {
       this.provider =
-        this.guild.settings.tts.tts_provider ?? TTSModels.ElevenLabsV3;
+        this.guild.settings.tts.tts_model ?? TTSModels.ElevenLabsV3;
     }
   }
 

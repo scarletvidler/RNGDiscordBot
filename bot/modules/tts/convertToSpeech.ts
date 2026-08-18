@@ -6,16 +6,18 @@ import streamToBuffer from "../../helpers/streamToBuffer.ts";
 import validateMessageContent from "./validate.ts";
 import { DBVoiceRole, DBVoiceUser } from "../../../supabase/models/voice.ts";
 import FishAudio from "../FishAudio.ts";
-import { FishAudioModels } from "../../types.ts";
+import { TTSModels } from "../../types.ts";
+import { DEFAULTS, TTS_MODELS, isTTSModel } from "../../config/defaults.ts";
 
 export default async function convertToSpeech(
   message: Message<boolean>,
   voice: DBVoiceUser | DBVoiceRole | null,
-  modelType: string = "eleven_v3",
+  modelType: string = DEFAULTS.defaultModel,
 ): Promise<{ audio: Readable; playedMessage: string; tokensUsed: number }> {
-  let voiceId = ClientInstance.installedGuilds.find(
-    (g) => g.id === message.guildId,
-  )?.settings.tts.elevenlabs_female_voice_id;
+  const guildSettings = ClientInstance.installedGuilds.find(
+    (guild) => guild.id === message.guildId,
+  )?.settings.tts;
+  let voiceId = guildSettings?.default_voice_id;
 
   if (voice) {
     voiceId = voice.voice_id;
@@ -27,15 +29,10 @@ export default async function convertToSpeech(
 
   const text = validateMessageContent(message);
 
-  if (modelType.includes("Fish")) {
-    return convertToSpeechWithFishAI(
-      voiceId,
-      text,
-      modelType as FishAudioModels,
-    );
-  } else {
-    return convertToSpeechWithElevenLabs(voiceId, text, modelType);
-  }
+  const model = isTTSModel(modelType) ? modelType : DEFAULTS.defaultModel;
+  return TTS_MODELS[model].provider === "fish"
+    ? convertToSpeechWithFishAI(voiceId, text, model)
+    : convertToSpeechWithElevenLabs(voiceId, text, model);
 }
 
 export async function convertToSpeechWithElevenLabs(
@@ -74,7 +71,7 @@ export async function convertToSpeechWithElevenLabs(
 export async function convertToSpeechWithFishAI(
   voiceId: string,
   text: string,
-  modelType: FishAudioModels,
+  modelType: TTSModels,
 ): Promise<{ audio: Readable; playedMessage: string; tokensUsed: number }> {
   const fishAudio = FishAudio.getInstance();
   try {

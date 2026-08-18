@@ -2,8 +2,12 @@ import { BotCommand, TTSModels } from "../types.ts";
 import { SlashCommandBuilder } from "discord.js";
 import ElevenLabs from "../modules/ElevenLabs.ts";
 import { createVoice } from "../../supabase/models/voice.ts";
-import ClientInstance from "../modules/ClientInstance.ts";
 import FishAudio from "../modules/FishAudio.ts";
+import {
+  getDefaultVoiceId,
+  isTTSModel,
+  TTS_MODELS,
+} from "../config/defaults.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -17,7 +21,7 @@ const command: BotCommand = {
         .addChoices(
           //  loop the models  //
           ...Object.values(TTSModels).map((model) => ({
-            name: model,
+            name: TTS_MODELS[model].label,
             value: model,
           })),
         ),
@@ -30,7 +34,12 @@ const command: BotCommand = {
     ),
   async execute(interaction, client, extendedGuild) {
     await interaction.deferReply();
-    const modelType = interaction.options.getString("model-type", true);
+    const selectedModel = interaction.options.getString("model-type", true);
+    if (!isTTSModel(selectedModel)) {
+      await interaction.editReply("That TTS model is not supported.");
+      return;
+    }
+    const modelType = selectedModel;
     let voiceId = interaction.options.getString("voice-id");
     let voiceName: string = "";
 
@@ -40,12 +49,13 @@ const command: BotCommand = {
         modelType == TTSModels.ElevenLabsFlashV2_5
       ) {
         const ElevenLabsInstance = ElevenLabs.getInstance();
-        voiceId = voiceId == null ? ClientInstance.default_elevens_id : voiceId;
+        voiceId = voiceId ?? getDefaultVoiceId(modelType);
         voiceId = await ElevenLabsInstance.ensureVoiceAvailable(voiceId);
         voiceName = await ElevenLabsInstance.getVoiceName(voiceId);
       } else {
-        voiceId = voiceId == null ? ClientInstance.default_fish_id : voiceId;
-        voiceName = await FishAudio.getInstance().ensureVoiceAvailable(voiceId);
+        voiceId = voiceId ?? getDefaultVoiceId(modelType);
+        voiceId = await FishAudio.getInstance().ensureVoiceAvailable(voiceId);
+        voiceName = "Fish Voice";
       }
     } catch (error) {
       console.error("Error ensuring voice availability:", error);

@@ -48,7 +48,9 @@ class FishAudio {
           mp3_bitrate: 128,
           sample_rate: 44100,
         },
-        model,
+        // The API supports this backend even though the published SDK's
+        // Backends union has not caught up yet.
+        model as Backends,
       )
       .withRawResponse();
   }

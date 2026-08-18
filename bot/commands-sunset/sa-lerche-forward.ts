@@ -61,7 +61,7 @@ const command: BotCommand = {
       const guildSettings = client.installedGuilds.find(
         (g) => g.id === guild.id,
       );
-      const voiceId = guildSettings?.settings.tts.elevenlabs_female_voice_id;
+      const voiceId = guildSettings?.settings.tts.default_voice_id;
       if (!voiceId) {
         await interaction.editReply(
           `[skipped] ${guild.name} (No TTS voice configured for this server.)`,

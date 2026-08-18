@@ -159,51 +159,51 @@ export type Database = {
       guild_tts_settings: {
         Row: {
           created_at: string
-          elevenlabs_female_voice_id: string | null
-          elevenlabs_male_voice_id: string | null
-          fisher_female_voice_id: string | null
-          fisher_male_voice_id: string | null
+          default_voice_id: string
           guild_id: string
           idle_timeout_seconds: number
+          listen_role_id: string | null
           replies_enabled: boolean
           room_prefix_enabled: boolean
+          setup_completed_at: string | null
+          tts_channel_id: string | null
           tts_channel_name: string
+          tts_model: string
           tts_ping_sound_enabled: boolean
-          tts_provider: string
           tts_provider_api_key: string | null
           tts_say_users_name: boolean
           updated_at: string
         }
         Insert: {
           created_at?: string
-          elevenlabs_female_voice_id?: string | null
-          elevenlabs_male_voice_id?: string | null
-          fisher_female_voice_id?: string | null
-          fisher_male_voice_id?: string | null
+          default_voice_id?: string
           guild_id: string
           idle_timeout_seconds?: number
+          listen_role_id?: string | null
           replies_enabled?: boolean
           room_prefix_enabled?: boolean
+          setup_completed_at?: string | null
+          tts_channel_id?: string | null
           tts_channel_name?: string
+          tts_model?: string
           tts_ping_sound_enabled?: boolean
-          tts_provider?: string
           tts_provider_api_key?: string | null
           tts_say_users_name?: boolean
           updated_at?: string
         }
         Update: {
           created_at?: string
-          elevenlabs_female_voice_id?: string | null
-          elevenlabs_male_voice_id?: string | null
-          fisher_female_voice_id?: string | null
-          fisher_male_voice_id?: string | null
+          default_voice_id?: string
           guild_id?: string
           idle_timeout_seconds?: number
+          listen_role_id?: string | null
           replies_enabled?: boolean
           room_prefix_enabled?: boolean
+          setup_completed_at?: string | null
+          tts_channel_id?: string | null
           tts_channel_name?: string
+          tts_model?: string
           tts_ping_sound_enabled?: boolean
-          tts_provider?: string
           tts_provider_api_key?: string | null
           tts_say_users_name?: boolean
           updated_at?: string

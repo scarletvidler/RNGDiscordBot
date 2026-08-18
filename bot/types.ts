@@ -49,10 +49,6 @@ export type APIGuild = {
 
 export class ExtendedClient extends Client {
   ownerId!: string;
-  default_elevens_id!: string;
-  default_fish_id!: string;
-  ttsChannelName!: string;
-  idleTimeout!: number;
   prefix!: string;
   commands: Collection<string, BotCommand>;
   installedGuilds!: DBGuildWithSettings[];

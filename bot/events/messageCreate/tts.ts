@@ -52,6 +52,7 @@ export async function handleTtsMessage(
     }
   } catch (error) {
     console.error("TTS validation error:", getErrorMessage(error));
+    console.error("Failed TTS message:", message.content);
     await message.reply(`TTS validation failed: ${getErrorMessage(error)}`);
   }
 }

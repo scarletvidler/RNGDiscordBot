@@ -2,7 +2,7 @@
 
 Lerche is a Discord text-to-speech bot built for voice-active servers that want messages read aloud in a way that feels social, lightweight, and easy to manage.
 
-At its core, Lerche listens for approved messages in a server, converts them into speech with ElevenLabs, and plays them in the sender's current voice channel. It is designed for friend groups and community servers that spend a lot of time in voice and want fast, natural TTS without a lot of setup friction.
+At its core, Lerche listens for approved messages in a server, converts them into speech with ElevenLabs or Fish Audio, and plays them in the sender's current voice channel. It is designed for friend groups and community servers that spend a lot of time in voice and want fast, natural TTS without a lot of setup friction.
 
 ## What Lerche Does
 
@@ -29,22 +29,23 @@ This makes Lerche useful for casual hangouts, accessibility support, background 
 
 ### TTS Playback
 
-Lerche uses ElevenLabs to generate speech and plays it directly in Discord voice channels. Messages are cleaned up before playback so they sound more natural, including flattening line breaks, handling mentions, and turning raw links into spoken-friendly text.
+Lerche uses ElevenLabs or Fish Audio to generate speech and plays it directly in Discord voice channels. Messages are cleaned up before playback so they sound more natural, including flattening line breaks, handling mentions, and turning raw links into spoken-friendly text.
 
 ### Guild-Specific Settings
 
 Each server can keep its own settings, including:
-- TTS channel name
+- TTS channel
+- TTS access role, or access for everyone
 - Reply visibility
 - Room-prefix mode
-- Default and personal voice IDs
+- Default model and voice ID, plus personal model and voice IDs
 - First-message jingle
 - Spoken user names
 - Idle timeout duration
 
 ### Role-Aware Access
 
-Lerche is built for controlled use, not open spam. TTS access is limited to members with the `Lerche Listens` role.
+Lerche is built for controlled use, not open spam. Administrators choose a TTS access role during `/tts-install`, or may allow everyone.
 
 ### Utility Commands
 
@@ -57,10 +58,11 @@ Lerche also includes commands for help, version reporting, token balance checks,
 | `/help` | Explains how to use Lerche and its commands. |
 | `/version` | Shows the current bot version. |
 | `/info-token-count` | Shows an admin the guild's remaining TTS token balance. |
+| `/tts-install` | Guides an admin through the server's complete TTS setup. |
 | `/config-channel-name` | Changes the text channel Lerche watches for TTS. |
 | `/config-afk-timeout` | Changes how long Lerche waits before leaving an idle voice channel. |
-| `/config-default-voice` | Sets the guild's default ElevenLabs voice. |
-| `/personal-set-my-voice` | Sets the user's personal ElevenLabs voice for the guild. |
+| `/config-default-voice` | Sets the guild's default model and voice. |
+| `/personal-set-my-voice` | Sets the user's personal model and voice for the guild. |
 | `/toggle-tts-mode` | Toggles `/t` room-prefix mode for the guild. |
 | `/toggle-tts-confirmations` | Toggles channel confirmation replies from Lerche. |
 | `/toggle-tts-jingle` | Toggles the jingle before the first TTS message. |
@@ -86,6 +88,7 @@ Lerche is built with:
 - TypeScript
 - discord.js
 - ElevenLabs
+- Fish Audio
 - Supabase
 
 The bot loads commands and events dynamically at startup, and stores guild-specific settings and logs in Supabase.
@@ -97,6 +100,7 @@ This repository can still be self-hosted if needed, but it is primarily the sour
 Minimum setup:
 - A Discord bot token and application client ID
 - An ElevenLabs API key
+- A Fish Audio API key when using Fish models
 - A Supabase project or local Supabase instance
 
 Useful scripts:
@@ -113,10 +117,9 @@ Environment variables currently used include:
 BOT_TOKEN=your_discord_bot_token
 CLIENT_ID=your_discord_application_client_id
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
+FISH_API_KEY=your_fish_audio_api_key
 SUPABASE_URL=http://127.0.0.1:55241
 SUPABASE_SECRET_KEY=your_supabase_secret_key
-TTS_CHANNEL_NAME=tts
-default_voice_id=cgSgspJ2msm6clMCkdW9
 ```
 
 ## Project Shape

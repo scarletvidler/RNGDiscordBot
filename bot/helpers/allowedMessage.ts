@@ -1,6 +1,6 @@
 import type { Message } from "discord.js";
 import { ExtendedClient } from "../types.ts";
-import Guild from "discord.js";
+import type { Guild, VoiceBasedChannel } from "discord.js";
 import {
   canLerchePerformAction,
   PermissionName,
@@ -24,7 +24,7 @@ export default async function allowedMessage(
 export async function allowedToJoinChannel(
   client: ExtendedClient,
   guild: Guild,
-  channel: Guild.Channel,
+  channel: VoiceBasedChannel,
 ): Promise<boolean> {
   if (!guild) return false;
   if (!channel || !channel.isVoiceBased()) return false;

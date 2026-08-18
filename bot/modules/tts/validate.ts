@@ -9,7 +9,7 @@ export default function validateMessageContent(
     let content = message.content.trim();
     const roomPrefixEnabled =
       ClientInstance.installedGuilds.find((g) => g.id === message.guildId)
-        ?.settings.tts.roomPrefixEnabled ?? false;
+        ?.settings.tts.room_prefix_enabled ?? false;
 
     if (roomPrefixEnabled) {
       content = content.replace(/^\/t(?:\s+|$)/i, "").trim();

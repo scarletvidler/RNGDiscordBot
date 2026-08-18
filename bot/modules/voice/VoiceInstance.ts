@@ -34,7 +34,7 @@ export default class VoiceInstance {
       this.guild = client.guilds.cache.get(guild.id)!;
       this.client = client;
       this.currentChannel = startingChannel;
-      this.idleTimeout = this.DBGuild.settings.tts.idleTimeout || 600;
+      this.idleTimeout = this.DBGuild.settings.tts.idle_timeout_seconds || 600;
       this.init();
     } catch (error) {
       console.error(
@@ -50,7 +50,7 @@ export default class VoiceInstance {
       throw new Error("Cannot initialize while VoiceInstance is destroying.");
     }
 
-    this.idleTimeout = this.DBGuild.settings.tts.idleTimeout || 600;
+    this.idleTimeout = this.DBGuild.settings.tts.idle_timeout_seconds || 600;
     this.connection = this.setVoiceConnection();
     this._setConnectionEvents(this.connection);
     this.player = this.setVoicePlayer(this.connection);

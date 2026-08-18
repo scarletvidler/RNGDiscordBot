@@ -19,7 +19,9 @@ const command: BotCommand = {
     await interaction.editReply(
       nextValue
         ? "TTS room mode is enabled. Lerche will read messages from your current voice room when they start with `/t`."
-        : `TTS room mode is disabled. Lerche will use #${extendedGuild.settings.tts.tts_channel_name}.`,
+        : extendedGuild.settings.tts.tts_channel_id
+          ? `TTS room mode is disabled. Lerche will use <#${extendedGuild.settings.tts.tts_channel_id}>.`
+          : `TTS room mode is disabled. Lerche will use #${extendedGuild.settings.tts.tts_channel_name}.`,
     );
   },
 };

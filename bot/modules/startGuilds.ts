@@ -1,7 +1,6 @@
 import type { Guild } from "discord.js";
 import type { APIGuild, ExtendedClient } from "../types.ts";
 import { getGuilds } from "../api/getGuilds.ts";
-import ClientInstance from "./ClientInstance.ts";
 import {
   DBUpsertGuildTTSSettings,
   getOrCreateDBGuild,
@@ -34,27 +33,6 @@ export default async function startGuilds(
   }
 }
 
-function defaultGuildSettings() {
-  return {
-    tts: {
-      repliesEnabled: true,
-      roomPrefixEnabled: false,
-      pingSoundEnabled: true,
-      sayUsersName: false,
-      elevenlabs_female_voice_id: ClientInstance.femaleRoleId,
-      elevenlabs_male_voice_id: ClientInstance.maleRoleId,
-      ttsChannelName: ClientInstance.ttsChannelName,
-      idleTimeout: ClientInstance.idleTimeout,
-    },
-    logging: {
-      messageCount: 0,
-      tokenTotalUsage: 0,
-      tokenBalance: 5000,
-      tokenLimit: 5000,
-    },
-  };
-}
-
 export async function setUpExtendedGuild(
   guild: Guild,
   client: ExtendedClient,
@@ -62,17 +40,9 @@ export async function setUpExtendedGuild(
   try {
     const DBGuild = await getOrCreateDBGuild(guild);
 
-    const TTSsettings = await DBUpsertGuildTTSSettings({
-      guild_id: guild.id,
-      replies_enabled: true,
-      room_prefix_enabled: false,
-      tts_ping_sound_enabled: true,
-      tts_say_users_name: false,
-      elevenlabs_female_voice_id: ClientInstance.femaleRoleId,
-      elevenlabs_male_voice_id: ClientInstance.maleRoleId,
-      tts_channel_name: ClientInstance.ttsChannelName,
-      idle_timeout_seconds: ClientInstance.idleTimeout,
-    });
+    // Supplying only the conflict key creates a missing settings row using
+    // database defaults without overwriting an existing guild's choices.
+    const TTSsettings = await DBUpsertGuildTTSSettings({ guild_id: guild.id });
     const extendedGuild: DBGuildWithSettings = {
       ...DBGuild,
       users: [], // Initialize users as an empty array; you may want to populate this based on your application's logic

@@ -1,9 +1,13 @@
-import type { ReadableStream } from "stream/web";
+type AudioChunk = Uint8Array<ArrayBufferLike>;
+type ReaderStream = {
+  getReader(): {
+    read(): Promise<{ done: boolean; value?: AudioChunk }>;
+    releaseLock(): void;
+  };
+};
 
 export default async function streamToBuffer(
-  stream:
-    | ReadableStream<Uint8Array<ArrayBufferLike>>
-    | AsyncIterable<Uint8Array<ArrayBufferLike>>,
+  stream: ReaderStream | AsyncIterable<AudioChunk>,
 ): Promise<Buffer> {
   const chunks: Buffer[] = [];
 
@@ -23,7 +27,7 @@ export default async function streamToBuffer(
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      chunks.push(Buffer.from(value));
+      if (value) chunks.push(Buffer.from(value));
     }
   } finally {
     reader.releaseLock();
