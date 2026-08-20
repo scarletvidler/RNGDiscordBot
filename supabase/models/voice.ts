@@ -30,12 +30,14 @@ export async function createVoice(voice: DBVoice): Promise<DBVoice> {
   if (!supabase) throw new Error("Supabase client not initialized");
   const { data, error } = await supabase
     .from("guild_voices")
-    .upsert(voice, { onConflict: "guild_id,owner_type,owner_id" })
+    .upsert(voice, {
+      onConflict: "guild_id,owner_type,owner_id",
+      ignoreDuplicates: false,
+    })
     .select()
-    .maybeSingle();
+    .single();
 
   if (error) throw error;
-  invariant(data != null, "Voice not created in database");
   return data;
 }
 
