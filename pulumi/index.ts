@@ -1,22 +1,20 @@
+import * as pulumi from "@pulumi/pulumi";
 import createS3Bucket from "./resources/storage";
-import createECRRepository from "./resources/container";
+import {
+  createECRRepository,
+  createRepositoryImage,
+} from "./resources/container";
 
-function main() {
-  try {
-    const ecrRepository = createECRRepository(
-      `${process.env.PROJECT_NAME ?? "lerche-bot"}-ecr-repository`,
-    );
+const projectName = process.env.PROJECT_NAME ?? "lerche-bot";
 
-    const s3Bucket = createS3Bucket(
-      `${process.env.PROJECT_NAME ?? "lerche-bot"}-s3-bucket`,
-    );
+const ecrRepository = createECRRepository(`${projectName}-ecr-repository`);
 
-    console.log(`ECR Repository created: ${ecrRepository.id}`);
-    console.log(`S3 Bucket created: ${s3Bucket.id}`);
-  } catch (error) {
-    console.error(error);
-    process.exit(1);
-  }
-}
+const repositoryImage = createRepositoryImage(
+  ecrRepository,
+  `${projectName}-repository-image`,
+);
 
-main();
+const s3Bucket = createS3Bucket(`${projectName}-s3-bucket`);
+console.log(pulumi.interpolate`${repositoryImage.id}`);
+console.log(pulumi.interpolate`${ecrRepository.repositoryUrl}`);
+console.log(pulumi.interpolate`${s3Bucket.id}`);
