@@ -1,7 +1,10 @@
 import { BotCommand, TTSModels } from "../types.ts";
 import { SlashCommandBuilder } from "discord.js";
 import ElevenLabs from "../modules/ElevenLabs.ts";
-import { createVoice } from "../../supabase/models/voice.ts";
+import {
+  createVoice,
+  type DBVoiceUser,
+} from "../../supabase/models/voice.ts";
 import FishAudio from "../modules/FishAudio.ts";
 import {
   getDefaultVoiceId,
@@ -40,7 +43,7 @@ const command: BotCommand = {
       return;
     }
     const modelType = selectedModel;
-    let voiceId = interaction.options.getString("voice-id");
+    let voiceId = interaction.options.getString("voice-id")?.trim() || null;
     let voiceName: string = "";
 
     try {
@@ -67,18 +70,39 @@ const command: BotCommand = {
 
     console.log(`Voice id: ${voiceId}`);
 
-    await createVoice({
-      owner_id: interaction.user.id,
-      voice_id: voiceId,
-      voice_name: voiceName,
-      voice_provider: modelType,
-      guild_id: interaction.guildId!,
-      owner_type: "user",
-      created_at: new Date().toISOString(),
-    });
+    let savedVoice: DBVoiceUser;
+    try {
+      savedVoice = (await createVoice({
+        owner_id: interaction.user.id,
+        voice_id: voiceId,
+        voice_name: voiceName,
+        voice_provider: modelType,
+        guild_id: interaction.guildId!,
+        owner_type: "user",
+        created_at: new Date().toISOString(),
+      })) as DBVoiceUser;
+    } catch (error) {
+      console.error("Error saving personal voice:", error);
+      await interaction.editReply(
+        "I couldn't save your personal TTS voice. Please try again later.",
+      );
+      return;
+    }
+
+    const cachedUser = extendedGuild.users.find(
+      (user) => user.id === interaction.user.id,
+    );
+    if (cachedUser) {
+      cachedUser.voice = savedVoice;
+    } else {
+      extendedGuild.users.push({
+        id: interaction.user.id,
+        voice: savedVoice,
+      });
+    }
 
     await interaction.editReply(
-      `Your personal TTS voice ID has been set to: ${voiceId}`,
+      `Your personal TTS voice ID has been set to: ${savedVoice.voice_id}`,
     );
   },
 };

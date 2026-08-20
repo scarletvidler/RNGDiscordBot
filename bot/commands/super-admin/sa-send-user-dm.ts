@@ -2,7 +2,7 @@ import { BotCommand } from "../../types.ts";
 import { SlashCommandBuilder } from "@discordjs/builders";
 
 const command: BotCommand = {
-  guildId: "1179157503766962176",
+  guildId: "1462584584771342458",
   data: new SlashCommandBuilder()
     .setName("send-user-dm")
     .setDescription("Send a direct message to a user")
