@@ -9,7 +9,7 @@ import {
 } from "discord.js";
 import type { BotCommand } from "../types.ts";
 import { rollPokemon } from "../../supabase/models/pokemon.ts";
-import { getUserProfile } from "../../supabase/models/user_pokemon.ts";
+import { DBGetUserPokemon } from "../../supabase/models/user_pokemon.ts";
 import formatPokemonName from "../helpers/formatPokemonName.ts";
 
 const command: BotCommand = {
@@ -21,7 +21,7 @@ const command: BotCommand = {
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply();
 
-    const { data: profile, error: profileError } = await getUserProfile(
+    const { data: profile, error: profileError } = await DBGetUserPokemon(
       interaction.user.id,
       interaction.user.username,
       interaction.guildId!,

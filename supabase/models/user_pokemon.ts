@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from "../client.ts";
 import { Tables } from "../../supabase/types.ts";
 
-export const getUserProfile = async (
+export const DBGetUserPokemon = async (
   discordUserId: string,
   username: string,
   id: string,
