@@ -47,7 +47,6 @@ fi
 TABLE_NAMES=(
   "discord_users"
   "guild_chat_logs"
-  "guild_command_settings"
   "guild_members"
   "guild_tts_settings"
   "guilds"
