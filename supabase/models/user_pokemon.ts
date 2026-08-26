@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "../client.ts";
 import { Tables, TablesInsert, TablesUpdate } from "../../supabase/types.ts";
 
 export type DBUserPokemon = Tables<"user_pokemon">;
+export type DBGuildMember = Tables<"guild_members">;
 
 type DBUpsertUserPokemon = {
   rows: TablesInsert<"user_pokemon"> & Required<Pick<DBUserPokemon, "id">>;
@@ -25,46 +26,30 @@ export async function DBinsertUserPokemon(
   return data;
 }
 
-export const DBGetUserPokemon = async (
-  discordUserId: string,
-  username: string,
-  id: string,
-  name: string,
-): Promise<{ data: Tables<"guild_members"> | null; error: any }> => {
+export async function DBGetUserPokemon(
+  userId: string,
+  guildId: string,
+): Promise<DBUserPokemon[]> {
   try {
     const supabase = getSupabaseAdmin();
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: user } = await supabase
-      .from("discord_users")
-      .upsert(
-        { id: discordUserId, username: username },
-        { onConflict: "discord_id" },
-      )
-      .select("id")
-      .single()
-      .throwOnError();
-
-    const { data: server } = await supabase
-      .from("guilds")
-      .upsert({ id, name }, { onConflict: "id" })
-      .select("id")
-      .single()
-      .throwOnError();
-
-    const { data: profile } = await supabase
-      .from("guild_members")
-      .upsert(
-        { user_id: user.id, guild_id: server.id },
-        { onConflict: "user_id, server_id" },
-      )
-      .select("*")
-      .single()
-      .throwOnError();
-
-    return { data: profile, error: null };
+    const { data, error } = await supabase
+      .from("user_pokemon")
+      .select()
+      .eq("user_id", userId)
+      .eq("guild_id", guildId);
+    if (error) throw error;
+    return data;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return { data: null, error: errorMessage };
+    throw new Error(errorMessage);
   }
-};
+}
+
+export async function DBGetGuildMember(
+  userId: string,
+  guildId: string,
+): Promise<DBGuildMember | null> {
+  return null as unknown as DBGuildMember; // TODO: Implement this
+}

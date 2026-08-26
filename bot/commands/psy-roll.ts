@@ -21,11 +21,9 @@ const command: BotCommand = {
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply();
 
-    const { data: profile, error: profileError } = await DBGetUserPokemon(
+    const usersPokemon = await DBGetUserPokemon(
       interaction.user.id,
-      interaction.user.username,
       interaction.guildId!,
-      interaction.guild?.name ?? "Unknown Server",
     );
 
     if (profileError || !profile) {
