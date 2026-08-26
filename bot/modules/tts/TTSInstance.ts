@@ -129,7 +129,7 @@ export class TTSInstance {
           await this.reply.edit("Message played in voice channel.");
         }
 
-        if (this.updateMessageCount() % 100 === 0) {
+        if ((await this.updateMessageCount()) % 100 === 0) {
           await this.channel.send(
             `👋 Thanks for supporting Lerche's development! If you're enjoying Lerche, please consider leaving a review on Top.gg! 
 https://top.gg/bot/1511773768438251660#reviews`,
@@ -248,11 +248,11 @@ https://top.gg/bot/1511773768438251660#reviews`,
     }
   }
 
-  updateMessageCount(count?: number): number {
+  async updateMessageCount(count?: number): Promise<number> {
     try {
       const newCount = count ?? this.getMessageCount() + 1;
       this.guild.settings.logging.message_count = newCount;
-      DBupdateGuild({ id: this.guild.id, message_count: newCount });
+      await DBupdateGuild({ id: this.guild.id, message_count: newCount });
       return newCount;
     } catch (error) {
       console.error("Error setting message count:", error);
