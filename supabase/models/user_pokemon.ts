@@ -4,8 +4,8 @@ import { Tables } from "../../supabase/types.ts";
 export const getUserProfile = async (
   discordUserId: string,
   username: string,
-  discordServerId: string,
-  serverName: string,
+  id: string,
+  name: string,
 ): Promise<{ data: Tables<"guild_members"> | null; error: any }> => {
   try {
     const supabase = getSupabaseAdmin();
@@ -23,10 +23,7 @@ export const getUserProfile = async (
 
     const { data: server } = await supabase
       .from("guilds")
-      .upsert(
-        { id: discordServerId, name: serverName },
-        { onConflict: "discord_server_id" },
-      )
+      .upsert({ id, name }, { onConflict: "id" })
       .select("id")
       .single()
       .throwOnError();
