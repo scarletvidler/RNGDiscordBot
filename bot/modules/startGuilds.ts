@@ -57,7 +57,18 @@ export async function setUpExtendedGuild(
       },
     };
 
-    client.installedGuilds.push(extendedGuild);
+    const existingGuildIndex = client.installedGuilds.findIndex(
+      (installedGuild) => installedGuild.id === guild.id,
+    );
+
+    if (existingGuildIndex === -1) {
+      client.installedGuilds.push(extendedGuild);
+    } else {
+      // Refresh the existing cache entry instead of leaving stale duplicates.
+      // Preserve cached users because they are populated lazily at runtime.
+      extendedGuild.users = client.installedGuilds[existingGuildIndex].users;
+      client.installedGuilds[existingGuildIndex] = extendedGuild;
+    }
 
     return extendedGuild;
   } catch (error) {

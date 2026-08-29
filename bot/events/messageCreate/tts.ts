@@ -10,6 +10,7 @@ import {
 } from "../../modules/supportMessages.ts";
 import { getErrorMessage } from "../../helpers/errors.ts";
 import { violatesLercheRules } from "../../modules/tts/textModeration.ts";
+import { DBGetGuild } from "../../../supabase/models/guilds.ts";
 
 const TTS_RULES_VIOLATION_MESSAGE =
   "This message was not translated as it violated Lerche's allowed rules.";
@@ -35,6 +36,17 @@ export async function handleTtsMessage(
         );
         guild = await setUpExtendedGuild(message.guild, client);
         invariant(guild, "Guild not found in installedGuilds");
+      } else {
+        // Allow quota changes made in the database to take effect without a
+        // bot restart. Other guild settings remain cached as before.
+        const dbGuild = await DBGetGuild(guild.id);
+        invariant(dbGuild, `Guild ${guild.id} not found in database`);
+        guild.settings.logging.token_limit = dbGuild.token_limit;
+        guild.settings.logging.token_total_usage = dbGuild.token_total_usage;
+        guild.settings.logging.token_balance = Math.max(
+          dbGuild.token_limit - dbGuild.token_total_usage,
+          0,
+        );
       }
 
       if (hasReachedUsageLimit(guild)) {

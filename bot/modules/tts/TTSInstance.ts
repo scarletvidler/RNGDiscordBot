@@ -262,8 +262,9 @@ https://top.gg/bot/1511773768438251660#reviews`,
 
   getUsageLimits(): number {
     try {
-      const { token_balance } = this.guild.settings.logging;
-      return token_balance;
+      const { token_limit, token_total_usage } =
+        this.guild.settings.logging;
+      return Math.max(token_limit - token_total_usage, 0);
     } catch (error) {
       console.error("Error retrieving usage limits:", error);
       throw new Error("Failed to retrieve usage limits.");
@@ -290,11 +291,11 @@ https://top.gg/bot/1511773768438251660#reviews`,
   async updateUsage(tokensUsed: number): Promise<void> {
     try {
       const previousTotalUsage = this.guild.settings.logging!.token_total_usage;
-      const newBalance =
-        this.guild.settings.logging!.token_balance - tokensUsed >= 0
-          ? this.guild.settings.logging!.token_balance - tokensUsed
-          : 0;
       const nextTotalUsage = previousTotalUsage + tokensUsed;
+      const newBalance = Math.max(
+        this.guild.settings.logging!.token_limit - nextTotalUsage,
+        0,
+      );
 
       this.guild.settings.logging!.token_balance = newBalance;
       this.guild.settings.logging!.token_total_usage = nextTotalUsage;

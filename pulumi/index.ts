@@ -1,9 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
-import createS3Bucket from "./resources/storage";
-import {
-  createECRRepository,
-  createRepositoryImage,
-} from "./resources/container";
+import createS3Bucket from "./resources/s3";
+import { createECRRepository, createRepositoryImage } from "./resources/ecr";
 
 const projectName = process.env.PROJECT_NAME ?? "lerche-bot";
 
@@ -15,6 +12,6 @@ const repositoryImage = createRepositoryImage(
 );
 
 const s3Bucket = createS3Bucket(`${projectName}-s3-bucket`);
-console.log(pulumi.interpolate`${repositoryImage.id}`);
-console.log(pulumi.interpolate`${ecrRepository.repositoryUrl}`);
-console.log(pulumi.interpolate`${s3Bucket.id}`);
+pulumi.interpolate`console.log(${repositoryImage.id})`;
+pulumi.interpolate`console.log(${ecrRepository.repositoryUrl})`;
+pulumi.interpolate`console.log(${s3Bucket.id})`;
