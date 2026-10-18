@@ -34,6 +34,141 @@ export type Database = {
   }
   public: {
     Tables: {
+      discord_entitlements: {
+        Row: {
+          consumed: boolean
+          deleted: boolean
+          ends_at: string | null
+          guild_id: string
+          id: string
+          sku_id: string
+          starts_at: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          consumed?: boolean
+          deleted?: boolean
+          ends_at?: string | null
+          guild_id: string
+          id: string
+          sku_id: string
+          starts_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          consumed?: boolean
+          deleted?: boolean
+          ends_at?: string | null
+          guild_id?: string
+          id?: string
+          sku_id?: string
+          starts_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_entitlements_guild_id_fkey"
+            columns: ["guild_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discord_entitlements_sku_id_fkey"
+            columns: ["sku_id"]
+            isOneToOne: false
+            referencedRelation: "discord_skus"
+            referencedColumns: ["sku_id"]
+          },
+        ]
+      }
+      discord_skus: {
+        Row: {
+          active: boolean
+          created_at: string
+          name: string
+          sku_id: string
+          tokens_per_period: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          name: string
+          sku_id: string
+          tokens_per_period: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          name?: string
+          sku_id?: string
+          tokens_per_period?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      discord_subscriptions: {
+        Row: {
+          canceled_at: string | null
+          current_period_end: string
+          current_period_start: string
+          entitlement_id: string | null
+          guild_id: string
+          id: string
+          purchaser_user_id: string
+          renewal_sku_ids: Json | null
+          sku_id: string
+          status: number
+          updated_at: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          current_period_end: string
+          current_period_start: string
+          entitlement_id?: string | null
+          guild_id: string
+          id: string
+          purchaser_user_id: string
+          renewal_sku_ids?: Json | null
+          sku_id: string
+          status: number
+          updated_at?: string
+        }
+        Update: {
+          canceled_at?: string | null
+          current_period_end?: string
+          current_period_start?: string
+          entitlement_id?: string | null
+          guild_id?: string
+          id?: string
+          purchaser_user_id?: string
+          renewal_sku_ids?: Json | null
+          sku_id?: string
+          status?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_subscriptions_guild_id_fkey"
+            columns: ["guild_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discord_subscriptions_sku_id_fkey"
+            columns: ["sku_id"]
+            isOneToOne: false
+            referencedRelation: "discord_skus"
+            referencedColumns: ["sku_id"]
+          },
+        ]
+      }
       discord_users: {
         Row: {
           avatar_url: string | null
@@ -379,6 +514,63 @@ export type Database = {
         }
         Relationships: []
       }
+      token_grants: {
+        Row: {
+          amount: number
+          billing_period_end: string | null
+          billing_period_start: string | null
+          created_at: string
+          discord_entitlement_id: string | null
+          discord_subscription_id: string | null
+          guild_id: string
+          id: string
+          sku_id: string | null
+          source: string
+          source_key: string
+        }
+        Insert: {
+          amount: number
+          billing_period_end?: string | null
+          billing_period_start?: string | null
+          created_at?: string
+          discord_entitlement_id?: string | null
+          discord_subscription_id?: string | null
+          guild_id: string
+          id?: string
+          sku_id?: string | null
+          source: string
+          source_key: string
+        }
+        Update: {
+          amount?: number
+          billing_period_end?: string | null
+          billing_period_start?: string | null
+          created_at?: string
+          discord_entitlement_id?: string | null
+          discord_subscription_id?: string | null
+          guild_id?: string
+          id?: string
+          sku_id?: string | null
+          source?: string
+          source_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_grants_guild_id_fkey"
+            columns: ["guild_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_grants_sku_id_fkey"
+            columns: ["sku_id"]
+            isOneToOne: false
+            referencedRelation: "discord_skus"
+            referencedColumns: ["sku_id"]
+          },
+        ]
+      }
       user_pokemon: {
         Row: {
           created_at: string
@@ -426,7 +618,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      grant_discord_tokens: {
+        Args: {
+          p_amount: number
+          p_entitlement_id?: string | null
+          p_guild_id: string
+          p_period_end?: string | null
+          p_period_start?: string | null
+          p_sku_id?: string | null
+          p_source: string
+          p_source_key: string
+          p_subscription_id?: string | null
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       voice_owner_type: "user" | "role"

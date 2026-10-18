@@ -4,6 +4,7 @@ import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { BotCommand } from "../types.ts";
 import { DBGuildWithSettings } from "../../supabase/models/guilds.ts";
 import { setUpExtendedGuild } from "../modules/startGuilds.ts";
+import { getGuildPremiumState } from "../../supabase/models/monetization.ts";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -18,13 +19,12 @@ const command: BotCommand = {
     const extendedGuild = await setUpExtendedGuild(interaction.guild!, client);
     const tokenUsage = extendedGuild.settings.logging.token_total_usage;
     const tokenLimit = extendedGuild.settings.logging.token_limit;
-    const tokenBalance = tokenLimit - tokenUsage;
+    const tokenBalance = Math.max(tokenLimit - tokenUsage, 0);
+    const premiumState = await getGuildPremiumState(interaction.guildId!);
 
-    const isFreeTier = tokenLimit <= 10000; // Assuming free tier has a limit of 1,000,000 tokens
-
-    const message = isFreeTier
-      ? `**Remaining Balance:** ${tokenBalance.toLocaleString()} tokens. Be careful not to use too many tokens, this is the free trial!`
-      : `This guild is on a paid tier. **Remaining Balance:** ${tokenBalance.toLocaleString()} tokens.`;
+    const message = premiumState.entitlement
+      ? `This server has an active **${premiumState.sku?.name ?? "Lerche Premium"}** subscription. **Remaining Balance:** ${tokenBalance.toLocaleString()} tokens.`
+      : `**Remaining Balance:** ${tokenBalance.toLocaleString()} tokens. Use \`/premium\` to add a monthly token plan for this server.`;
 
     // Update the guild settings to toggle TTS replies
 

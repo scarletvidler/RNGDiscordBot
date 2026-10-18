@@ -20,7 +20,8 @@
     "release:major:beta": "npm version major --preid=beta",
     "release:beta": "npm version prerelease --preid=beta",
     "typecheck": "tsc && tsc -p tsconfig.json --noEmit",
-    "typecheck:bot": "tsc -p tsconfig.json --noEmit"
+    "typecheck:bot": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test bot/**/*.test.ts"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.2",

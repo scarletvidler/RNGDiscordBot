@@ -9,6 +9,7 @@ import { type BotCommand, type BotEvent } from "./types.ts";
 import ClientInstance from "./modules/ClientInstance.ts";
 import startGuilds from "./modules/startGuilds.ts";
 import { botVersion } from "./version.ts";
+import { startDiscordMonetization } from "./modules/monetization/discordMonetization.ts";
 
 console.log(`Starting Lerche Discord Bot v${botVersion}`);
 
@@ -94,12 +95,16 @@ export async function startBot(): Promise<void> {
     console.log(`🤖 Logged in as ${ClientInstance.user?.tag}`);
 
     const guildIds = await startGuilds(ClientInstance);
-    registerSlashCommands(
+    await registerSlashCommands(
       ClientInstance,
       process.env.CLIENT_ID!,
       guildIds,
       process.env.BOT_TOKEN!,
     );
+
+    await startDiscordMonetization(ClientInstance).catch((error) => {
+      console.error("Failed to start Discord monetization:", error);
+    });
 
     ClientInstance.user!.setPresence({
       activities: [

@@ -18,14 +18,12 @@ export function usageMessage(
       `**🛑 Please note the following:**
 - Lerche will stop processing TTS once **${allowance.toLocaleString()} total tokens** have been used.
 - The bot is still in early development, and all costs are currently coming directly from my bank account.
-- I simply cannot cover these costs alone, If you really love the bot and want to keep using her, please reach out to me on Discord at **o._rosie_.o**.
-- I have a Patreon at https://www.patreon.com/cw/LercheTTS where you can support the bot's development and get more tokens monthly,
-- I am sorry about this, and I do plan to add other ways to help when I can.
+- Server administrators can use **/premium** to subscribe through Discord and add more tokens each month.
 
 **‼️ Please note:**
 This message was introduced on **15 July 2026**. Any usage before that date will **not** be counted toward the total, because I do not think that would be fair.
 
-If you really love the bot and want to keep using her, please reach out to me on Discord at **o._rosie_.o**. I have a Buy Me a Coffee link and can provide a temporary token allowance. (just the amount it costs me)`,
+If you need help with billing or token grants, please reach out to me on Discord at **o._rosie_.o**.`,
     )
     .addFields(
       {
@@ -56,13 +54,11 @@ export function usageLimitReachedMessage(
       [
         `Lerche has reached the mandatory **${allowance.toLocaleString()} token limit** and must stop processing TTS messages.`,
         "",
-        "The bot is still in early development, and all current running costs are coming directly from my bank account.",
-        "I simply cannot cover these costs alone, so a **small Patreon subscription for power users** will be introduced soon.",
+        "The bot is still in early development, and voice generation has a real running cost.",
         "",
-        "If you really love the bot and want to keep using her, please reach out to me on Discord at `o._rosie_.o`.",
-        "I have a Patreon at https://www.patreon.com/cw/LercheTTS where you can support the bot's development and get more tokens monthly",
+        "A server administrator can use **/premium** to subscribe through Discord and add more tokens each month.",
         "",
-        "I am sorry about this, and I do plan to add other ways to help when I can.",
+        "If a payment was already made and tokens are missing, please use **/premium-status** and contact `o._rosie_.o`.",
       ].join("\n"),
     )
     .addFields({

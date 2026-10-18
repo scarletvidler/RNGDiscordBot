@@ -58,6 +58,8 @@ Lerche also includes commands for help, version reporting, token balance checks,
 | `/help` | Explains how to use Lerche and its commands. |
 | `/version` | Shows the current bot version. |
 | `/info-token-count` | Shows an admin the guild's remaining TTS token balance. |
+| `/premium` | Shows Discord guild subscription plans and purchase buttons. |
+| `/premium-status` | Shows the guild's current subscription and latest token grant. |
 | `/tts-install` | Guides an admin through the server's complete TTS setup. |
 | `/config-channel-name` | Changes the text channel Lerche watches for TTS. |
 | `/config-afk-timeout` | Changes how long Lerche waits before leaving an idle voice channel. |
@@ -78,7 +80,7 @@ Right now:
 - TTS usage is tracked per guild.
 - Lerche warns users as usage approaches the configured token cap.
 - TTS stops once the guild reaches the hard token limit.
-- Funding support options are planned for heavier users.
+- Server administrators can purchase monthly token plans through Discord Premium Apps.
 
 That limit exists because voice generation has a real running cost, and the current version of Lerche is still being supported directly rather than through a formal hosted plan.
 
@@ -120,7 +122,16 @@ ELEVENLABS_API_KEY=your_elevenlabs_api_key
 FISH_API_KEY=your_fish_audio_api_key
 SUPABASE_URL=http://127.0.0.1:55241
 SUPABASE_SECRET_KEY=your_supabase_secret_key
+DISCORD_PREMIUM_SKUS=[{"skuId":"123456789012345678","name":"Supporter","tokens":50000}]
+DISCORD_MONETIZATION_RECONCILE_MINUTES=360
 ```
+
+`DISCORD_PREMIUM_SKUS` maps published Discord guild-subscription SKU IDs to
+the number of tokens granted per billing period. The bot synchronizes this
+configuration to Supabase at startup. Discord entitlements are reconciled at
+startup and periodically in addition to being handled through Gateway events.
+See [Discord monetization setup](docs/discord-monetization.md) for Developer
+Portal, deployment, grant-policy, and testing instructions.
 
 ## Project Shape
 
