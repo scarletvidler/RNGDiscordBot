@@ -6,6 +6,7 @@ export default function validateMessageContent(
   message: Message<boolean>,
 ): string {
   try {
+    const CUSTOM_EMOJI_REGEX = /<a?:[A-Za-z0-9_]+:\d+>/g;
     let content = message.content.trim();
     const roomPrefixEnabled =
       ClientInstance.installedGuilds.find((g) => g.id === message.guildId)
@@ -16,6 +17,11 @@ export default function validateMessageContent(
     }
 
     content = content.replace(/\n/g, " ");
+
+    content = content.replace(CUSTOM_EMOJI_REGEX, (match) => {
+      const emoji = match.split(":")[1].split(":")[0];
+      return `:${emoji}:`;
+    });
 
     message.mentions.users.forEach((user) => {
       console.log(user.globalName?.match(/^[\x00-\x7F]+$/));

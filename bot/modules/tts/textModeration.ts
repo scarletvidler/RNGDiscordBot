@@ -6,9 +6,9 @@ import {
 const MODEL = "Xenova/toxic-bert";
 
 const BLOCKED_LABEL_THRESHOLDS = {
-  identity_hate: 0.5,
-  severe_toxic: 0.5,
-  threat: 0.55,
+  identity_hate: 0.3,
+  severe_toxic: 0.3,
+  threat: 0.15,
 } as const;
 
 let classifierPromise: Promise<TextClassificationPipeline> | undefined;
