@@ -9,6 +9,7 @@ import { type BotCommand, type BotEvent } from "./types.ts";
 import ClientInstance from "./modules/ClientInstance.ts";
 import startGuilds from "./modules/startGuilds.ts";
 import { botVersion } from "./version.ts";
+import { startTopGgStatsReporter } from "./modules/topGgStats.ts";
 
 console.log(`Starting Lerche Discord Bot v${botVersion}`);
 
@@ -92,6 +93,7 @@ loadEvents(eventsDir).catch(console.error);
 export async function startBot(): Promise<void> {
   ClientInstance.once("clientReady", async () => {
     console.log(`🤖 Logged in as ${ClientInstance.user?.tag}`);
+    startTopGgStatsReporter(ClientInstance);
 
     const guildIds = await startGuilds(ClientInstance);
     registerSlashCommands(

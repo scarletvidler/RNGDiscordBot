@@ -8,6 +8,7 @@ import {
 import { setupUser } from "./setupUser.ts";
 import { APIGetUserByGuild } from "../../api/getUser.ts";
 import { setUpExtendedGuild } from "../../modules/startGuilds.ts";
+import { scheduleTopGgStatsUpdate } from "../../modules/topGgStats.ts";
 
 const event: BotEvent<[Guild, ExtendedClient]> = {
   type: "guildCreate",
@@ -16,6 +17,7 @@ const event: BotEvent<[Guild, ExtendedClient]> = {
       console.log(
         `Joined guild: ${guild.name} (ID: ${guild.id}), owner: ${guild.ownerId})`,
       );
+      scheduleTopGgStatsUpdate(extendedClient);
 
       const user = await APIGetUserByGuild(guild);
       if (!user) return;

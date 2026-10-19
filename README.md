@@ -116,11 +116,17 @@ Environment variables currently used include:
 ```env
 BOT_TOKEN=your_discord_bot_token
 CLIENT_ID=your_discord_application_client_id
+TOPGG_TOKEN=your_top_gg_api_v1_token
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
 FISH_API_KEY=your_fish_audio_api_key
 SUPABASE_URL=http://127.0.0.1:55241
 SUPABASE_SECRET_KEY=your_supabase_secret_key
 ```
+
+`TOPGG_TOKEN` is optional for local development. In production, set it to a
+current Top.gg API token for Lerche so the bot can report its live server and
+shard counts when it starts, when it joins or leaves a server, and once per
+hour as a reconciliation update.
 
 ## Project Shape
 

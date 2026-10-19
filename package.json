@@ -19,6 +19,7 @@
     "release:minor:beta": "npm version minor --preid=beta",
     "release:major:beta": "npm version major --preid=beta",
     "release:beta": "npm version prerelease --preid=beta",
+    "test:bot": "tsx --test bot/modules/*.test.ts",
     "typecheck": "tsc && tsc -p tsconfig.json --noEmit",
     "typecheck:bot": "tsc -p tsconfig.json --noEmit"
   },
@@ -29,6 +30,7 @@
     "@huggingface/transformers": "^4.2.0",
     "@pulumi/aws": "^7.43.0",
     "@supabase/supabase-js": "^2.108.2",
+    "@top-gg/sdk": "^4.0.0",
     "discord-api-types": "^0.38.47",
     "discord.js": "^14.22.1",
     "elevenlabs-js": "^1.2.6",
