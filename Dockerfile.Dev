@@ -15,6 +15,10 @@ RUN apt-get update && \
 # -----------------------------------------------------
 COPY package*.json ./
 
+# Lerche uses ONNX Runtime's bundled CPU provider. Avoid downloading the
+# optional CUDA provider from NuGet during container builds.
+ENV ONNXRUNTIME_NODE_INSTALL=skip
+
 # Install deps from lockfile (mirrors local environment exactly)
 RUN npm ci
 
