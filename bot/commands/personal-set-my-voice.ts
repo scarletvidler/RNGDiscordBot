@@ -94,12 +94,10 @@ const command: BotCommand = {
     );
     if (cachedUser) {
       cachedUser.voice = savedVoice;
-      cachedUser.voiceLoaded = true;
     } else {
       extendedGuild.users.push({
         id: interaction.user.id,
         voice: savedVoice,
-        voiceLoaded: true,
       });
     }
 

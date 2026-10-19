@@ -1,9 +1,11 @@
+import { Api as TopGgApi } from "@top-gg/sdk";
 import type { ExtendedClient } from "../types.ts";
-import { getTopGgApi } from "./topGg.ts";
 
 const EVENT_UPDATE_DELAY_MS = 5_000;
 const PERIODIC_UPDATE_INTERVAL_MS = 60 * 60 * 1_000;
 
+let topGgApi: TopGgApi | undefined;
+let configuredToken: string | undefined;
 let eventUpdateTimer: NodeJS.Timeout | undefined;
 let periodicUpdateTimer: NodeJS.Timeout | undefined;
 let reporterStarted = false;
@@ -13,6 +15,18 @@ type TopGgStats = {
   serverCount: number;
   shardCount: number;
 };
+
+function getTopGgApi(): TopGgApi | undefined {
+  const token = process.env.TOPGG_TOKEN?.trim();
+  if (!token) return undefined;
+
+  if (!topGgApi || configuredToken !== token) {
+    configuredToken = token;
+    topGgApi = new TopGgApi(token);
+  }
+
+  return topGgApi;
+}
 
 function isReporterProcess(client: ExtendedClient): boolean {
   return !client.shard || client.shard.ids.includes(0);
