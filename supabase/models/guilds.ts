@@ -9,12 +9,18 @@ import type { DBDiscordUser } from "./users.ts";
 export type DBGuild = Tables<"guilds">;
 export type DBGuildTtsSettings = Tables<"guild_tts_settings">;
 export type DBGuildLogging = Tables<"guild_chat_logs">;
+export type DBGuildRuntimeState = Pick<
+  DBGuild,
+  "id" | "has_active_subscription" | "token_limit" | "token_total_usage"
+>;
 
 export type DBGuildWithSettings = DBGuild & {
   users: {
     id: string;
     voice: DBVoiceUser | DBVoiceRole | null;
+    voiceLoaded?: boolean;
     databaseUser?: DBDiscordUser;
+    databaseUserCachedAt?: number;
   }[];
   settings: {
     tts: DBGuildTtsSettings;
@@ -50,6 +56,22 @@ export async function DBGetGuild(guildId: string): Promise<DBGuild | null> {
   const { data, error } = await supabase
     .from("guilds")
     .select()
+    .eq("id", guildId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function DBGetGuildRuntimeState(
+  guildId: string,
+): Promise<DBGuildRuntimeState | null> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  const { data, error } = await supabase
+    .from("guilds")
+    .select("id, has_active_subscription, token_limit, token_total_usage")
     .eq("id", guildId)
     .maybeSingle();
 

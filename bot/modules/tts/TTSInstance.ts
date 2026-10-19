@@ -184,11 +184,12 @@ https://top.gg/bot/1511773768438251660#reviews`,
     );
 
     const cachedUser = this.guild.users.find((user) => user.id === userId);
-    if (cachedUser?.voice) {
+    if (cachedUser?.voiceLoaded || cachedUser?.voice) {
       console.log(
         `Found cached voice data for user ${userId} in guild ${this.guild.id}`,
       );
       this.voice = cachedUser.voice;
+      cachedUser.voiceLoaded = true;
       return true;
     }
     console.log(
@@ -201,8 +202,13 @@ https://top.gg/bot/1511773768438251660#reviews`,
       this.voice = userVoice;
       if (cachedUser) {
         cachedUser.voice = userVoice;
+        cachedUser.voiceLoaded = true;
       } else {
-        this.guild.users.push({ id: userId, voice: userVoice });
+        this.guild.users.push({
+          id: userId,
+          voice: userVoice,
+          voiceLoaded: true,
+        });
       }
       return true;
     }
@@ -214,12 +220,23 @@ https://top.gg/bot/1511773768438251660#reviews`,
       this.voice = roleVoice[0];
       if (cachedUser) {
         cachedUser.voice = roleVoice[0];
+        cachedUser.voiceLoaded = true;
       } else {
-        this.guild.users.push({ id: userId, voice: roleVoice[0] });
+        this.guild.users.push({
+          id: userId,
+          voice: roleVoice[0],
+          voiceLoaded: true,
+        });
       }
       return true;
     }
     this.voice = null;
+    if (cachedUser) {
+      cachedUser.voice = null;
+      cachedUser.voiceLoaded = true;
+    } else {
+      this.guild.users.push({ id: userId, voice: null, voiceLoaded: true });
+    }
     return false;
   }
 
