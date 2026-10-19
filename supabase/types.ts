@@ -41,6 +41,7 @@ export type Database = {
           global_name: string | null
           id: string
           is_bot: boolean
+          last_voted: string | null
           last_seen_at: string
           username: string
         }
@@ -50,6 +51,7 @@ export type Database = {
           global_name?: string | null
           id: string
           is_bot?: boolean
+          last_voted?: string | null
           last_seen_at?: string
           username: string
         }
@@ -59,6 +61,7 @@ export type Database = {
           global_name?: string | null
           id?: string
           is_bot?: boolean
+          last_voted?: string | null
           last_seen_at?: string
           username?: string
         }

@@ -4,6 +4,7 @@ import { APIGetUserByGuild } from "../../bot/api/getUser.ts";
 import invariant from "tiny-invariant";
 import type { Tables, TablesInsert, TablesUpdate } from "../types.ts";
 import { DBVoiceRole, DBVoiceUser } from "./voice.ts";
+import type { DBDiscordUser } from "./users.ts";
 
 export type DBGuild = Tables<"guilds">;
 export type DBGuildTtsSettings = Tables<"guild_tts_settings">;
@@ -13,6 +14,7 @@ export type DBGuildWithSettings = DBGuild & {
   users: {
     id: string;
     voice: DBVoiceUser | DBVoiceRole | null;
+    databaseUser?: DBDiscordUser;
   }[];
   settings: {
     tts: DBGuildTtsSettings;

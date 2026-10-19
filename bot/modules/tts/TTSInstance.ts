@@ -199,7 +199,11 @@ https://top.gg/bot/1511773768438251660#reviews`,
 
     if (userVoice) {
       this.voice = userVoice;
-      this.guild.users.push({ id: userId, voice: userVoice });
+      if (cachedUser) {
+        cachedUser.voice = userVoice;
+      } else {
+        this.guild.users.push({ id: userId, voice: userVoice });
+      }
       return true;
     }
     const roleVoice = await getRolesVoices(
@@ -208,7 +212,11 @@ https://top.gg/bot/1511773768438251660#reviews`,
     );
     if (roleVoice.length > 0) {
       this.voice = roleVoice[0];
-      this.guild.users.push({ id: userId, voice: roleVoice[0] });
+      if (cachedUser) {
+        cachedUser.voice = roleVoice[0];
+      } else {
+        this.guild.users.push({ id: userId, voice: roleVoice[0] });
+      }
       return true;
     }
     this.voice = null;

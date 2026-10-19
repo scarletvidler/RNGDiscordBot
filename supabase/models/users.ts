@@ -1,5 +1,8 @@
 import type { GuildMember, User } from "discord.js";
 import { getSupabaseAdmin } from "../client.ts";
+import type { Tables } from "../types.ts";
+
+export type DBDiscordUser = Tables<"discord_users">;
 
 export async function upsertDiscordUser(user: User): Promise<void> {
   const supabase = getSupabaseAdmin();
@@ -15,6 +18,40 @@ export async function upsertDiscordUser(user: User): Promise<void> {
   });
 
   if (error) throw error;
+}
+
+export async function getDiscordUser(
+  userId: string,
+): Promise<DBDiscordUser | null> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  const { data, error } = await supabase
+    .from("discord_users")
+    .select()
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateDiscordUserLastVoted(
+  userId: string,
+  lastVoted: string,
+): Promise<DBDiscordUser> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  const { data, error } = await supabase
+    .from("discord_users")
+    .update({ last_voted: lastVoted })
+    .eq("id", userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 export async function upsertGuildMember(member: GuildMember): Promise<void> {
