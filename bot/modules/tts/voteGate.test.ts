@@ -20,7 +20,7 @@ test("exempts guilds with an active subscription from voting", () => {
   );
 });
 
-test("allows a user who is still inside the two-hour grace period", () => {
+test("allows a user who is still inside the two-day grace period", () => {
   assert.equal(
     isVoteRequired(
       {
@@ -33,7 +33,7 @@ test("allows a user who is still inside the two-hour grace period", () => {
   );
 });
 
-test("requires a vote after the two-hour grace period", () => {
+test("requires a vote after the two-day grace period", () => {
   assert.equal(
     isVoteRequired(
       {

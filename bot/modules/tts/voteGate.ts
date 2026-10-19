@@ -15,7 +15,7 @@ import {
 } from "../../../supabase/models/users.ts";
 import { getTopGgApi } from "../topGg.ts";
 
-export const NEW_USER_GRACE_PERIOD_MS = 2 * 60 * 60 * 1_000;
+export const NEW_USER_GRACE_PERIOD_MS = 2 * 24 * 60 * 60 * 1_000;
 export const VOTE_VALIDITY_PERIOD_MS = 7 * 24 * 60 * 60 * 1_000;
 export const USER_DATABASE_CACHE_TTL_MS = 60 * 1_000;
 
