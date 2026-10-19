@@ -37,10 +37,11 @@ export async function handleTtsMessage(
         guild = await setUpExtendedGuild(message.guild, client);
         invariant(guild, "Guild not found in installedGuilds");
       } else {
-        // Allow quota changes made in the database to take effect without a
-        // bot restart. Other guild settings remain cached as before.
+        // Allow quota and subscription changes made in the database to take
+        // effect without a bot restart. Other guild settings remain cached.
         const dbGuild = await DBGetGuild(guild.id);
         invariant(dbGuild, `Guild ${guild.id} not found in database`);
+        guild.has_active_subscription = dbGuild.has_active_subscription;
         guild.settings.logging.token_limit = dbGuild.token_limit;
         guild.settings.logging.token_total_usage = dbGuild.token_total_usage;
         guild.settings.logging.token_balance = Math.max(

@@ -20,6 +20,12 @@ export const VOTE_VALIDITY_PERIOD_MS = 7 * 24 * 60 * 60 * 1_000;
 
 type CachedGuildUser = DBGuildWithSettings["users"][number];
 
+export function isGuildExemptFromVoting(
+  guild: Pick<DBGuildWithSettings, "has_active_subscription">,
+): boolean {
+  return guild.has_active_subscription;
+}
+
 export function isVoteRequired(
   user: Pick<DBDiscordUser, "first_seen_at" | "last_voted">,
   now = Date.now(),
@@ -87,6 +93,8 @@ export async function canUseTtsAfterVoteCheck(
   guild: DBGuildWithSettings,
 ): Promise<boolean> {
   const cachedUser = await getOrCacheGuildUser(message, guild);
+  if (isGuildExemptFromVoting(guild)) return true;
+
   let databaseUser = cachedUser.databaseUser!;
 
   if (!isVoteRequired(databaseUser)) return true;

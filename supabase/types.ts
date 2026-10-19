@@ -254,6 +254,7 @@ export type Database = {
       guilds: {
         Row: {
           created_at: string
+          has_active_subscription: boolean
           id: string
           joined_at: string
           left_at: string | null
@@ -267,6 +268,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          has_active_subscription?: boolean
           id: string
           joined_at?: string
           left_at?: string | null
@@ -280,6 +282,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          has_active_subscription?: boolean
           id?: string
           joined_at?: string
           left_at?: string | null

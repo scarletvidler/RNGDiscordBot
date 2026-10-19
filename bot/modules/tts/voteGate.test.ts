@@ -1,12 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  isGuildExemptFromVoting,
   isVoteRequired,
   NEW_USER_GRACE_PERIOD_MS,
   VOTE_VALIDITY_PERIOD_MS,
 } from "./voteGate.ts";
 
 const NOW = Date.parse("2026-10-19T12:00:00.000Z");
+
+test("exempts guilds with an active subscription from voting", () => {
+  assert.equal(
+    isGuildExemptFromVoting({ has_active_subscription: true }),
+    true,
+  );
+  assert.equal(
+    isGuildExemptFromVoting({ has_active_subscription: false }),
+    false,
+  );
+});
 
 test("allows a user who is still inside the two-hour grace period", () => {
   assert.equal(
