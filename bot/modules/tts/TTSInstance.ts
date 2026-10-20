@@ -89,7 +89,7 @@ export class TTSInstance {
     let voiceInstance = this.client.activeVoiceConnections.get(this.guild.id);
     try {
       // Get or create a VoiceInstance for the guild and join the user's voice channel to play the TTS message
-      if (!(await this._canRunTTS())) {
+      if (!(await this._canRunTTS()) || (await this._shouldIgnoreMessage())) {
         return;
       }
 
@@ -147,6 +147,19 @@ https://top.gg/bot/1511773768438251660#reviews`,
     } catch (error) {
       console.error("Error running TTS:", error);
       throw new Error("Failed to run TTS.");
+    }
+  }
+
+  async _shouldIgnoreMessage(): Promise<boolean> {
+    try {
+      const ignoredWords = ["@everyone", "@here", "lIgnore"];
+      const ignoreMessage = ignoredWords.some((word) =>
+        this.message.content.includes(word),
+      );
+      return ignoreMessage;
+    } catch (error) {
+      console.error("Error checking if message should be ignored:", error);
+      return false;
     }
   }
 
@@ -287,8 +300,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
 
   getUsageLimits(): number {
     try {
-      const { token_limit, token_total_usage } =
-        this.guild.settings.logging;
+      const { token_limit, token_total_usage } = this.guild.settings.logging;
       return Math.max(token_limit - token_total_usage, 0);
     } catch (error) {
       console.error("Error retrieving usage limits:", error);
