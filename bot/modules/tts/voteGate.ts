@@ -15,7 +15,7 @@ import {
 } from "../../../supabase/models/users.ts";
 import { getTopGgApi } from "../topGg.ts";
 
-export const NEW_USER_GRACE_PERIOD_MS = 2 * 24 * 60 * 60 * 1_000;
+export const NEW_USER_GRACE_PERIOD_MS = 1 * 24 * 60 * 60 * 1_000;
 export const VOTE_VALIDITY_PERIOD_MS = 7 * 24 * 60 * 60 * 1_000;
 export const USER_DATABASE_CACHE_TTL_MS = 60 * 1_000;
 
@@ -37,7 +37,9 @@ export function isVoteRequired(
     return now - new Date(user.last_voted).getTime() > VOTE_VALIDITY_PERIOD_MS;
   }
 
-  return now - new Date(user.first_seen_at).getTime() > NEW_USER_GRACE_PERIOD_MS;
+  return (
+    now - new Date(user.first_seen_at).getTime() > NEW_USER_GRACE_PERIOD_MS
+  );
 }
 
 async function fetchOrCreateDiscordUser(
@@ -77,8 +79,7 @@ export async function getOrCacheGuildUser(
 
   const databaseUser = await fetchOrCreateDiscordUser(message);
   const currentCachedUser =
-    cachedUser ??
-    guild.users.find((user) => user.id === message.author.id);
+    cachedUser ?? guild.users.find((user) => user.id === message.author.id);
   if (currentCachedUser) {
     currentCachedUser.databaseUser = databaseUser;
     currentCachedUser.databaseUserCachedAt = Date.now();
@@ -133,10 +134,7 @@ async function verifyActiveVote(userId: string): Promise<DBDiscordUser | null> {
     const activeVote = await topGgApi.getVote(userId);
     if (!activeVote) return null;
 
-    return updateDiscordUserLastVoted(
-      userId,
-      activeVote.votedAt.toISOString(),
-    );
+    return updateDiscordUserLastVoted(userId, activeVote.votedAt.toISOString());
   })().finally(() => {
     voteChecks.delete(userId);
   });

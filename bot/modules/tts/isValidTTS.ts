@@ -24,6 +24,8 @@ export default function isValidTTS(message: Message<true>): boolean {
     return false;
   }
 
+  if (shouldIgnoreMessage(message.content)) return false;
+
   const listenRoleId = guild.settings.tts.listen_role_id;
   const canUseTTS =
     listenRoleId === message.guildId ||
@@ -60,4 +62,14 @@ function getTTSContent(content: string, roomPrefixEnabled: boolean): string {
   const trimmed = content.trim();
   if (!roomPrefixEnabled) return trimmed;
   return trimmed.replace(/^\/t(?:\s+|$)/i, "").trim();
+}
+
+export function shouldIgnoreMessage(content: string): boolean {
+  try {
+    const ignoredWords = ["@everyone", "@here", "lIgnore", "lignore"];
+    return ignoredWords.some((word) => content.includes(word));
+  } catch (error) {
+    console.error("Error checking if message should be ignored:", error);
+    return false;
+  }
 }

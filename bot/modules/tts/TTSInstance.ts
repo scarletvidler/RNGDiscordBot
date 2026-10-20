@@ -89,7 +89,7 @@ export class TTSInstance {
     let voiceInstance = this.client.activeVoiceConnections.get(this.guild.id);
     try {
       // Get or create a VoiceInstance for the guild and join the user's voice channel to play the TTS message
-      if (!(await this._canRunTTS()) || (await this._shouldIgnoreMessage())) {
+      if (!(await this._canRunTTS())) {
         return;
       }
 
@@ -147,16 +147,6 @@ https://top.gg/bot/1511773768438251660#reviews`,
     } catch (error) {
       console.error("Error running TTS:", error);
       throw new Error("Failed to run TTS.");
-    }
-  }
-
-  async _shouldIgnoreMessage(): Promise<boolean> {
-    try {
-      const ignoredWords = ["@everyone", "@here", "lIgnore", "lignore"];
-      return ignoredWords.some((word) => this.message.content.includes(word));
-    } catch (error) {
-      console.error("Error checking if message should be ignored:", error);
-      return false;
     }
   }
 
