@@ -152,11 +152,8 @@ https://top.gg/bot/1511773768438251660#reviews`,
 
   async _shouldIgnoreMessage(): Promise<boolean> {
     try {
-      const ignoredWords = ["@everyone", "@here", "lIgnore"];
-      const ignoreMessage = ignoredWords.some((word) =>
-        this.message.content.includes(word),
-      );
-      return ignoreMessage;
+      const ignoredWords = ["@everyone", "@here", "lIgnore", "lignore"];
+      return ignoredWords.some((word) => this.message.content.includes(word));
     } catch (error) {
       console.error("Error checking if message should be ignored:", error);
       return false;
