@@ -49,8 +49,9 @@ export default function isValidTTS(message: Message<true>): boolean {
   if (ttsContent.length === 0) {
     if (!hasAnyImage(message)) {
       return false;
+    } else {
+      throw new Error("TTS message cannot be empty.");
     }
-    throw new Error("TTS message cannot be empty.");
   }
   if (
     ttsContent.length > maxLength &&
