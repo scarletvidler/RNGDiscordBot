@@ -46,7 +46,12 @@ export default function isValidTTS(message: Message<true>): boolean {
 
   const ttsContent = getTTSContent(message.content, roomPrefixEnabled);
 
-  if (ttsContent.length === 0) throw new Error("TTS message cannot be empty.");
+  if (ttsContent.length === 0) {
+    if (!messageHasImages(message)) {
+      return false;
+    }
+    throw new Error("TTS message cannot be empty.");
+  }
   if (
     ttsContent.length > maxLength &&
     message.member?.id !== ClientInstance.ownerId
@@ -62,6 +67,12 @@ function getTTSContent(content: string, roomPrefixEnabled: boolean): string {
   const trimmed = content.trim();
   if (!roomPrefixEnabled) return trimmed;
   return trimmed.replace(/^\/t(?:\s+|$)/i, "").trim();
+}
+
+function messageHasImages(message: Message<true>): boolean {
+  return message.attachments.some((attachment) =>
+    attachment.contentType?.startsWith("image/"),
+  );
 }
 
 export function shouldIgnoreMessage(content: string): boolean {
