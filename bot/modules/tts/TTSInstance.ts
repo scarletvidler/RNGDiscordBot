@@ -135,7 +135,7 @@ export class TTSInstance {
         ) {
           await this.channel.send(
             `👋 Thanks for supporting Lerche's development! If you're enjoying Lerche, please consider leaving a review on Top.gg! 
-https://top.gg/bot/1511773768438251660#reviews`,
+<https://top.gg/bot/1511773768438251660#reviews>`,
           );
         }
         this.logMessageDetails(playedMessage);
