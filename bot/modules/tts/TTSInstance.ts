@@ -129,7 +129,10 @@ export class TTSInstance {
           await this.reply.edit("Message played in voice channel.");
         }
 
-        if ((await this.updateMessageCount()) % 100 === 0) {
+        if (
+          (await this.updateMessageCount()) % 100 === 0 &&
+          this.guild.has_active_subscription !== true
+        ) {
           await this.channel.send(
             `👋 Thanks for supporting Lerche's development! If you're enjoying Lerche, please consider leaving a review on Top.gg! 
 https://top.gg/bot/1511773768438251660#reviews`,
