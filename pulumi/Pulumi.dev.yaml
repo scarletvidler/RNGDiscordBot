@@ -1,2 +1,12 @@
+name: lerche-bot
+description: AWS CICD for Lerche's Discord Bot
+runtime:
+  name: nodejs
+  options:
+    packagemanager: npm
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-typescript
 environment:
   - lerche-bot/dev

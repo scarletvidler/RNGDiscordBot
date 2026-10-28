@@ -114,6 +114,9 @@ export async function startBot(): Promise<void> {
     });
 
     ClientInstance.user!.setStatus("online");
+    ClientInstance.application?.edit({
+      tags: ["tts", "utility", "accessibility", "voice", "social"],
+    });
   });
 
   ClientInstance.login(process.env.BOT_TOKEN!);
