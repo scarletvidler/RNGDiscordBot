@@ -10,10 +10,11 @@ export enum PermissionName {
   ReadMessageHistory = "ReadMessageHistory",
   Connect = "Connect",
   Speak = "Speak",
+  EmbedLinks = "EmbedLinks",
+  AttachFiles = "AttachFiles",
 }
 
-export const ALL_PERMISSION_NAMES: PermissionName[] = Object.values(
-  PermissionName,
-);
+export const ALL_PERMISSION_NAMES: PermissionName[] =
+  Object.values(PermissionName);
 
 export type PermissionIdentifier = PermissionName | PermissionResolvable;

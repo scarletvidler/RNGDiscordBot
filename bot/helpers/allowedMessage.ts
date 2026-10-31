@@ -14,7 +14,12 @@ export default async function allowedMessage(
   // Check if Lerche has permissions to send messages in the channel
   const result = await canLerchePerformAction(
     message.guild,
-    [PermissionName.SendMessages, PermissionName.ViewChannel],
+    [
+      PermissionName.SendMessages,
+      PermissionName.ViewChannel,
+      PermissionName.EmbedLinks,
+      PermissionName.AttachFiles,
+    ],
     message.channel,
   );
 
@@ -31,7 +36,7 @@ export async function allowedToJoinChannel(
 
   const result = await canLerchePerformAction(
     guild,
-    ["Connect", "Speak", "ViewChannel"],
+    [PermissionName.Connect, PermissionName.Speak, PermissionName.ViewChannel],
     channel,
   );
   return result.allowed;
