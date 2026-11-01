@@ -47,7 +47,7 @@ export default function isValidTTS(message: Message<true>): boolean {
   const ttsContent = getTTSContent(message.content, roomPrefixEnabled);
 
   if (ttsContent.length === 0) {
-    if (!hasAnyImage(message)) {
+    if (hasAnyImage(message)) {
       return false;
     } else {
       throw new Error("TTS message cannot be empty.");
@@ -72,7 +72,7 @@ function getTTSContent(content: string, roomPrefixEnabled: boolean): string {
 
 function messageHasImages(message: Message<true>): boolean {
   return message.attachments.some((attachment) =>
-    attachment.contentType?.startsWith("image/"),
+    attachment.contentType?.includes("image"),
   );
 }
 

@@ -45,7 +45,10 @@ export async function handleTtsMessage(
 
       let hasVoteAccess: boolean;
       try {
-        hasVoteAccess = await canUseTtsAfterVoteCheck(message, guild);
+        hasVoteAccess =
+          process.env.DEV_MODE === "false"
+            ? await canUseTtsAfterVoteCheck(message, guild)
+            : true;
       } catch (error) {
         console.error("Failed to verify Top.gg vote:", error);
         await message.reply(VOTE_CHECK_FAILED_MESSAGE);
