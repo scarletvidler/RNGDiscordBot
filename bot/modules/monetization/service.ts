@@ -1,0 +1,292 @@
+import type {
+  EntitlementSnapshot, MonetizationStore, SkuSnapshot, SubscriptionSnapshot,
+} from "../../../supabase/models/monetization.ts";
+import { isSnowflake } from "./config.ts";
+
+export interface DiscordMonetizationApi {
+  listSkus(): Promise<unknown>;
+  getEntitlement(id: string): Promise<unknown>;
+  getSubscription(skuId: string, id: string): Promise<unknown>;
+  listEntitlements(after?: string): Promise<unknown>;
+  listSubscriptions(skuId: string, userId: string, after?: string): Promise<unknown>;
+}
+
+export interface EventHint { id: string; skuIds: string[]; deleted?: boolean; fallback?: unknown }
+
+const PAGE_SIZE = 100;
+const MAX_PAGES = 1000;
+const MAX_PENDING = 1000;
+
+function object(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid Discord object");
+  return value as Record<string, unknown>;
+}
+function id(value: unknown): string {
+  if (!isSnowflake(value)) throw new Error("Invalid Discord ID");
+  return value;
+}
+function ids(value: unknown): string[] {
+  if (!Array.isArray(value) || value.length > 100) throw new Error("Invalid Discord ID list");
+  const result = value.map(id);
+  if (new Set(result).size !== result.length) throw new Error("Duplicate Discord ID");
+  return result;
+}
+function date(value: unknown): string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(value) || !Number.isFinite(Date.parse(value))) {
+    throw new Error("Invalid Discord timestamp");
+  }
+  return new Date(value).toISOString();
+}
+function optionalDate(value: unknown): string | null { return value == null ? null : date(value); }
+function bool(value: unknown): boolean {
+  if (typeof value !== "boolean") throw new Error("Invalid Discord flag");
+  return value;
+}
+function createdAt(snowflake: string): string {
+  return new Date(Number((BigInt(snowflake) >> 22n) + 1420070400000n)).toISOString();
+}
+function page(value: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(value) || value.length > PAGE_SIZE) throw new Error("Invalid Discord page");
+  return value.map(object);
+}
+function nextCursor(rows: Record<string, unknown>[], previous?: string): string | undefined {
+  if (rows.length < PAGE_SIZE) return undefined;
+  const cursor = rows.map((row) => id(row.id)).reduce((a, b) => BigInt(a) > BigInt(b) ? a : b);
+  if (previous && BigInt(cursor) <= BigInt(previous)) throw new Error("Discord pagination did not advance");
+  return cursor;
+}
+
+/** Discord records only. This service never records payments, grants perks or consumes items. */
+export class MonetizationService {
+  private readonly queues = new Map<string, Promise<void>>();
+  private skus = new Map<string, SkuSnapshot>();
+  private catalogPromise?: Promise<void>;
+  private reconciliation?: Promise<void>;
+  private closed = false;
+  private pending = 0;
+
+  constructor(
+    private readonly applicationId: string,
+    private readonly allowedSkus: ReadonlySet<string>,
+    private readonly api: DiscordMonetizationApi,
+    private readonly store: MonetizationStore,
+    private readonly now: () => string = () => new Date().toISOString(),
+  ) { id(applicationId); }
+
+  private serial(key: string, work: () => Promise<void>): Promise<void> {
+    if (this.closed) return Promise.reject(new Error("Monetization stopped"));
+    if (this.pending >= MAX_PENDING) return Promise.reject(new Error("Monetization queue full; reconcile required"));
+    this.pending++;
+    const previous = this.queues.get(key) ?? Promise.resolve();
+    const current = previous.catch(() => undefined).then(work);
+    this.queues.set(key, current);
+    void current.finally(() => {
+      this.pending--;
+      if (this.queues.get(key) === current) this.queues.delete(key);
+    }).catch(() => undefined);
+    return current;
+  }
+
+  async refreshCatalog(): Promise<void> {
+    if (this.catalogPromise) return this.catalogPromise;
+    const run = async () => {
+      const observedAt = this.now();
+      const raw = await this.api.listSkus();
+      if (!Array.isArray(raw)) throw new Error("Invalid SKU catalog");
+      const catalog = new Map<string, SkuSnapshot>();
+      for (const value of raw) {
+        const sku = object(value);
+        const skuId = id(sku.id);
+        if (!this.allowedSkus.has(skuId)) continue;
+        if (sku.application_id !== this.applicationId || ![2, 3, 5].includes(sku.type as number)) {
+          throw new Error("SKU does not belong to the configured application or product type");
+        }
+        if (typeof sku.name !== "string" || !sku.name.trim() || sku.name.length > 1000
+          || !Number.isSafeInteger(sku.flags) || Number(sku.flags) < 0) throw new Error("Invalid SKU metadata");
+        catalog.set(skuId, {
+          applicationId: this.applicationId, id: skuId, name: sku.name,
+          type: sku.type as 2 | 3 | 5, flags: sku.flags as number, observedAt,
+        });
+      }
+      if ([...this.allowedSkus].some((skuId) => !catalog.has(skuId))) {
+        throw new Error("Configured SKU absent from Discord application catalog");
+      }
+      await this.store.upsertSkus([...catalog.values()]);
+      this.skus = catalog;
+    };
+    this.catalogPromise = run();
+    try { await this.catalogPromise; } finally { this.catalogPromise = undefined; }
+  }
+
+  private async ensureCatalog(): Promise<void> { if (!this.skus.size) await this.refreshCatalog(); }
+
+  private async fetchSubscription(skuId: string, subscriptionId: string): Promise<unknown> {
+    // An upgrade may make the SKU from an older event obsolete. Try the other verified
+    // subscription SKUs after a 404, but never interpret a missing response as deletion.
+    const candidates = [skuId, ...[...this.skus.values()].filter((sku) => sku.type === 5 && sku.id !== skuId).map((sku) => sku.id)];
+    let missing: unknown;
+    for (const candidate of candidates) {
+      try { return await this.api.getSubscription(candidate, subscriptionId); }
+      catch (error) {
+        if (!error || typeof error !== "object" || !("status" in error) || error.status !== 404) throw error;
+        missing = error;
+      }
+    }
+    throw missing ?? new Error("Subscription unavailable");
+  }
+
+  private entitlement(raw: unknown, observedAt: string, deleted = false): EntitlementSnapshot {
+    const data = object(raw);
+    const entitlementId = id(data.id);
+    const skuId = id(data.sku_id);
+    if (data.application_id !== this.applicationId || !this.skus.has(skuId)) throw new Error("Untrusted entitlement application or SKU");
+    if (!Number.isInteger(data.type) || Number(data.type) < 1 || Number(data.type) > 8) throw new Error("Invalid entitlement type");
+    const userId = data.user_id == null ? null : id(data.user_id);
+    const guildId = data.guild_id == null ? null : id(data.guild_id);
+    if (!userId && !guildId) throw new Error("Entitlement has no beneficiary");
+    return {
+      applicationId: this.applicationId, id: entitlementId, skuId, userId, guildId,
+      type: data.type as number, startsAt: optionalDate(data.starts_at), endsAt: optionalDate(data.ends_at),
+      consumed: data.consumed === undefined ? false : bool(data.consumed),
+      deleted: deleted || bool(data.deleted), createdAt: createdAt(entitlementId), observedAt,
+    };
+  }
+
+  private subscription(raw: unknown, observedAt: string, deleted = false): SubscriptionSnapshot {
+    const data = object(raw);
+    const subscriptionId = id(data.id);
+    const skuIds = ids(data.sku_ids);
+    const renewalSkuIds = data.renewal_sku_ids == null ? null : ids(data.renewal_sku_ids);
+    if (!skuIds.length || [...skuIds, ...(renewalSkuIds ?? [])].some((skuId) => this.skus.get(skuId)?.type !== 5)) {
+      throw new Error("Subscription includes an unconfigured subscription SKU");
+    }
+    if (![0, 1, 2].includes(data.status as number)) throw new Error("Invalid subscription status");
+    const start = date(data.current_period_start);
+    const end = date(data.current_period_end);
+    if (start > end) throw new Error("Invalid subscription period");
+    return {
+      applicationId: this.applicationId, id: subscriptionId, userId: id(data.user_id), skuIds,
+      entitlementIds: ids(data.entitlement_ids), renewalSkuIds, status: data.status as 0 | 1 | 2,
+      currentPeriodStart: start, currentPeriodEnd: end, canceledAt: optionalDate(data.canceled_at),
+      createdAt: createdAt(subscriptionId), observedAt, deleted,
+    };
+  }
+
+  async handleEntitlement(hint: EventHint): Promise<void> {
+    id(hint.id);
+    if (!hint.skuIds.some((skuId) => this.allowedSkus.has(skuId))) return;
+    return this.serial(`entitlement:${hint.id}`, async () => {
+      await this.ensureCatalog();
+      const observedAt = this.now();
+      // A delete Gateway event is itself authoritative; REST may no longer return the object.
+      const raw = hint.deleted ? hint.fallback : await this.api.getEntitlement(hint.id);
+      const snapshot = this.entitlement(raw, observedAt, hint.deleted);
+      if (snapshot.id !== hint.id) throw new Error("Entitlement response ID mismatch");
+      await this.store.applyEntitlement(snapshot);
+    });
+  }
+
+  async handleSubscription(hint: EventHint): Promise<void> {
+    id(hint.id);
+    const skuId = hint.skuIds.find((candidate) => this.allowedSkus.has(candidate));
+    if (!skuId) return;
+    return this.serial(`subscription:${hint.id}`, async () => {
+      await this.ensureCatalog();
+      if (this.skus.get(skuId)?.type !== 5) throw new Error("Invalid subscription SKU");
+      const observedAt = this.now();
+      const raw = hint.deleted ? hint.fallback : await this.fetchSubscription(skuId, hint.id);
+      const snapshot = this.subscription(raw, observedAt, hint.deleted);
+      if (snapshot.id !== hint.id) throw new Error("Subscription response ID mismatch");
+      await this.store.applySubscription(snapshot);
+    });
+  }
+
+  reconcile(): Promise<void> {
+    if (this.closed) return Promise.resolve();
+    if (this.reconciliation) return this.reconciliation;
+    this.reconciliation = this.reconcileAll().finally(() => { this.reconciliation = undefined; });
+    return this.reconciliation;
+  }
+
+  private async reconcileAll(): Promise<void> {
+    await this.refreshCatalog();
+    let failures = 0;
+    let after: string | undefined;
+    for (let n = 0; n < MAX_PAGES && !this.closed; n++) {
+      const observedAt = this.now();
+      const rows = page(await this.api.listEntitlements(after));
+      for (const row of rows) {
+        if (!this.allowedSkus.has(String(row.sku_id))) continue;
+        try {
+          const snapshot = this.entitlement(row, observedAt);
+          await this.serial(`entitlement:${snapshot.id}`, () => this.store.applyEntitlement(snapshot));
+        } catch { failures++; }
+      }
+      after = nextCursor(rows, after);
+      if (!after) break;
+      if (n === MAX_PAGES - 1) throw new Error("Entitlement reconciliation page limit reached");
+    }
+    // Entitlement beneficiaries provide discovery for subscriptions missed during downtime.
+    after = undefined;
+    for (let n = 0; n < MAX_PAGES && !this.closed; n++) {
+      const users = await this.store.listKnownPurchasers(this.applicationId, after, PAGE_SIZE);
+      for (const userId of users) {
+        id(userId);
+        for (const sku of this.skus.values()) {
+          if (sku.type === 5) {
+            try { await this.reconcileUser(sku.id, userId); } catch { failures++; }
+          }
+        }
+      }
+      if (users.length < PAGE_SIZE) break;
+      const next = users[users.length - 1];
+      if (after !== undefined && next <= after) throw new Error("Purchaser pagination did not advance");
+      after = next;
+      if (n === MAX_PAGES - 1) throw new Error("Purchaser reconciliation page limit reached");
+    }
+    // List APIs can omit a deleted subscription. Point reads detect stale known records, but an
+    // undocumented/generic 404 is not proof of deletion: retain history and surface scan failure.
+    after = undefined;
+    for (let n = 0; n < MAX_PAGES && !this.closed; n++) {
+      const known = await this.store.listKnownSubscriptions(this.applicationId, after, PAGE_SIZE);
+      for (const subscription of known) {
+        try { await this.handleSubscription({ id: subscription.id, skuIds: subscription.skuIds }); }
+        catch { failures++; }
+      }
+      if (known.length < PAGE_SIZE) break;
+      const next = known[known.length - 1].id;
+      if (after !== undefined && next <= after) throw new Error("Known subscription pagination did not advance");
+      after = next;
+      if (n === MAX_PAGES - 1) throw new Error("Known subscription reconciliation page limit reached");
+    }
+    if (failures && !this.closed) throw new Error("Some monetization records could not be reconciled");
+  }
+
+  private async reconcileUser(skuId: string, userId: string): Promise<void> {
+    let after: string | undefined;
+    let failures = 0;
+    for (let n = 0; n < MAX_PAGES && !this.closed; n++) {
+      const observedAt = this.now();
+      const rows = page(await this.api.listSubscriptions(skuId, userId, after));
+      for (const row of rows) {
+        try {
+          const snapshot = this.subscription(row, observedAt);
+          if (snapshot.userId !== userId || !snapshot.skuIds.includes(skuId)) throw new Error("Subscription query scope mismatch");
+          await this.serial(`subscription:${snapshot.id}`, () => this.store.applySubscription(snapshot));
+        } catch { failures++; }
+      }
+      after = nextCursor(rows, after);
+      if (!after) {
+        if (failures) throw new Error("Some subscription records could not be reconciled");
+        return;
+      }
+    }
+    if (!this.closed) throw new Error("Subscription reconciliation page limit reached");
+  }
+
+  async stop(): Promise<void> {
+    this.closed = true;
+    await this.reconciliation?.catch(() => undefined);
+    await Promise.allSettled([...this.queues.values()]);
+  }
+}

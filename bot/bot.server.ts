@@ -10,6 +10,7 @@ import ClientInstance from "./modules/ClientInstance.ts";
 import startGuilds from "./modules/startGuilds.ts";
 import { botVersion } from "./version.ts";
 import { startTopGgStatsReporter } from "./modules/topGgStats.ts";
+import { startDiscordMonetization, stopDiscordMonetization } from "./modules/monetization/runtime.ts";
 
 console.log(`Starting Lerche Discord Bot v${botVersion}`);
 
@@ -88,12 +89,13 @@ async function loadEvents(dir: string): Promise<void> {
   }
 }
 
-loadEvents(eventsDir).catch(console.error);
+await loadEvents(eventsDir);
 
 export async function startBot(): Promise<void> {
   ClientInstance.once("clientReady", async () => {
     console.log(`🤖 Logged in as ${ClientInstance.user?.tag}`);
     startTopGgStatsReporter(ClientInstance);
+    await startDiscordMonetization(ClientInstance);
 
     const guildIds = await startGuilds(ClientInstance);
     registerSlashCommands(
@@ -122,4 +124,12 @@ export async function startBot(): Promise<void> {
   ClientInstance.login(process.env.BOT_TOKEN!);
 
   return Promise.resolve();
+}
+
+export async function stopBot(): Promise<void> {
+  try {
+    await stopDiscordMonetization(ClientInstance);
+  } finally {
+    await ClientInstance.destroy();
+  }
 }

@@ -93,6 +93,11 @@ Lerche is built with:
 
 The bot loads commands and events dynamically at startup, and stores guild-specific settings and logs in Supabase.
 
+An optional [Discord monetization records integration](docs/discord-monetization-records.md)
+stores subscriptions, one-time purchases, and entitlements using a restricted
+database connection. Payment storage is reserved for verified financial imports;
+recording events does not grant premium benefits or change TTS limits.
+
 ## Running Your Own Copy
 
 This repository can still be self-hosted if needed, but it is primarily the source for Lerche itself rather than a contributor guide.
