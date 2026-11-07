@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ExtendedClient } from "../types.ts";
-import { getTopGgStats } from "./topGgStats.ts";
+import type { ExtendedClient } from "../../../bot/types.ts";
+import { getTopGgStats } from "../../../bot/modules/topGgStats.ts";
 
 test("gets the server count from a non-sharded client's guild cache", async () => {
   const client = {

@@ -3,11 +3,11 @@ import test from "node:test";
 import type {
   DBGuildRuntimeState,
   DBGuildWithSettings,
-} from "../../../supabase/models/guilds.ts";
+} from "../../../../supabase/models/guilds.ts";
 import {
   GUILD_RUNTIME_CACHE_TTL_MS,
   refreshGuildRuntimeState,
-} from "./guildRuntimeState.ts";
+} from "../../../../bot/modules/tts/guildRuntimeState.ts";
 
 function createGuild(id: string): DBGuildWithSettings {
   return {

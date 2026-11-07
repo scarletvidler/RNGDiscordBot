@@ -5,7 +5,7 @@ import {
   isVoteRequired,
   NEW_USER_GRACE_PERIOD_MS,
   VOTE_VALIDITY_PERIOD_MS,
-} from "./voteGate.ts";
+} from "../../../../bot/modules/tts/voteGate.ts";
 
 const NOW = Date.parse("2026-10-19T12:00:00.000Z");
 
