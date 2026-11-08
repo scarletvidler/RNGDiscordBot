@@ -106,6 +106,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "guild_chat_logs_guild_id_fkey"
+            columns: ["guild_id"]
+            isOneToOne: false
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "guild_chat_logs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -211,7 +218,15 @@ export type Database = {
           tts_say_users_name?: boolean
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "guild_tts_settings_guild_id_fkey"
+            columns: ["guild_id"]
+            isOneToOne: true
+            referencedRelation: "guilds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       guild_voices: {
         Row: {
@@ -570,4 +585,3 @@ export const Constants = {
     },
   },
 } as const
-

@@ -9,6 +9,7 @@ At its core, Lerche listens for approved messages in a server, converts them int
 Lerche turns text messages into spoken audio in Discord voice channels.
 
 Key behaviour:
+
 - Reads messages from a dedicated TTS text channel by default.
 - Can switch into room-prefix mode, where users type `/t` in normal chat and Lerche only reads messages for their current voice room.
 - Uses different voices depending on configured server settings and role-based behaviour.
@@ -18,6 +19,7 @@ Key behaviour:
 ## How It Feels In Use
 
 The intended flow is simple:
+
 1. A user joins a voice channel.
 2. They post a message in the configured TTS channel, or use `/t` if room-prefix mode is enabled.
 3. Lerche validates the message and permissions.
@@ -34,6 +36,7 @@ Lerche uses ElevenLabs or Fish Audio to generate speech and plays it directly in
 ### Guild-Specific Settings
 
 Each server can keep its own settings, including:
+
 - TTS channel
 - TTS access role, or access for everyone
 - Reply visibility
@@ -53,28 +56,29 @@ Lerche also includes commands for help, version reporting, token balance checks,
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| `/help` | Explains how to use Lerche and its commands. |
-| `/version` | Shows the current bot version. |
-| `/info-token-count` | Shows an admin the guild's remaining TTS token balance. |
-| `/tts-install` | Guides an admin through the server's complete TTS setup. |
-| `/config-channel-name` | Changes the text channel Lerche watches for TTS. |
-| `/config-afk-timeout` | Changes how long Lerche waits before leaving an idle voice channel. |
-| `/config-default-voice` | Sets the guild's default model and voice. |
-| `/personal-set-my-voice` | Sets the user's personal model and voice for the guild. |
-| `/toggle-tts-mode` | Toggles `/t` room-prefix mode for the guild. |
-| `/toggle-tts-confirmations` | Toggles channel confirmation replies from Lerche. |
-| `/toggle-tts-jingle` | Toggles the jingle before the first TTS message. |
-| `/toggle-say-users-name` | Toggles speaking the user's name before their message. |
-| `/command-force-stop` | Stops playback, clears the queue, and disconnects Lerche. |
-| `/command-swap-channel` | Moves active TTS playback to the admin's voice channel. |
+| Command                     | Description                                                         |
+| --------------------------- | ------------------------------------------------------------------- |
+| `/help`                     | Explains how to use Lerche and its commands.                        |
+| `/version`                  | Shows the current bot version.                                      |
+| `/info-token-count`         | Shows an admin the guild's remaining TTS token balance.             |
+| `/tts-install`              | Guides an admin through the server's complete TTS setup.            |
+| `/config-channel-name`      | Changes the text channel Lerche watches for TTS.                    |
+| `/config-afk-timeout`       | Changes how long Lerche waits before leaving an idle voice channel. |
+| `/config-default-voice`     | Sets the guild's default model and voice.                           |
+| `/personal-set-my-voice`    | Sets the user's personal model and voice for the guild.             |
+| `/toggle-tts-mode`          | Toggles `/t` room-prefix mode for the guild.                        |
+| `/toggle-tts-confirmations` | Toggles channel confirmation replies from Lerche.                   |
+| `/toggle-tts-jingle`        | Toggles the jingle before the first TTS message.                    |
+| `/toggle-say-users-name`    | Toggles speaking the user's name before their message.              |
+| `/command-force-stop`       | Stops playback, clears the queue, and disconnects Lerche.           |
+| `/command-swap-channel`     | Moves active TTS playback to the admin's voice channel.             |
 
 ## Current Limits
 
 Lerche is still in early development.
 
 Right now:
+
 - TTS usage is tracked per guild.
 - Lerche warns users as usage approaches the configured token cap.
 - TTS stops once the guild reaches the hard token limit.
@@ -85,6 +89,7 @@ That limit exists because voice generation has a real running cost, and the curr
 ## Tech Stack
 
 Lerche is built with:
+
 - TypeScript
 - discord.js
 - ElevenLabs
@@ -95,7 +100,7 @@ The bot loads commands and events dynamically at startup, and stores guild-speci
 
 An optional [Discord monetization records integration](docs/discord-monetization-records.md)
 stores subscriptions, one-time purchases, and entitlements using a restricted
-database connection. Payment storage is reserved for verified financial imports;
+database connection. Discord lifecycle events are stored directly;
 recording events does not grant premium benefits or change TTS limits.
 
 ## Running Your Own Copy
@@ -103,6 +108,7 @@ recording events does not grant premium benefits or change TTS limits.
 This repository can still be self-hosted if needed, but it is primarily the source for Lerche itself rather than a contributor guide.
 
 Minimum setup:
+
 - A Discord bot token and application client ID
 - An ElevenLabs API key
 - A Fish Audio API key when using Fish models

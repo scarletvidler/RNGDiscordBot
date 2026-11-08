@@ -39,7 +39,13 @@ test("an unauthorized login never reaches record queries even when retried", asy
       return { rows: [{ result: false }] };
     },
   });
-  await assert.rejects(client.query("record purchase", []), /restricted writer/);
-  await assert.rejects(client.query("record purchase", []), /restricted writer/);
+  await assert.rejects(
+    client.query("record purchase", []),
+    /restricted writer/,
+  );
+  await assert.rejects(
+    client.query("record purchase", []),
+    /restricted writer/,
+  );
   assert.equal(calls, 2);
 });

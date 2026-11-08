@@ -1,180 +1,113 @@
 # Discord monetization records
 
-This integration records Discord subscription and entitlement lifecycle events in
-Supabase Postgres. It supports user and guild beneficiaries. It does not change
-premium access, guild token limits, commands, or TTS behavior, and it never consumes
-one-time purchases. It is disabled unless explicitly enabled.
+Lerche trusts subscription and entitlement events received through its Discord
+client and stores their lifecycle state directly. This feature supports user and
+guild beneficiaries. It stores no financial data and does not grant premium
+benefits, change TTS limits, or consume purchases. It is disabled by default.
 
-## What is recorded
+## Stored records
 
-- `monetization.subscriptions`: recurring purchase state, purchaser ID, product
-  title, period dates, cancellation, and deletion markers.
-- `monetization.one_time_purchases`: durable or consumable purchase records linked
-  to their Discord entitlement, with product identity and beneficiary details.
-- `monetization.payments`: verified financial transactions, each with exactly one
-  subscription or one-time purchase parent. A source/payment ID identifies a
-  transaction for idempotent imports.
-- Supporting SKU, subscription-item, entitlement, and payment-item records retain
-  product identity and access facts separately from financial facts.
+- `monetization.subscriptions`: Discord subscription ID, purchaser ID, title,
+  status, period dates, cancellation, and deletion state.
+- `monetization.one_time_purchases`: durable or consumable purchases, their SKU
+  and title, entitlement, purchaser when known, beneficiary/user or guild, dates,
+  and consumed/deleted state.
+- `entitlements`, `skus`, and `subscription_items` retain beneficiary state,
+  catalog metadata, and subscription product/title history.
 
-Discord IDs are text. Monetary amounts are integer minor units represented as
-strings in TypeScript to preserve precision. Currency and amount remain null when
-unknown. Source timestamps are distinct from observation timestamps: the creation
-time derived from a Discord snowflake is not a payment timestamp. Product-title
-snapshots preserve historical names.
+There are no payment records, amounts, currencies, transaction IDs, or finance
+import APIs. Discord IDs are text. Creation timestamps and observation timestamps
+are stored separately. Product titles come from the Discord SKU catalog.
 
-Discord's documented bot APIs do not expose actual charged amounts or transaction
-IDs. The six event handlers therefore never create payments. A future trusted
-financial source can use `createFinancialImporter` with a separately authorized
-database connection; passing an object to this helper is not proof of payment.
-The importer must verify its source before calling the model. No financial source
-or scheduled importer is connected by this feature.
-Newer verified data may fill previously unknown amount/currency or payment time;
-once known, those values cannot be rewritten by a retry. Refund state can advance
-without rewriting the original charged amount or granting/revoking access.
+Purchaser identity and beneficiary identity are distinct: gifts and test grants
+can have a beneficiary without a known purchaser. Existing `public.discord_users`
+profiles are linked when available; missing profiles do not discard the purchase
+or cause a fabricated username to be inserted.
 
-Purchaser identity is separate from the beneficiary. Subscription events identify
-the purchaser; an entitlement beneficiary is not automatically assumed to be the
-payer, particularly for gifts and test grants. A missing existing
-`public.discord_users` profile must not discard a purchase: retain the Discord ID
-and leave the optional profile link unresolved until it can be matched. No fake
-username is inserted.
+## Event handling and recovery
 
-Server-side consumers use the typed model factory in
-`supabase/models/monetization.ts`:
+The six handlers cover subscription and entitlement create, update, and delete.
+They map the Discord.js payload into a stored snapshot directly, including the
+new object on an update when the previous cache entry is missing. There is no
+per-event REST fetch to prove that a subscription or purchase is valid.
+
+Application/SKU scoping, basic shape validation, per-resource serialization,
+bounded queues, duplicate handling, and deletion tombstones remain. These protect
+record integrity; they do not independently verify Discord's purchase decision.
+The catalog is fetched for product names and configured SKU metadata.
+
+Startup and periodic reconciliation repair missed events using Discord list APIs.
+Subscription discovery uses configured SKUs and known users. This cannot recover
+subscriptions with neither a known user nor a discoverable entitlement. Missing
+rows or failed scans are not treated as deletion; explicit delete events preserve
+tombstones. Logs contain sanitized operation summaries, not event payloads.
+
+## Reading records
+
+Use the typed server-side models in `supabase/models/monetization.ts`:
 
 ```ts
 const records = createMonetizationStore();
-const subscriptions = await records.listSubscriptions({ applicationId, userId });
-const purchases = await records.listOneTimePurchases({ applicationId, guildId });
-const payments = await records.listPayments({ applicationId, userId, limit: 100 });
+const subscriptions = await records.listSubscriptions({
+  applicationId,
+  userId,
+});
+const purchases = await records.listOneTimePurchases({
+  applicationId,
+  guildId,
+});
 ```
 
-Use the final row's `id` as `after` for the next page. Subscription and payment
-results include SKU items and title snapshots. Subscription items retain historical
-SKUs and identify current items with `is_current`, so later financial imports can
-still reference an older tier. User filters select verified purchasers, not every
-beneficiary. These server-side models do not authorize a Discord command caller;
-future commands must enforce their own user/guild permissions before reading.
-`createMonetizationStore` is the bot's writer connection and verifies that role.
-A separate read-only service should inject its reader connection into
-`createMonetizationModels`; the database denies write functions to that reader role.
+Use the final row's `id` as `after` for the next page. Subscription results include
+SKU/title items; `is_current` distinguishes historical items. User filters select
+purchasers; guild filters select beneficiaries. These models do not authorize a
+Discord command caller: future commands must enforce caller permissions.
 
-## Event and reconciliation flow
+## Least-privilege access
 
-The existing loader registers `subscriptionCreate`, `subscriptionUpdate`,
-`subscriptionDelete`, `entitlementCreate`, `entitlementUpdate`, and
-`entitlementDelete`. Update handlers use the new object even if the old cache entry
-is absent. The handlers catch asynchronous errors and log sanitized summaries.
+The private `monetization` schema is outside the Supabase Data API. The integration
+uses a dedicated `pg` connection with no fallback to `SUPABASE_SECRET_KEY`.
+Database functions use a fixed search path, parameterized inputs, and application
+bindings checked against the actual session login. Ordinary client roles cannot
+access the schema. RLS and restricted writer/reader roles remain.
 
-Create/update events trigger canonical Discord REST reads, with application and
-SKU validation, rather than persisting potentially stale event snapshots. Delete
-events retain tombstones. Processing is serialized per resource, and database
-writes reject older observations and resurrection of deleted IDs. No event grants
-access or infers a charge from a subscription renewal.
+Apply the repository migrations in order using the normal reviewed workflow for
+the chosen environment. The follow-up simplification migration removes the old
+financial tables, columns, and functions. Review that removal before applying it
+to any database that has already received financial records. No migration is
+applied automatically by this code change.
 
-An initial background scan and periodic scans repair missed events. Entitlement
-queries include ended/deleted records. Subscription scans use the configured SKUs
-and known users, because Discord's bot subscription listing requires a user ID.
-There is no complete historical financial backfill: subscriptions with neither a
-known user nor a discoverable entitlement may require a later targeted recovery.
-Pagination and pending work are bounded; overlapping scans are coalesced. A failed
-request, incomplete scan, or absent row never constitutes a deletion.
-Known subscriptions are also fetched individually. A generic 404 is not reliable
-proof of subscription deletion: if the delete event was missed and Discord no
-longer returns the subscription, the last record is retained and reconciliation
-reports a failure for investigation. It is not silently marked deleted.
+Provision a non-administrative login, grant `monetization_writer`, and bind it to
+its Discord application in `monetization.login_applications`. Inject its connection
+URL through secret management; never put passwords in migrations or commits.
+Read-only server consumers can inject a `monetization_reader` connection into
+`createMonetizationModels`. Runtime roles must not own tables or inherit admin
+privileges. Remote connections require verified TLS; loopback development
+connections may be plaintext.
 
-## Least-privilege database access
+Other Lerche code still uses a broad Supabase credential in the same process.
+This dedicated connection limits the integration's privileges, but does not
+isolate it from a full compromise of that process.
 
-The private `monetization` schema is not exposed through the Supabase Data API.
-The integration uses `pg` with a separate connection string; it never falls back to
-`SUPABASE_SECRET_KEY`. Security-definer functions have a fixed search path, accept
-typed/validated data, and are explicitly granted to purpose-specific roles.
-Ordinary client roles have no access. Runtime roles must not own tables or inherit
-administrative privileges.
+## Configuration and validation
 
-Apply the new migration through the normal reviewed Supabase migration workflow
-for the chosen environment:
-`supabase/migrations/20261107000000_discord_monetization_records.sql`.
-Provision a dedicated database login using your secret management process and
-grant only `monetization_writer` to that login. Bind that login to its Discord
-application through `monetization.login_applications`; functions check the actual
-session login, so a role grant alone is insufficient. Provision
-`monetization_finance` access separately and do not put that credential in the bot.
-`monetization_reader` is available for trusted server-side read models.
-Never put passwords into migrations, documentation, shell history, or commits.
-
-Example administrative setup, after creating a password-protected, non-superuser
-login named `lerche_monetization` through your secret provisioning process:
-
-```sql
-grant monetization_writer to lerche_monetization;
-insert into monetization.login_applications (login_role, application_id)
-values ('lerche_monetization', 'YOUR_DISCORD_APPLICATION_ID');
-```
-
-Replace the application placeholder with a real numeric Discord ID. This setup is
-an environment action; automated tests and application startup do not perform it.
-
-Remote database connections require verified TLS. Use the provider's correct
-hostname and trusted certificate chain. Plaintext is only permitted for a loopback
-development database. Do not disable certificate verification to resolve a
-deployment error.
-
-The rest of Lerche still uses its existing broad Supabase credential. A separate
-restricted connection limits this component's privileges, but does not isolate it
-from a full compromise of the same bot process. Stronger isolation would require
-moving ingestion to a separate service without the broad credential.
-
-## Configuration
-
-Set these only after the migration and restricted login are ready:
+After the migrations and restricted login are ready:
 
 ```dotenv
 DISCORD_MONETIZATION_ENABLED=true
 DISCORD_MONETIZATION_SKU_IDS=123456789012345678,234567890123456789
 DISCORD_MONETIZATION_RECONCILE_MINUTES=60
-# Inject a restricted Postgres connection URL through your secret manager:
-# DISCORD_MONETIZATION_DATABASE_URL
+# Inject DISCORD_MONETIZATION_DATABASE_URL through secret management.
 ```
 
-SKU IDs must belong to the logged-in Discord application and represent a durable,
-consumable, or subscription SKU, not a subscription group. Configure every SKU
-needed by active subscriptions and scheduled tier changes. The application ID is
-taken from the logged-in client. Test and production apps need separate approved
-SKU lists and databases. The reconciliation interval accepts 5–1440 minutes.
-Removing or disabling configuration does not erase stored history.
+Use the logged-in application's durable, consumable, and subscription SKUs,
+including scheduled tier changes. The interval accepts 5–1440 minutes. Disabling
+the integration does not erase records. Separate test and production environments.
 
-## Verification
+Run `npm run test:bot` and `npm run typecheck:bot`. Database tests use isolated
+PGlite instances, not hosted Supabase. Before enabling a development environment,
+validate the migration, restricted login, TLS, and actual Discord lifecycle events.
+Confirm duplicates do not multiply records, updates use the received payload,
+deletions preserve history, and no benefits or consumption are triggered.
 
-```sh
-npm run test:bot
-npm run typecheck:bot
-```
-
-All bot and database tests live under `tests/` and remain in discovery.
-Database tests use an isolated in-memory PGlite PostgreSQL instance, applying the
-new migration against minimal fixtures. They do not read environment credentials
-or contact Supabase. These tests exercise SQL behavior, not hosted Supabase login,
-TLS, pooler behavior, or multi-process concurrency on a deployed server.
-
-Before enabling in a development environment, verify the restricted login and
-migration on that environment, then test Discord lifecycle events. Use application
-test mode for one-time purchases; subscription test entitlements are not the
-one-time-purchase test procedure. Confirm duplicate deliveries create no duplicate
-records, canceled subscriptions preserve their entitlement state, revocation is
-retained, and no payments or benefits appear from test events.
-
-## References
-
-- [Discord subscriptions](https://docs.discord.com/developers/resources/subscription)
-- [Discord entitlements](https://docs.discord.com/developers/resources/entitlement)
-- [Discord Gateway events](https://docs.discord.com/developers/events/gateway-events)
-- [Discord one-time purchases](https://docs.discord.com/developers/monetization/implementing-one-time-purchases)
-- [Supabase database roles](https://supabase.com/docs/guides/database/postgres/roles)
-- [Supabase RLS and secret-key bypass](https://supabase.com/docs/guides/database/postgres/row-level-security)
-
-Reviewed against the installed Discord.js API and official documentation on
-2026-11-07. Neither subscription status nor a payment row is an access-control
-decision; future benefit logic must use validated entitlements.
+See [the implementation diagrams](diagrams/implemented-monetization.html).

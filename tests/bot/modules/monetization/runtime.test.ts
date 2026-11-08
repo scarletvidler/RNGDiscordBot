@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Client } from "discord.js";
-import { createDiscordMonetizationApi, startDiscordMonetization, stopDiscordMonetization } from "../../../../bot/modules/monetization/runtime.ts";
+import {
+  createDiscordMonetizationApi,
+  startDiscordMonetization,
+  stopDiscordMonetization,
+} from "../../../../bot/modules/monetization/runtime.ts";
 import entitlementUpdate from "../../../../bot/events/entitlementUpdate/index.event.ts";
 import subscriptionUpdate from "../../../../bot/events/subscriptionUpdate/index.event.ts";
 
@@ -9,7 +13,11 @@ const app = "123456789012345678";
 const sku = "223456789012345678";
 type RestGet = Client["rest"]["get"];
 function api(get: RestGet) {
-  return createDiscordMonetizationApi({ rest: { get } as Client["rest"] }, app, new Set([sku]));
+  return createDiscordMonetizationApi(
+    { rest: { get } as Client["rest"] },
+    app,
+    new Set([sku]),
+  );
 }
 
 test("REST reads retry transient errors with a strict attempt bound and timeout signals", async () => {
@@ -25,14 +33,21 @@ test("REST reads retry transient errors with a strict attempt bound and timeout 
 
 test("permanent REST errors are not retried", async () => {
   let attempts = 0;
-  const transport = api(async () => { attempts++; throw { status: 403 }; });
-  await assert.rejects(transport.getEntitlement("323456789012345678"));
+  const transport = api(async () => {
+    attempts++;
+    throw { status: 403 };
+  });
+  await assert.rejects(transport.listEntitlements());
   assert.equal(attempts, 1);
 });
 
 test("REST reconciliation explicitly includes expired/deleted records and user-scopes subscription reads", async () => {
-  const requests: Array<{ route: string; query: URLSearchParams | undefined }> = [];
-  const transport = api(async (route, options) => { requests.push({ route, query: options?.query }); return []; });
+  const requests: Array<{ route: string; query: URLSearchParams | undefined }> =
+    [];
+  const transport = api(async (route, options) => {
+    requests.push({ route, query: options?.query });
+    return [];
+  });
   await transport.listEntitlements("323456789012345678");
   await transport.listSubscriptions(sku, "423456789012345678");
   assert.equal(requests[0].query?.get("exclude_ended"), "false");
@@ -47,7 +62,13 @@ test("disabled update adapters accept nullable old cache without starting a data
   const previous = process.env.DISCORD_MONETIZATION_ENABLED;
   delete process.env.DISCORD_MONETIZATION_ENABLED;
   try {
-    const client = { rest: { get: () => { throw new Error("Unexpected request"); } } } as unknown as Client;
+    const client = {
+      rest: {
+        get: () => {
+          throw new Error("Unexpected request");
+        },
+      },
+    } as unknown as Client;
     assert.equal(entitlementUpdate.type, "entitlementUpdate");
     assert.equal(subscriptionUpdate.type, "subscriptionUpdate");
     // Disabled records mode must be safe even before an application or user cache exists.

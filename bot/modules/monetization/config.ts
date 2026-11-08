@@ -4,15 +4,19 @@ export interface MonetizationConfig {
 }
 
 export function isSnowflake(value: unknown): value is string {
-  return typeof value === "string" && /^[1-9]\d{0,19}$/.test(value)
-    && BigInt(value) <= 18_446_744_073_709_551_615n;
+  return (
+    typeof value === "string" &&
+    /^[1-9]\d{0,19}$/.test(value) &&
+    BigInt(value) <= 18_446_744_073_709_551_615n
+  );
 }
 
 export function readMonetizationConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): MonetizationConfig | null {
   if (env.DISCORD_MONETIZATION_ENABLED !== "true") return null;
-  const ids = env.DISCORD_MONETIZATION_SKU_IDS?.split(",").map((id) => id.trim()) ?? [];
+  const ids =
+    env.DISCORD_MONETIZATION_SKU_IDS?.split(",").map((id) => id.trim()) ?? [];
   if (!ids.length || ids.some((id) => !isSnowflake(id)) || ids.length > 100) {
     throw new Error("Monetization requires between 1 and 100 valid SKU IDs");
   }

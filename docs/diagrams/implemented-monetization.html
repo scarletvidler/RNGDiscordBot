@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lerche · Simplified monetization</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --color-paper: #f5f5f5; /* white-smoke */
+        --color-ink: #2d3142; /* jet-black */
+        --color-muted: #4f5d75; /* blue-slate */
+        --color-accent: #bf4520; /* burnt-tangerine */
+        --font-sans: "Geist", system-ui, sans-serif;
+        --font-serif: "Instrument Serif", "Noto Serif", "Noto Serif KR", serif;
+        --font-mono: "Geist Mono", ui-monospace, monospace;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background: var(--color-paper);
+        color: var(--color-ink);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 2rem;
+      }
+
+      .frame {
+        max-width: 1360px;
+        width: 100%;
+      }
+      /* The SVG holds its readable width (min-width == the viewBox width, so the
+       type ramp is never silently scaled down). This wrapper lets a narrow
+       screen scroll the diagram instead of the whole page. */
+      .diagram-container {
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.66rem;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--color-muted);
+        margin-bottom: 0.5rem;
+      }
+
+      h1 {
+        font-family: var(--font-serif);
+        font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        color: var(--color-ink);
+        margin-bottom: 1.5rem;
+      }
+
+      svg {
+        width: 100%;
+        min-width: 1280px;
+        display: block;
+      }
+      /* Paper has no scrollbar, so the local scroller would clip instead of
+       scroll. Let the diagram scale down to the sheet: smaller but whole
+       beats sharp but cut off. Must come after the svg rule above - a media
+       query adds no specificity, so a later plain rule would win. */
+      @media print {
+        .diagram-container {
+          overflow-x: visible;
+        }
+        svg {
+          min-width: 0;
+        }
+      }
+
+      body {
+        display: block;
+        padding: 40px 24px;
+      }
+      .frame {
+        margin: auto;
+        min-width: 0;
+      }
+      h1 {
+        font-size: 40px;
+        margin-bottom: 16px;
+      }
+      h2 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+        font-weight: 400;
+        margin: 40px 0 8px;
+      }
+      p {
+        max-width: 950px;
+        line-height: 1.6;
+        margin-bottom: 12px;
+      }
+      section {
+        margin-bottom: 36px;
+      }
+      .name {
+        font:
+          600 12px "Geist",
+          system-ui,
+          sans-serif;
+        fill: #2d3142;
+      }
+      .body {
+        font:
+          400 11px "Geist",
+          system-ui,
+          sans-serif;
+        fill: #4f5d75;
+      }
+      .tag {
+        font:
+          500 8px "Geist Mono",
+          monospace;
+        letter-spacing: 0.06em;
+        fill: #5a6580;
+      }
+      .legend {
+        font:
+          400 10px "Geist",
+          system-ui,
+          sans-serif;
+        fill: #4f5d75;
+      }
+      .callout {
+        font:
+          italic 14px "Instrument Serif",
+          serif;
+        fill: #bf4520;
+      }
+      .notes {
+        border-top: 1px solid #bfc0c0;
+        padding-top: 20px;
+      }
+      code {
+        font-family: var(--font-mono);
+        font-size: 0.9em;
+      }
+      a {
+        color: #2e5aa8;
+      }
+      @media print {
+        body {
+          padding: 0;
+        }
+        .diagram-container {
+          overflow-x: visible;
+        }
+        svg {
+          min-width: 0;
+        }
+        section {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="frame">
+      <p class="eyebrow">
+        LERCHE · feat/monertisation · SIMPLIFIED IMPLEMENTATION
+      </p>
+      <h1>Trust Discord. Record the purchase lifecycle.</h1>
+      <p>
+        Store subscriptions, one-time purchases and their user or guild
+        beneficiaries. Financial storage and payment imports are removed. Events
+        are accepted directly from the Discord client.
+      </p>
+      <section>
+        <h2>01 / From Discord event to stored record</h2>
+        <div class="diagram-container">
+          <svg
+            viewBox="0 0 1280 720"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-labelledby="monetization-flow-title monetization-flow-desc"
+          >
+            <title id="monetization-flow-title">
+              Trust Discord events. Store lifecycle records.
+            </title>
+            <desc id="monetization-flow-desc">
+              Discord lifecycle events are stored directly through a restricted
+              database connection, with list-based recovery for missed events.
+            </desc>
+            <rect width="1280" height="720" fill="#f5f5f5" />
+            <defs>
+              <marker
+                id="flow-arrow"
+                markerWidth="8"
+                markerHeight="6"
+                refX="7"
+                refY="3"
+                orient="auto"
+              >
+                <polygon points="0 0,8 3,0 6" fill="#4f5d75" />
+              </marker>
+            </defs>
+            <path
+              d="M 312 252 L 396 252"
+              fill="none"
+              stroke="#4f5d75"
+              stroke-width="1.5"
+              marker-end="url(#flow-arrow)"
+            />
+            <path
+              d="M 684 252 L 824 252"
+              fill="none"
+              stroke="#4f5d75"
+              stroke-width="1.5"
+              marker-end="url(#flow-arrow)"
+            />
+            <path
+              d="M 540 452 L 540 352"
+              fill="none"
+              stroke="#4f5d75"
+              stroke-width="1.5"
+              marker-end="url(#flow-arrow)"
+            />
+            <rect
+              x="56"
+              y="176"
+              width="256"
+              height="176"
+              rx="6"
+              fill="#f5f5f5"
+              stroke="#4f5d75"
+            />
+            <text x="76" y="200" class="tag">TRUSTED EVENT SOURCE</text>
+            <text x="76" y="228" class="name">Discord Gateway</text>
+            <text x="76" y="256" class="body">
+              Subscription create / update / delete
+            </text>
+            <text x="76" y="276" class="body">
+              Entitlement create / update / delete
+            </text>
+            <text x="76" y="296" class="body">
+              Use the received Discord.js payload
+            </text>
+            <rect
+              x="396"
+              y="176"
+              width="288"
+              height="176"
+              rx="6"
+              fill="#faeae5"
+              stroke="#bf4520"
+            />
+            <text x="416" y="200" class="tag">BOT · RESTRICTED WRITER</text>
+            <text x="416" y="228" class="name">Record lifecycle state</text>
+            <text x="416" y="256" class="body">
+              Map the received event directly
+            </text>
+            <text x="416" y="276" class="body">
+              Scope by application and SKU
+            </text>
+            <text x="416" y="296" class="body">
+              Serialize updates; retain deletions
+            </text>
+            <rect
+              x="824"
+              y="176"
+              width="400"
+              height="176"
+              rx="6"
+              fill="#f5f5f5"
+              stroke="#4f5d75"
+            />
+            <text x="844" y="200" class="tag">SUPABASE POSTGRES</text>
+            <text x="844" y="228" class="name">
+              Private monetization schema
+            </text>
+            <text x="844" y="256" class="body">
+              Subscriptions + one-time purchases + entitlements
+            </text>
+            <text x="844" y="276" class="body">
+              SKU catalog + subscription title history
+            </text>
+            <text x="844" y="296" class="body">
+              Application-bound SQL functions; restricted roles
+            </text>
+            <rect
+              x="396"
+              y="452"
+              width="288"
+              height="136"
+              rx="6"
+              fill="#f5f5f5"
+              stroke="#4f5d75"
+            />
+            <text x="416" y="476" class="tag">STARTUP + PERIODIC</text>
+            <text x="416" y="504" class="name">Recover missed events</text>
+            <text x="416" y="532" class="body">
+              List entitlements and subscriptions
+            </text>
+            <text x="416" y="552" class="body">
+              Fetch SKU metadata for product names
+            </text>
+            <text x="824" y="472" class="callout">
+              No financial records or import path.
+            </text>
+            <text x="824" y="500" class="body">
+              No per-event REST verification.
+            </text>
+            <text x="824" y="528" class="body">
+              No premium grants or purchase consumption.
+            </text>
+            <path d="M40 660 H1240" stroke="#bfc0c0" />
+            <text x="40" y="688" class="legend">
+              Arrows: snapshot flow · Trusting Discord events does not remove
+              database access controls or duplicate handling
+            </text>
+          </svg>
+        </div>
+      </section>
+      <section>
+        <h2>02 / Purchase identity and beneficiary state</h2>
+        <div class="diagram-container">
+          <svg
+            viewBox="0 0 1280 720"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-labelledby="monetization-data-title monetization-data-desc"
+          >
+            <title id="monetization-data-title">
+              Subscriptions, purchases and beneficiaries
+            </title>
+            <desc id="monetization-data-desc">
+              Subscription records and one-time purchases retain product
+              identity and link to entitlements describing their user or guild
+              beneficiary.
+            </desc>
+            <rect width="1280" height="720" fill="#f5f5f5" />
+            <path
+              d="M 376 288 L 488 288"
+              fill="none"
+              stroke="#4f5d75"
+              stroke-width="1.5"
+            />
+            <path
+              d="M 792 288 L 904 288"
+              fill="none"
+              stroke="#4f5d75"
+              stroke-width="1.5"
+            />
+            <text x="388" y="272" class="tag">0..1 SUB</text>
+            <text x="412" y="312" class="tag">0..N</text>
+            <text x="812" y="272" class="tag">1</text>
+            <text x="832" y="312" class="tag">0..1 OTP</text>
+            <rect
+              x="56"
+              y="160"
+              width="320"
+              height="288"
+              rx="6"
+              fill="#f5f5f5"
+              stroke="#4f5d75"
+            />
+            <text x="76" y="184" class="tag">RECURRING PURCHASE</text>
+            <text x="76" y="212" class="name">Subscriptions</text>
+            <text x="76" y="240" class="body"># application_id + id</text>
+            <text x="76" y="260" class="body">
+              purchaser_discord_id; optional profile
+            </text>
+            <text x="76" y="280" class="body">title; status; created_at</text>
+            <text x="76" y="300" class="body">current_period_start / end</text>
+            <text x="76" y="320" class="body">
+              canceled_at; deleted; observed_at
+            </text>
+            <text x="76" y="340" class="body">
+              SKU/title items retain product history
+            </text>
+            <rect
+              x="488"
+              y="160"
+              width="304"
+              height="288"
+              rx="6"
+              fill="#faeae5"
+              stroke="#bf4520"
+            />
+            <text x="508" y="184" class="tag">BENEFICIARY STATE</text>
+            <text x="508" y="212" class="name">Entitlements</text>
+            <text x="508" y="240" class="body">
+              # application_id + id; sku_id
+            </text>
+            <text x="508" y="260" class="body">
+              beneficiary_discord_id and/or guild_id
+            </text>
+            <text x="508" y="280" class="body">subscription_id (optional)</text>
+            <text x="508" y="300" class="body">starts_at / ends_at</text>
+            <text x="508" y="320" class="body">
+              consumed; deleted; observed_at
+            </text>
+            <rect
+              x="904"
+              y="160"
+              width="320"
+              height="288"
+              rx="6"
+              fill="#f5f5f5"
+              stroke="#4f5d75"
+            />
+            <text x="924" y="184" class="tag">DURABLE OR CONSUMABLE</text>
+            <text x="924" y="212" class="name">One-time purchases</text>
+            <text x="924" y="240" class="body">
+              # application_id + id; entitlement_id
+            </text>
+            <text x="924" y="260" class="body">
+              sku_id; title; kind; created_at
+            </text>
+            <text x="924" y="280" class="body">
+              purchaser ID when known; profile link
+            </text>
+            <text x="924" y="300" class="body">
+              beneficiary_discord_id / guild_id
+            </text>
+            <text x="924" y="320" class="body">
+              consumed; deleted; observed_at
+            </text>
+            <text x="56" y="516" class="callout">
+              Purchaser and beneficiary are distinct.
+            </text>
+            <text x="56" y="548" class="body">
+              Keep the Discord ID even when a local user profile does not exist.
+            </text>
+            <text x="56" y="576" class="body">
+              Gift and test entitlements do not invent a purchaser.
+            </text>
+            <path d="M40 660 H1240" stroke="#bfc0c0" />
+            <text x="40" y="688" class="legend">
+              Logical relationships · 0..N = zero or many · OTP = one-time
+              purchase · Supporting SKU, item and login tables summarized below
+            </text>
+          </svg>
+        </div>
+      </section>
+      <section class="notes">
+        <h2>Small scope, retained safeguards</h2>
+        <p>
+          <strong>Product identity:</strong> <code>skus</code> holds catalog
+          names and types; <code>subscription_items</code> retains SKU/title
+          history. <code>login_applications</code> binds database logins to
+          their application.
+        </p>
+        <p>
+          <strong>Access:</strong> the private schema, writer/reader roles, RLS,
+          fixed SQL search paths, parameterized calls and verified remote TLS
+          remain. Ordinary clients have no access. Other code still holds a
+          broad Supabase credential in the bot process, so this connection is
+          not full process isolation.
+        </p>
+        <p>
+          <strong>Recovery:</strong> startup and periodic list scans repair
+          missed events. A missing row is not a deletion. Catalog reads supply
+          names; no resource fetch independently verifies each event.
+        </p>
+        <p>
+          <strong>Rollout:</strong> disabled by default. Apply the follow-up
+          migration through the reviewed migration workflow; it removes the old
+          financial schema objects and columns. Hosted validation and live
+          Discord checks are still required before enabling.
+        </p>
+        <p>
+          Based on
+          <a href="../discord-monetization-records.md"
+            >the implementation guide</a
+          >. Detailed SQL columns, indexes and retry limits are omitted. Default
+          light style; Google Fonts with system fallbacks.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

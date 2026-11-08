@@ -10,7 +10,10 @@ import ClientInstance from "./modules/ClientInstance.ts";
 import startGuilds from "./modules/startGuilds.ts";
 import { botVersion } from "./version.ts";
 import { startTopGgStatsReporter } from "./modules/topGgStats.ts";
-import { startDiscordMonetization, stopDiscordMonetization } from "./modules/monetization/runtime.ts";
+import {
+  startDiscordMonetization,
+  stopDiscordMonetization,
+} from "./modules/monetization/runtime.ts";
 
 console.log(`Starting Lerche Discord Bot v${botVersion}`);
 
