@@ -5,13 +5,32 @@ export async function getGuilds(token: string): Promise<APIGuild[]> {
   const rest = apiConnect(token);
 
   try {
-    const guilds = await rest.get("/users/@me/guilds");
+    const guilds: APIGuild[] = [];
+    const limit = 200;
+    const query = new URLSearchParams({ limit: String(limit) });
+    const cursors = new Set<string>();
 
-    //  Check if the response is an array and contains guild objects
-    if (!Array.isArray(guilds) || !guilds.every((guild) => guild)) {
-      throw new Error(
-        "Invalid response format: Expected an array of guild objects.",
-      );
+    while (true) {
+      const page = await rest.get("/users/@me/guilds", { query });
+
+      if (
+        !Array.isArray(page) ||
+        !page.every((guild) => guild && typeof guild.id === "string" && guild.id)
+      ) {
+        throw new Error(
+          "Invalid response format: Expected an array of guild objects.",
+        );
+      }
+
+      guilds.push(...page);
+      if (page.length < limit) break;
+
+      const after = page[page.length - 1].id;
+      if (cursors.has(after)) {
+        throw new Error("Guild pagination cursor did not advance.");
+      }
+      cursors.add(after);
+      query.set("after", after);
     }
 
     return guilds;
