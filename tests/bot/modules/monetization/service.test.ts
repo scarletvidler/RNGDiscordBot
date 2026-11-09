@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { after, test } from "node:test";
+import { keyedQueue } from "../../../../bot/helpers/keyedQueue.ts";
 import {
   MonetizationService,
   type DiscordMonetizationApi,
@@ -10,6 +11,9 @@ import type {
   MonetizationStore,
   SubscriptionSnapshot,
 } from "../../../../supabase/models/monetization.ts";
+
+keyedQueue.start();
+after(() => keyedQueue.stop());
 
 const app = "123456789012345678";
 const sku = "223456789012345678";
@@ -508,4 +512,116 @@ test("an in-flight reconciliation response cannot overwrite a later Gateway upda
   resolvePage([entitlement({ consumed: false })]);
   await scan;
   assert.equal(persisted?.consumed, true);
+});
+
+test("separate monetization consumers share the bot queue for the same record", async () => {
+  let release!: () => void;
+  let started!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const firstStarted = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const writes: boolean[] = [];
+  const { service, api, store } = setup(
+    {},
+    {
+      applyEntitlement: async (snapshot) => {
+        writes.push(snapshot.consumed);
+        if (!snapshot.consumed) {
+          started();
+          await gate;
+        }
+      },
+    },
+  );
+  const other = new MonetizationService(
+    app,
+    new Set([sku, subSku]),
+    api,
+    store,
+  );
+  await Promise.all([service.refreshCatalog(), other.refreshCatalog()]);
+  const first = service.handleEntitlement({
+    id: entitlementId,
+    skuIds: [sku],
+    payload: entitlement(),
+  });
+  await firstStarted;
+  const second = other.handleEntitlement({
+    id: entitlementId,
+    skuIds: [sku],
+    payload: entitlement({ consumed: true }),
+  });
+  assert.equal(
+    await keyedQueue.run("another-feature:record", () => "ready"),
+    "ready",
+  );
+  assert.deepEqual(writes, [false]);
+  release();
+  await Promise.all([first, second]);
+  assert.deepEqual(writes, [false, true]);
+  await Promise.all([service.stop(), other.stop()]);
+  assert.equal(
+    await keyedQueue.run("another-feature:record", () => "still active"),
+    "still active",
+  );
+});
+
+test("bot queue shutdown drains accepted writes after monetization stops producing work", async () => {
+  let release!: () => void;
+  let started!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const firstStarted = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const writes: boolean[] = [];
+  const { service } = setup(
+    {},
+    {
+      applyEntitlement: async (snapshot) => {
+        started();
+        await gate;
+        writes.push(snapshot.consumed);
+      },
+    },
+  );
+  await service.refreshCatalog();
+  const first = service.handleEntitlement({
+    id: entitlementId,
+    skuIds: [sku],
+    payload: entitlement(),
+  });
+  await firstStarted;
+  const second = service.handleEntitlement({
+    id: entitlementId,
+    skuIds: [sku],
+    payload: entitlement({ consumed: true }),
+  });
+  let drained = false;
+  const drain = keyedQueue.stop().then(() => {
+    drained = true;
+  });
+  await service.stop();
+  await assert.rejects(
+    keyedQueue.run("another-feature:record", () => undefined),
+    /stopped/i,
+  );
+  await assert.rejects(
+    service.handleEntitlement({
+      id: entitlementId,
+      skuIds: [sku],
+      payload: entitlement(),
+    }),
+    /stopped/i,
+  );
+  assert.equal(drained, false);
+  release();
+  await Promise.all([first, second, drain]);
+  assert.deepEqual(writes, [false, true]);
+  await service.reconcile();
+  assert.deepEqual(writes, [false, true]);
 });

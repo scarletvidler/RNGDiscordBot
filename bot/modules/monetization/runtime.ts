@@ -1,9 +1,6 @@
 import type { Client, Entitlement, Subscription } from "discord.js";
 import { Routes } from "discord-api-types/v10";
-import {
-  createMonetizationStore,
-  closeMonetizationStore,
-} from "../../../supabase/models/monetization.ts";
+import { createMonetizationStore } from "../../../supabase/models/monetization.ts";
 import { readMonetizationConfig } from "./config.ts";
 import { MonetizationService, type DiscordMonetizationApi } from "./service.ts";
 
@@ -115,7 +112,6 @@ export async function stopDiscordMonetization(client: Client): Promise<void> {
     await current.service.stop();
     runtimes.delete(client);
   }
-  await closeMonetizationStore();
 }
 
 export async function recordEntitlementEvent(

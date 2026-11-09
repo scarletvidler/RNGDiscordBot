@@ -1,8 +1,9 @@
 # Discord monetization records
+
 - ID: discord-monetization-records
 - Domain: monetization
 - Status: done
-- Updated: 2026-11-07
+- Updated: 2026-11-09
 
 ## Decisions
 
@@ -11,6 +12,7 @@
 - Trust lifecycle payloads received through the Discord client as authoritative subscription/one-time purchase records. Persist them directly rather than independently re-verifying each event through REST; retain list-based recovery for missed events.
 - Preserve product identity/history and user or guild beneficiary links. Keep purchaser and beneficiary identities distinct when Discord does not identify a purchaser.
 - Keep restricted, application-bound database access and record-integrity safeguards. Existing broad credentials elsewhere in the bot remain a process-level limitation. See the [security preference](../../PREFERENCES.md#security).
+- User-confirmed on 2026-11-09: queue ownership belongs to the bot process, initialized by `startBot` and drained during bot shutdown. Monetization only submits namespaced work to the shared helper; other features opt in rather than routing every event through it. See [event handling and recovery](../../docs/discord-monetization-records.md#event-handling-and-recovery).
 
 ## Current state
 

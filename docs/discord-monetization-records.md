@@ -36,6 +36,25 @@ bounded queues, duplicate handling, and deletion tombstones remain. These protec
 record integrity; they do not independently verify Discord's purchase decision.
 The catalog is fetched for product names and configured SKU metadata.
 
+Ordering uses the bot-wide queue in `bot/helpers/keyedQueue.ts`. `startBot()`
+initializes it before Discord login; monetization only submits work using
+`keyedQueue.run(key, work)`. Its keys include the feature, application ID, record
+type, and record ID. Other features can use the same helper with their own keys:
+
+```ts
+import { keyedQueue } from "../../helpers/keyedQueue.ts";
+
+await keyedQueue.run(`my-feature:${recordId}`, () => updateRecord(recordId));
+```
+
+The same key runs in order; unrelated keys can progress independently. The helper
+owns the global 1,000-task running/waiting limit and lets later tasks proceed after
+a failure while returning errors to callers. The bot stops new submissions and
+drains accepted work before closing the database and Discord client. Stopping
+monetization only stops its producers and recovery scans, not the shared queue.
+This is opt-in, in-memory, and local to one bot process; it does not queue every
+Discord event automatically or persist work across restarts.
+
 Startup and periodic reconciliation repair missed events using Discord list APIs.
 Subscription discovery uses configured SKUs and known users. This cannot recover
 subscriptions with neither a known user nor a discoverable entitlement. Missing

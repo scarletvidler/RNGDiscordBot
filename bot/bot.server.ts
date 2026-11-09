@@ -4,6 +4,8 @@ import path from "path";
 import { registerSlashCommands } from "./modules/registerSlashCommands.ts";
 import "dotenv/config";
 import getDirectoryRoot from "./helpers/getDirectoryRoot.ts";
+import { keyedQueue } from "./helpers/keyedQueue.ts";
+import { closeMonetizationStore } from "../supabase/models/monetization.ts";
 import { pathToFileURL } from "url";
 import { type BotCommand, type BotEvent } from "./types.ts";
 import ClientInstance from "./modules/ClientInstance.ts";
@@ -95,6 +97,7 @@ async function loadEvents(dir: string): Promise<void> {
 await loadEvents(eventsDir);
 
 export async function startBot(): Promise<void> {
+  keyedQueue.start();
   ClientInstance.once("clientReady", async () => {
     console.log(`🤖 Logged in as ${ClientInstance.user?.tag}`);
     startTopGgStatsReporter(ClientInstance);
@@ -130,9 +133,16 @@ export async function startBot(): Promise<void> {
 }
 
 export async function stopBot(): Promise<void> {
+  const drained = keyedQueue.stop();
   try {
     await stopDiscordMonetization(ClientInstance);
   } finally {
-    await ClientInstance.destroy();
+    // Accepted tasks may still need the database and Discord client.
+    await drained;
+    try {
+      await closeMonetizationStore();
+    } finally {
+      await ClientInstance.destroy();
+    }
   }
 }

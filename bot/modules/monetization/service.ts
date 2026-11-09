@@ -1,3 +1,4 @@
+import { keyedQueue } from "../../helpers/keyedQueue.ts";
 import type {
   EntitlementSnapshot,
   MonetizationStore,
@@ -25,7 +26,6 @@ export interface DiscordRecordEvent {
 
 const PAGE_SIZE = 100;
 const MAX_PAGES = 1000;
-const MAX_PENDING = 1000;
 
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -86,12 +86,11 @@ function nextCursor(
 
 /** Discord records only. This service never records payments, grants perks or consumes items. */
 export class MonetizationService {
-  private readonly queues = new Map<string, Promise<void>>();
   private skus = new Map<string, SkuSnapshot>();
   private catalogPromise?: Promise<void>;
   private reconciliation?: Promise<void>;
   private closed = false;
-  private pending = 0;
+
   private lastObservation = -Infinity;
 
   constructor(
@@ -112,25 +111,6 @@ export class MonetizationService {
       this.lastObservation + 1,
     );
     return new Date(this.lastObservation).toISOString();
-  }
-
-  private serial(key: string, work: () => Promise<void>): Promise<void> {
-    if (this.closed) return Promise.reject(new Error("Monetization stopped"));
-    if (this.pending >= MAX_PENDING)
-      return Promise.reject(
-        new Error("Monetization queue full; reconcile required"),
-      );
-    this.pending++;
-    const previous = this.queues.get(key) ?? Promise.resolve();
-    const current = previous.catch(() => undefined).then(work);
-    this.queues.set(key, current);
-    void current
-      .finally(() => {
-        this.pending--;
-        if (this.queues.get(key) === current) this.queues.delete(key);
-      })
-      .catch(() => undefined);
-    return current;
   }
 
   async refreshCatalog(): Promise<void> {
@@ -265,43 +245,51 @@ export class MonetizationService {
   }
 
   async handleEntitlement(event: DiscordRecordEvent): Promise<void> {
+    if (this.closed) throw new Error("Monetization stopped");
     id(event.id);
     if (!event.skuIds.some((skuId) => this.allowedSkus.has(skuId))) return;
     const observedAt = this.observationTime();
-    return this.serial(`entitlement:${event.id}`, async () => {
-      await this.ensureCatalog();
-      // The authenticated Discord Gateway payload is the lifecycle source of truth.
-      const snapshot = this.entitlement(
-        event.payload,
-        observedAt,
-        event.deleted,
-      );
-      if (snapshot.id !== event.id)
-        throw new Error("Entitlement event ID mismatch");
-      await this.store.applyEntitlement(snapshot);
-    });
+    return keyedQueue.run(
+      `monetization:${this.applicationId}:entitlement:${event.id}`,
+      async () => {
+        await this.ensureCatalog();
+        // The authenticated Discord Gateway payload is the lifecycle source of truth.
+        const snapshot = this.entitlement(
+          event.payload,
+          observedAt,
+          event.deleted,
+        );
+        if (snapshot.id !== event.id)
+          throw new Error("Entitlement event ID mismatch");
+        await this.store.applyEntitlement(snapshot);
+      },
+    );
   }
 
   async handleSubscription(event: DiscordRecordEvent): Promise<void> {
+    if (this.closed) throw new Error("Monetization stopped");
     id(event.id);
     const skuId = event.skuIds.find((candidate) =>
       this.allowedSkus.has(candidate),
     );
     if (!skuId) return;
     const observedAt = this.observationTime();
-    return this.serial(`subscription:${event.id}`, async () => {
-      await this.ensureCatalog();
-      if (this.skus.get(skuId)?.type !== 5)
-        throw new Error("Invalid subscription SKU");
-      const snapshot = this.subscription(
-        event.payload,
-        observedAt,
-        event.deleted,
-      );
-      if (snapshot.id !== event.id)
-        throw new Error("Subscription event ID mismatch");
-      await this.store.applySubscription(snapshot);
-    });
+    return keyedQueue.run(
+      `monetization:${this.applicationId}:subscription:${event.id}`,
+      async () => {
+        await this.ensureCatalog();
+        if (this.skus.get(skuId)?.type !== 5)
+          throw new Error("Invalid subscription SKU");
+        const snapshot = this.subscription(
+          event.payload,
+          observedAt,
+          event.deleted,
+        );
+        if (snapshot.id !== event.id)
+          throw new Error("Subscription event ID mismatch");
+        await this.store.applySubscription(snapshot);
+      },
+    );
   }
 
   reconcile(): Promise<void> {
@@ -324,8 +312,9 @@ export class MonetizationService {
         if (!this.allowedSkus.has(String(row.sku_id))) continue;
         try {
           const snapshot = this.entitlement(row, observedAt);
-          await this.serial(`entitlement:${snapshot.id}`, () =>
-            this.store.applyEntitlement(snapshot),
+          await keyedQueue.run(
+            `monetization:${this.applicationId}:entitlement:${snapshot.id}`,
+            () => this.store.applyEntitlement(snapshot),
           );
         } catch {
           failures++;
@@ -379,8 +368,9 @@ export class MonetizationService {
           const snapshot = this.subscription(row, observedAt);
           if (snapshot.userId !== userId || !snapshot.skuIds.includes(skuId))
             throw new Error("Subscription query scope mismatch");
-          await this.serial(`subscription:${snapshot.id}`, () =>
-            this.store.applySubscription(snapshot),
+          await keyedQueue.run(
+            `monetization:${this.applicationId}:subscription:${snapshot.id}`,
+            () => this.store.applySubscription(snapshot),
           );
         } catch {
           failures++;
@@ -400,6 +390,5 @@ export class MonetizationService {
   async stop(): Promise<void> {
     this.closed = true;
     await this.reconciliation?.catch(() => undefined);
-    await Promise.allSettled([...this.queues.values()]);
   }
 }
