@@ -1,4 +1,5 @@
-import { Pool, type PoolConfig } from "pg";
+import { getSupabaseAdmin } from "../client.ts";
+import type { Database, Json } from "../types.ts";
 
 export interface SkuSnapshot {
   applicationId: string;
@@ -87,11 +88,13 @@ export interface MonetizationReader {
   listSubscriptions(filter: RecordFilter): Promise<SubscriptionRecord[]>;
   listOneTimePurchases(filter: RecordFilter): Promise<OneTimePurchaseRecord[]>;
 }
-export interface QueryClient {
-  query(
-    text: string,
-    values: unknown[],
-  ): Promise<{ rows: Array<{ result: unknown }> }>;
+type RpcFunctions = Database["public"]["Functions"];
+export type MonetizationRpcName = keyof RpcFunctions;
+export interface MonetizationRpcClient {
+  rpc(
+    name: MonetizationRpcName,
+    args: RpcFunctions[MonetizationRpcName]["Args"],
+  ): PromiseLike<{ data: unknown; error: unknown }>;
 }
 
 const snowflake = /^[0-9]{1,20}$/;
@@ -121,32 +124,31 @@ function base(value: {
   id(value.id);
   timestamp(value.observedAt);
 }
-/** Injectable query boundary keeps automated tests off live Supabase. */
+/** Injectable RPC boundary keeps automated tests off live Supabase. */
 export function createMonetizationModels(
-  client: QueryClient,
+  client: MonetizationRpcClient,
 ): MonetizationStore & MonetizationReader {
-  async function call<T>(name: string, args: unknown[]): Promise<T> {
-    // Names are internal constants below; all values remain SQL parameters.
-    const placeholders = args.map((_, index) => `$${index + 1}`).join(", ");
-    const response = await client.query(
-      `select monetization.${name}(${placeholders}) as result`,
-      args,
-    );
-    return response.rows[0]?.result as T;
+  async function call<T>(
+    name: MonetizationRpcName,
+    args: RpcFunctions[MonetizationRpcName]["Args"],
+  ): Promise<T> {
+    const response = await client.rpc(name, args);
+    if (response.error) throw response.error;
+    return response.data as T;
   }
   async function read<T>(kind: string, filter: RecordFilter): Promise<T[]> {
     id(filter.applicationId);
     if (filter.userId) id(filter.userId);
     if (filter.guildId) id(filter.guildId);
     page(filter.after, filter.limit ?? 100);
-    return call<T[]>("read_records", [
+    return call<T[]>("monetization_read_records", {
       kind,
-      filter.applicationId,
-      filter.userId ?? null,
-      filter.guildId ?? null,
-      filter.after ?? null,
-      filter.limit ?? 100,
-    ]);
+      app: filter.applicationId,
+      usr: filter.userId ?? null,
+      guild: filter.guildId ?? null,
+      after_id: filter.after ?? null,
+      page_size: filter.limit ?? 100,
+    });
   }
   return {
     async upsertSkus(skus) {
@@ -162,7 +164,9 @@ export function createMonetizationModels(
         )
           throw new Error("Invalid SKU");
       }
-      await call("upsert_skus", [JSON.stringify(skus)]);
+      await call("monetization_upsert_skus", {
+        records: skus as unknown as Json,
+      });
     },
     async applySubscription(snapshot) {
       base(snapshot);
@@ -191,7 +195,9 @@ export function createMonetizationModels(
         Date.parse(snapshot.currentPeriodStart)
       )
         throw new Error("Invalid subscription period");
-      await call("apply_subscription", [JSON.stringify(snapshot)]);
+      await call("monetization_apply_subscription", {
+        r: snapshot as unknown as Json,
+      });
     },
     async applyEntitlement(snapshot) {
       base(snapshot);
@@ -212,12 +218,18 @@ export function createMonetizationModels(
         snapshot.createdAt,
       ])
         timestamp(value);
-      await call("apply_entitlement", [JSON.stringify(snapshot)]);
+      await call("monetization_apply_entitlement", {
+        r: snapshot as unknown as Json,
+      });
     },
     async listKnownPurchasers(applicationId, after, limit = 100) {
       id(applicationId);
       page(after, limit);
-      return call("known_purchasers", [applicationId, after ?? null, limit]);
+      return call("monetization_known_purchasers", {
+        app: applicationId,
+        after_id: after ?? null,
+        page_size: limit,
+      });
     },
     listSubscriptions: (filter) =>
       read<SubscriptionRecord>("subscriptions", filter),
@@ -226,100 +238,14 @@ export function createMonetizationModels(
   };
 }
 
-export function monetizationConnectionConfig(
-  connectionString: string,
-): PoolConfig {
-  const url = new URL(connectionString);
-  if (!["postgres:", "postgresql:"].includes(url.protocol))
-    throw new Error("Invalid monetization database URL");
-  const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
-  if (
-    ["postgres", "service_role", "supabase_admin", "authenticator"].includes(
-      decodeURIComponent(url.username),
-    )
-  )
-    throw new Error("Use a dedicated monetization database login");
-  // Never pass the URL to pg: query parameters can override host, SSL and timeouts.
-  if ([...url.searchParams.keys()].some((key) => key !== "sslmode"))
-    throw new Error("Unsupported database URL parameter");
-  const sslmode = url.searchParams.get("sslmode");
-  if (
-    sslmode &&
-    !["verify-full", "require", ...(local ? ["disable"] : [])].includes(sslmode)
-  )
-    throw new Error("Insecure database TLS mode");
-  const config: PoolConfig = {
-    host: url.hostname.replace(/^\[|\]$/g, ""),
-    port: Number(url.port || 5432),
-    user: decodeURIComponent(url.username),
-    password: decodeURIComponent(url.password),
-    database: decodeURIComponent(url.pathname.slice(1)),
-    max: 3,
-    connectionTimeoutMillis: 5_000,
-    idleTimeoutMillis: 30_000,
-    statement_timeout: 10_000,
-    query_timeout: 12_000,
-    ssl: local ? false : { rejectUnauthorized: true },
-    application_name: "lerche-monetization",
-  };
-  return config;
-}
-
-export async function assertMonetizationLogin(
-  client: QueryClient,
-): Promise<void> {
-  const response = await client.query(
-    `select (
-    not r.rolsuper and not r.rolbypassrls
-    and pg_has_role(session_user, 'monetization_writer', 'member')
-    and not has_schema_privilege(session_user, 'monetization', 'create')
-    and not exists (
-      select from pg_tables t where t.schemaname='monetization'
-      and has_table_privilege(session_user, format('%I.%I',t.schemaname,t.tablename), 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
-    )
-  ) as result from pg_roles r where r.rolname=session_user`,
-    [],
-  );
-  if (response.rows[0]?.result !== true)
-    throw new Error(
-      "Monetization login must have only restricted writer access",
-    );
-}
-
-/** Coalesce login checks, but let a later operation recover after a connection failure. */
-export function createRestrictedQueryClient(client: QueryClient): QueryClient {
-  let loginCheck: Promise<void> | undefined;
-  return {
-    async query(text, values) {
-      loginCheck ??= assertMonetizationLogin(client).catch((error: unknown) => {
-        loginCheck = undefined;
-        throw error;
-      });
-      await loginCheck;
-      return client.query(text, values);
-    },
-  };
-}
-
-let pool: Pool | undefined;
-let restrictedClient: QueryClient | undefined;
-export function createMonetizationStore(
-  connectionString = process.env.DISCORD_MONETIZATION_DATABASE_URL,
-): MonetizationStore & MonetizationReader {
-  if (!connectionString)
-    throw new Error("DISCORD_MONETIZATION_DATABASE_URL is required");
-  if (!pool) {
-    pool = new Pool(monetizationConnectionConfig(connectionString));
-    pool.on("error", () =>
-      console.error("Monetization database idle connection failed"),
-    );
-    restrictedClient = createRestrictedQueryClient(pool as QueryClient);
-  }
-  return createMonetizationModels(restrictedClient!);
-}
-export async function closeMonetizationStore(): Promise<void> {
-  const previous = pool;
-  pool = undefined;
-  restrictedClient = undefined;
-  await previous?.end();
+/** Reuse the same server-side Supabase client and credentials as all other models. */
+export function createMonetizationStore(): MonetizationStore &
+  MonetizationReader {
+  const client = getSupabaseAdmin();
+  if (!client)
+    throw new Error("Supabase is not configured for monetization records");
+  return createMonetizationModels({
+    rpc: (name, args) =>
+      client.rpc(name, args).abortSignal(AbortSignal.timeout(12_000)),
+  });
 }

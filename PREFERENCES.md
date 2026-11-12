@@ -16,6 +16,12 @@ Entry format:
 
 - [confirmed] Design monetization integrations with least privilege and explicit protection against malicious inputs and unauthorized access. Scope: Lerche monetization events, database models, and future consumers. Source: user requested attacker-resistant design and the least possible privilege mindset while planning Discord monetization. Updated: 2026-11-07.
 
+## Monetization
+
+- [confirmed] Record purchases and entitlements for all of the bot application's SKUs rather than requiring a manually maintained SKU allowlist. Recording should always run with the bot, without an enable flag. Scope: Discord monetization ingestion. Source: user stated all SKUs should reach the database when investigating a missing test donation, then explicitly requested removal of the recording flag. Updated: 2026-11-12.
+
+- [confirmed] Monetization must reuse the normal Supabase client and credentials, storing records in its separate schema within the same database; do not require a dedicated PostgreSQL URL or login. Scope: monetization database access. Source: user explicitly requested removal of the separate connection requirement and related code. Updated: 2026-11-12.
+
 ## Formatting
 
 - [confirmed] Run created or edited files through Prettier before handoff, matching the repository configuration and Cursor's Prettier settings so saving does not reformat them. Use the installed formatter rather than approximating its layout; respect supported file types and ignore rules. Scope: Lerche file changes. Source: user corrected formatting differences on save and requested alignment with their Prettier. Updated: 2026-11-07.

@@ -6,11 +6,11 @@ Preferences belong in [PREFERENCES.md](PREFERENCES.md). Detailed discussions bel
 
 ## Topics
 
-| Topic ID                     | Domain       | Topic file                                                             | Status | Next question or action                                                              | Updated    |
-| ---------------------------- | ------------ | ---------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------ | ---------- |
-| agent-guidance-setup         | development  | [Agent guidance setup](memory/development/agent-guidance-setup.md)     | done   | Use keeper for meaningful future discussions; native role loading remains unverified | 2026-11-07 |
-| discord-monetization-records | monetization | [Discord monetization records](memory/monetization/discord-records.md) | done   | Environment setup and live validation await authorization                            | 2026-11-09 |
-| guild-list-pagination        | discord      | [Guild list pagination](memory/discord/guild-list-pagination.md)       | done   | Local checks passed; live Discord pagination not exercised                           | 2026-11-08 |
+| Topic ID                     | Domain       | Topic file                                                             | Status      | Next question or action                                                              | Updated    |
+| ---------------------------- | ------------ | ---------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------ | ---------- |
+| agent-guidance-setup         | development  | [Agent guidance setup](memory/development/agent-guidance-setup.md)     | done        | Use keeper for meaningful future discussions; native role loading remains unverified | 2026-11-07 |
+| discord-monetization-records | monetization | [Discord monetization records](memory/monetization/discord-records.md) | in-progress | Shared Supabase migration applied; deploy and verify live donation recovery          | 2026-11-12 |
+| guild-list-pagination        | discord      | [Guild list pagination](memory/discord/guild-list-pagination.md)       | done        | Local checks passed; live Discord pagination not exercised                           | 2026-11-08 |
 
 Pub/sub was supplied as an example of the memory workflow, not as an approved project task.
 

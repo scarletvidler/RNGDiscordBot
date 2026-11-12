@@ -95,7 +95,6 @@ export class MonetizationService {
 
   constructor(
     private readonly applicationId: string,
-    private readonly allowedSkus: ReadonlySet<string>,
     private readonly api: DiscordMonetizationApi,
     private readonly store: MonetizationStore,
     private readonly now: () => string = () => new Date().toISOString(),
@@ -123,7 +122,9 @@ export class MonetizationService {
       for (const value of raw) {
         const sku = object(value);
         const skuId = id(sku.id);
-        if (!this.allowedSkus.has(skuId)) continue;
+        // Discord also returns non-purchasable subscription grouping records.
+        if (sku.application_id === this.applicationId && sku.type === 6)
+          continue;
         if (
           sku.application_id !== this.applicationId ||
           ![2, 3, 5].includes(sku.type as number)
@@ -149,12 +150,10 @@ export class MonetizationService {
           observedAt,
         });
       }
-      if ([...this.allowedSkus].some((skuId) => !catalog.has(skuId))) {
-        throw new Error(
-          "Configured SKU absent from Discord application catalog",
-        );
+      const records = [...catalog.values()];
+      for (let offset = 0; offset < records.length; offset += PAGE_SIZE) {
+        await this.store.upsertSkus(records.slice(offset, offset + PAGE_SIZE));
       }
-      await this.store.upsertSkus([...catalog.values()]);
       this.skus = catalog;
     };
     this.catalogPromise = run();
@@ -165,8 +164,9 @@ export class MonetizationService {
     }
   }
 
-  private async ensureCatalog(): Promise<void> {
-    if (!this.skus.size) await this.refreshCatalog();
+  private async ensureCatalog(skuIds: string[]): Promise<void> {
+    if (!this.skus.size || skuIds.some((skuId) => !this.skus.has(skuId)))
+      await this.refreshCatalog();
   }
 
   private entitlement(
@@ -220,7 +220,7 @@ export class MonetizationService {
         (skuId) => this.skus.get(skuId)?.type !== 5,
       )
     ) {
-      throw new Error("Subscription includes an unconfigured subscription SKU");
+      throw new Error("Subscription includes an unknown subscription SKU");
     }
     if (![0, 1, 2].includes(data.status as number))
       throw new Error("Invalid subscription status");
@@ -247,12 +247,11 @@ export class MonetizationService {
   async handleEntitlement(event: DiscordRecordEvent): Promise<void> {
     if (this.closed) throw new Error("Monetization stopped");
     id(event.id);
-    if (!event.skuIds.some((skuId) => this.allowedSkus.has(skuId))) return;
     const observedAt = this.observationTime();
     return keyedQueue.run(
       `monetization:${this.applicationId}:entitlement:${event.id}`,
       async () => {
-        await this.ensureCatalog();
+        await this.ensureCatalog([id(object(event.payload).sku_id)]);
         // The authenticated Discord Gateway payload is the lifecycle source of truth.
         const snapshot = this.entitlement(
           event.payload,
@@ -269,17 +268,15 @@ export class MonetizationService {
   async handleSubscription(event: DiscordRecordEvent): Promise<void> {
     if (this.closed) throw new Error("Monetization stopped");
     id(event.id);
-    const skuId = event.skuIds.find((candidate) =>
-      this.allowedSkus.has(candidate),
-    );
-    if (!skuId) return;
     const observedAt = this.observationTime();
     return keyedQueue.run(
       `monetization:${this.applicationId}:subscription:${event.id}`,
       async () => {
-        await this.ensureCatalog();
-        if (this.skus.get(skuId)?.type !== 5)
-          throw new Error("Invalid subscription SKU");
+        const data = object(event.payload);
+        await this.ensureCatalog([
+          ...ids(data.sku_ids),
+          ...(data.renewal_sku_ids == null ? [] : ids(data.renewal_sku_ids)),
+        ]);
         const snapshot = this.subscription(
           event.payload,
           observedAt,
@@ -309,7 +306,6 @@ export class MonetizationService {
       const observedAt = this.observationTime();
       const rows = page(await this.api.listEntitlements(after));
       for (const row of rows) {
-        if (!this.allowedSkus.has(String(row.sku_id))) continue;
         try {
           const snapshot = this.entitlement(row, observedAt);
           await keyedQueue.run(

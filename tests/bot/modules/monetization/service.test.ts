@@ -79,41 +79,25 @@ function setup(
     listSubscriptions: async () => [],
     ...overrides,
   };
-  const service = new MonetizationService(
-    app,
-    new Set([sku, subSku]),
-    api,
-    store,
-    () => observedAt,
-  );
+  const service = new MonetizationService(app, api, store, () => observedAt);
   return { service, entitlements, subscriptions, store, api };
 }
 
-test("disabled monetization needs no credentials; enabled configuration fails closed", () => {
-  assert.equal(readMonetizationConfig({}), null);
-  assert.throws(() =>
-    readMonetizationConfig({ DISCORD_MONETIZATION_ENABLED: "true" }),
-  );
-  assert.throws(() =>
-    readMonetizationConfig({
-      DISCORD_MONETIZATION_ENABLED: "true",
-      DISCORD_MONETIZATION_SKU_IDS: sku,
-    }),
-  );
-  assert.throws(() =>
-    readMonetizationConfig({
-      DISCORD_MONETIZATION_ENABLED: "true",
-      DISCORD_MONETIZATION_SKU_IDS: "-1",
-      DISCORD_MONETIZATION_DATABASE_URL: "present",
-    }),
-  );
+test("recording needs no toggle, SKU list or separate database connection", () => {
+  assert.equal(readMonetizationConfig({}).reconcileMs, 3_600_000);
   assert.equal(
     readMonetizationConfig({
-      DISCORD_MONETIZATION_ENABLED: "true",
-      DISCORD_MONETIZATION_SKU_IDS: sku,
-      DISCORD_MONETIZATION_DATABASE_URL: "present",
-    })?.reconcileMs,
+      DISCORD_MONETIZATION_ENABLED: "false",
+      DISCORD_MONETIZATION_SKU_IDS: "invalid-legacy-setting",
+    }).reconcileMs,
     3_600_000,
+  );
+  assert.throws(
+    () =>
+      readMonetizationConfig({
+        DISCORD_MONETIZATION_RECONCILE_MINUTES: "1",
+      }),
+    /5 to 1440/,
   );
 });
 
@@ -126,12 +110,6 @@ test("events use their Discord payload directly without resource verification re
       async () => {
         throw new Error("Unexpected REST request");
       };
-  await service.handleEntitlement({
-    id: entitlementId,
-    skuIds: ["999"],
-    payload: entitlement(),
-  });
-  assert.equal(entitlements.length, 0);
   await service.handleEntitlement({
     id: entitlementId,
     skuIds: [sku],
@@ -267,7 +245,7 @@ test("cancellation preserves subscription period without becoming deletion", asy
   assert.equal(subscriptions[0].currentPeriodEnd, "2026-12-01T00:00:00.000Z");
 });
 
-test("rejects unconfigured renewal SKU", async () => {
+test("rejects renewal SKU absent from the application catalog", async () => {
   const { service, subscriptions } = setup();
   await assert.rejects(
     service.handleSubscription({
@@ -291,13 +269,7 @@ test("keeps multi-SKU subscriptions directly from the event", async () => {
         flags: 128,
       })),
   });
-  const service = new MonetizationService(
-    app,
-    new Set([subSku, nextSku]),
-    api,
-    store,
-    () => observedAt,
-  );
+  const service = new MonetizationService(app, api, store, () => observedAt);
   await service.handleSubscription({
     id: subscriptionId,
     skuIds: [subSku, nextSku],
@@ -435,13 +407,7 @@ test("queued event snapshots keep their receipt time rather than catalog complet
     await gate;
     return catalog();
   };
-  const service = new MonetizationService(
-    app,
-    new Set([sku, subSku]),
-    api,
-    store,
-    () => clock,
-  );
+  const service = new MonetizationService(app, api, store, () => clock);
   const write = service.handleEntitlement({
     id: entitlementId,
     skuIds: [sku],
@@ -536,12 +502,7 @@ test("separate monetization consumers share the bot queue for the same record", 
       },
     },
   );
-  const other = new MonetizationService(
-    app,
-    new Set([sku, subSku]),
-    api,
-    store,
-  );
+  const other = new MonetizationService(app, api, store);
   await Promise.all([service.refreshCatalog(), other.refreshCatalog()]);
   const first = service.handleEntitlement({
     id: entitlementId,
@@ -566,6 +527,90 @@ test("separate monetization consumers share the bot queue for the same record", 
   assert.equal(
     await keyedQueue.run("another-feature:record", () => "still active"),
     "still active",
+  );
+});
+
+test("discovers new consumables and renewal SKUs after the initial catalog load", async () => {
+  const { service, api, entitlements, subscriptions } = setup();
+  await service.refreshCatalog();
+  const initialCatalog = (await api.listSkus()) as object[];
+  const donation = "823456789012345678";
+  const renewal = "923456789012345678";
+  let reads = 0;
+  api.listSkus = async () => {
+    reads++;
+    return [
+      ...initialCatalog,
+      {
+        id: donation,
+        application_id: app,
+        name: "Donation",
+        type: 3,
+        flags: 4,
+      },
+      {
+        id: renewal,
+        application_id: app,
+        name: "Next tier",
+        type: 5,
+        flags: 128,
+      },
+      {
+        id: "923456789012345679",
+        application_id: app,
+        name: "Group",
+        type: 6,
+        flags: 0,
+      },
+    ];
+  };
+  await service.handleSubscription({
+    id: subscriptionId,
+    skuIds: [subSku],
+    payload: subscription({ renewal_sku_ids: [renewal] }),
+  });
+  await service.handleEntitlement({
+    id: entitlementId,
+    skuIds: [donation],
+    payload: entitlement({ sku_id: donation, type: 4 }),
+  });
+  assert.equal(reads, 1);
+  assert.equal(entitlements[0].skuId, donation);
+  assert.equal(entitlements[0].type, 4);
+  assert.deepEqual(subscriptions[0].renewalSkuIds, [renewal]);
+});
+
+test("recovery records all purchase SKU types and batches large catalogs", async () => {
+  const catalog = Array.from({ length: 101 }, (_, n) => ({
+    id: String(BigInt(sku) + BigInt(n)),
+    application_id: app,
+    name: "Product " + n,
+    type: [2, 3, 5][n % 3],
+    flags: 4,
+  }));
+  const batches: number[] = [];
+  const { service, entitlements } = setup(
+    {
+      listSkus: async () => catalog,
+      listEntitlements: async () =>
+        catalog.slice(0, 3).map((item, n) =>
+          entitlement({
+            id: String(BigInt(entitlementId) + BigInt(n)),
+            sku_id: item.id,
+          }),
+        ),
+    },
+    {
+      upsertSkus: async (rows) => {
+        batches.push(rows.length);
+      },
+    },
+  );
+  await service.reconcile();
+  assert.deepEqual(batches, [100, 1]);
+  assert.deepEqual(
+    entitlements.map((row) => row.skuId),
+    catalog.slice(0, 3).map((row) => row.id),
   );
 });
 

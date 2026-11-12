@@ -1,51 +1,62 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createRestrictedQueryClient } from "../../supabase/models/monetization.ts";
+import {
+  createMonetizationModels,
+  createMonetizationStore,
+} from "../../supabase/models/monetization.ts";
+import { getSupabaseAdmin } from "../../supabase/client.ts";
 
-test("a transient login-check failure coalesces and can recover on the next operation", async () => {
-  let checks = 0;
-  let writes = 0;
-  const client = createRestrictedQueryClient({
-    async query(text) {
-      if (text === "record purchase") {
-        writes++;
-        return { rows: [{ result: "recorded" }] };
-      }
-      checks++;
-      if (checks === 1) throw new Error("Temporary connection failure");
-      return { rows: [{ result: true }] };
+test("RPC errors propagate and later operations can recover", async () => {
+  let attempts = 0;
+  const failure = { code: "503", message: "unavailable" };
+  const store = createMonetizationModels({
+    async rpc(name, args) {
+      assert.equal(name, "monetization_known_purchasers");
+      assert.deepEqual(args, { app: "100", after_id: null, page_size: 100 });
+      if (++attempts === 1) return { data: null, error: failure };
+      return { data: ["300"], error: null };
     },
   });
-
-  const failed = await Promise.allSettled([
-    client.query("record purchase", []),
-    client.query("record purchase", []),
-  ]);
-  assert(failed.every((result) => result.status === "rejected"));
-  assert.equal(checks, 1);
-  assert.equal(writes, 0);
-
-  await client.query("record purchase", []);
-  await client.query("record purchase", []);
-  assert.equal(checks, 2);
-  assert.equal(writes, 2);
+  await assert.rejects(
+    store.listKnownPurchasers("100"),
+    (error) => error === failure,
+  );
+  assert.deepEqual(await store.listKnownPurchasers("100"), ["300"]);
 });
 
-test("an unauthorized login never reaches record queries even when retried", async () => {
-  let calls = 0;
-  const client = createRestrictedQueryClient({
-    async query() {
-      calls++;
-      return { rows: [{ result: false }] };
-    },
-  });
-  await assert.rejects(
-    client.query("record purchase", []),
-    /restricted writer/,
-  );
-  await assert.rejects(
-    client.query("record purchase", []),
-    /restricted writer/,
-  );
-  assert.equal(calls, 2);
+test("monetization uses the shared Supabase admin client with no extra credentials", async () => {
+  const previousUrl = process.env.SUPABASE_URL;
+  const previousKey = process.env.SUPABASE_SECRET_KEY;
+  process.env.SUPABASE_URL = "https://example.supabase.co";
+  process.env.SUPABASE_SECRET_KEY = "test-secret";
+  const client = getSupabaseAdmin()!;
+  const originalRpc = client.rpc;
+  const calls: unknown[] = [];
+  client.rpc = ((name: string, args: unknown) => {
+    calls.push({ name, args });
+    return {
+      abortSignal(signal: AbortSignal) {
+        assert.ok(signal instanceof AbortSignal);
+        return Promise.resolve({ data: ["300"], error: null });
+      },
+    };
+  }) as unknown as typeof client.rpc;
+  try {
+    assert.deepEqual(
+      await createMonetizationStore().listKnownPurchasers("100"),
+      ["300"],
+    );
+    assert.deepEqual(calls, [
+      {
+        name: "monetization_known_purchasers",
+        args: { app: "100", after_id: null, page_size: 100 },
+      },
+    ]);
+  } finally {
+    client.rpc = originalRpc;
+    if (previousUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = previousUrl;
+    if (previousKey === undefined) delete process.env.SUPABASE_SECRET_KEY;
+    else process.env.SUPABASE_SECRET_KEY = previousKey;
+  }
 });

@@ -13,11 +13,7 @@ const app = "123456789012345678";
 const sku = "223456789012345678";
 type RestGet = Client["rest"]["get"];
 function api(get: RestGet) {
-  return createDiscordMonetizationApi(
-    { rest: { get } as Client["rest"] },
-    app,
-    new Set([sku]),
-  );
+  return createDiscordMonetizationApi({ rest: { get } as Client["rest"] }, app);
 }
 
 test("REST reads retry transient errors with a strict attempt bound and timeout signals", async () => {
@@ -52,17 +48,23 @@ test("REST reconciliation explicitly includes expired/deleted records and user-s
   await transport.listSubscriptions(sku, "423456789012345678");
   assert.equal(requests[0].query?.get("exclude_ended"), "false");
   assert.equal(requests[0].query?.get("exclude_deleted"), "false");
-  assert.equal(requests[0].query?.get("sku_ids"), sku);
+  assert.equal(requests[0].query?.has("sku_ids"), false);
   assert.equal(requests[0].query?.get("after"), "323456789012345678");
   assert.equal(requests[1].query?.get("user_id"), "423456789012345678");
   assert.equal(requests[1].query?.get("limit"), "100");
 });
 
-test("disabled update adapters accept nullable old cache without starting a database or HTTP call", async () => {
-  const previous = process.env.DISCORD_MONETIZATION_ENABLED;
-  delete process.env.DISCORD_MONETIZATION_ENABLED;
+test("missing database configuration reports failures without making HTTP calls", async () => {
+  const previous = process.env.SUPABASE_SECRET_KEY;
+  delete process.env.SUPABASE_SECRET_KEY;
+  const errors: unknown[][] = [];
+  const originalError = console.error;
+  console.error = (...args) => {
+    errors.push(args);
+  };
   try {
     const client = {
+      application: { id: app },
       rest: {
         get: () => {
           throw new Error("Unexpected request");
@@ -71,13 +73,16 @@ test("disabled update adapters accept nullable old cache without starting a data
     } as unknown as Client;
     assert.equal(entitlementUpdate.type, "entitlementUpdate");
     assert.equal(subscriptionUpdate.type, "subscriptionUpdate");
-    // Disabled records mode must be safe even before an application or user cache exists.
+    // Missing required configuration must be reported, never silently disable recording.
     await entitlementUpdate.execute(null, {} as never, client as never);
     await subscriptionUpdate.execute(null, {} as never, client as never);
     await startDiscordMonetization(client);
     await stopDiscordMonetization(client);
+    assert.equal(errors.length, 3);
+    assert.match(String(errors[2][0]), /startup configuration failed/);
   } finally {
-    if (previous === undefined) delete process.env.DISCORD_MONETIZATION_ENABLED;
-    else process.env.DISCORD_MONETIZATION_ENABLED = previous;
+    console.error = originalError;
+    if (previous === undefined) delete process.env.SUPABASE_SECRET_KEY;
+    else process.env.SUPABASE_SECRET_KEY = previous;
   }
 });

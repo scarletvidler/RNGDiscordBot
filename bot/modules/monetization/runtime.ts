@@ -20,7 +20,6 @@ export function reportMonetizationFailure(operation: string): void {
 export function createDiscordMonetizationApi(
   client: Pick<Client, "rest">,
   applicationId: string,
-  skuIds: ReadonlySet<string>,
 ): DiscordMonetizationApi {
   const get = async (
     route: `/${string}`,
@@ -54,7 +53,6 @@ export function createDiscordMonetizationApi(
         limit: "100",
         exclude_ended: "false",
         exclude_deleted: "false",
-        sku_ids: [...skuIds].join(","),
       });
       if (after) query.set("after", after);
       return get(Routes.entitlements(applicationId), query);
@@ -72,14 +70,12 @@ function runtime(client: Client): MonetizationService | undefined {
   const existing = runtimes.get(client);
   if (existing) return existing.service;
   const config = readMonetizationConfig();
-  if (!config) return undefined;
   const applicationId = client.application?.id;
   if (!applicationId)
     throw new Error("Monetization requires a ready Discord application");
   const service = new MonetizationService(
     applicationId,
-    config.skuIds,
-    createDiscordMonetizationApi(client, applicationId, config.skuIds),
+    createDiscordMonetizationApi(client, applicationId),
     createMonetizationStore(),
   );
   const timer = setInterval(() => {
