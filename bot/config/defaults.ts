@@ -32,7 +32,7 @@ export const TTS_MODELS: Record<TTSModels, TTSModelDefinition> = {
   },
   [TTSModels.FishPro]: {
     label: "Fish Audio Pro",
-    description: "Fish Audio using Lerche's configured Pro/free backend.",
+    description: "Fish Audio's expressive S2.1 Pro model.",
     provider: "fish",
   },
 };

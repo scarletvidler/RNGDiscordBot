@@ -1,11 +1,9 @@
 import { BotCommand, TTSModels } from "../types.ts";
 import { SlashCommandBuilder } from "discord.js";
 import ElevenLabs from "../modules/ElevenLabs.ts";
-import {
-  createVoice,
-  type DBVoiceUser,
-} from "../../supabase/models/voice.ts";
+import { createVoice, type DBVoiceUser } from "../../supabase/models/voice.ts";
 import FishAudio from "../modules/FishAudio.ts";
+import { getGuildPlanAccess } from "../modules/planAccess.ts";
 import {
   getDefaultVoiceId,
   isTTSModel,
@@ -40,6 +38,25 @@ const command: BotCommand = {
     const selectedModel = interaction.options.getString("model-type", true);
     if (!isTTSModel(selectedModel)) {
       await interaction.editReply("That TTS model is not supported.");
+      return;
+    }
+    const access = await getGuildPlanAccess(
+      interaction.applicationId,
+      extendedGuild.id,
+    );
+    if (!access.voiceSelection) {
+      await interaction.editReply(
+        "This server needs voice selection to set personal voices.",
+      );
+      return;
+    }
+    if (
+      selectedModel !== TTSModels.ElevenLabsFlashV2_5 &&
+      !access.higherVoiceModules
+    ) {
+      await interaction.editReply(
+        "This server needs Higher Voice Modules to use that model.",
+      );
       return;
     }
     const modelType = selectedModel;

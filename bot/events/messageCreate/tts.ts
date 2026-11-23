@@ -14,6 +14,7 @@ import {
   voteRequiredMessage,
 } from "../../modules/tts/voteGate.ts";
 import { refreshGuildRuntimeState } from "../../modules/tts/guildRuntimeState.ts";
+import { replyToTtsMessage } from "./replyToTtsMessage.ts";
 
 const VOTE_CHECK_FAILED_MESSAGE =
   "I couldn't verify your Top.gg vote right now. Please try your TTS message again in a moment.";
@@ -39,7 +40,7 @@ export async function handleTtsMessage(
       }
 
       if (hasReachedUsageLimit(guild)) {
-        await message.reply(usageLimitReachedMessage(guild));
+        await replyToTtsMessage(message, usageLimitReachedMessage(guild));
         return;
       }
 
@@ -51,12 +52,12 @@ export async function handleTtsMessage(
             : true;
       } catch (error) {
         console.error("Failed to verify Top.gg vote:", error);
-        await message.reply(VOTE_CHECK_FAILED_MESSAGE);
+        await replyToTtsMessage(message, VOTE_CHECK_FAILED_MESSAGE);
         return;
       }
 
       if (!hasVoteAccess) {
-        await message.reply(voteRequiredMessage(client.user!.id));
+        await replyToTtsMessage(message, voteRequiredMessage(client.user!.id));
         return;
       }
 
@@ -64,13 +65,16 @@ export async function handleTtsMessage(
       await tts.run();
     } catch (error) {
       console.error("Error processing TTS message:", error);
-      await message.reply(
+      await replyToTtsMessage(
+        message,
         "There was an error processing your TTS message. Please try again later.",
       );
     }
   } catch (error) {
     console.error("TTS validation error:", getErrorMessage(error));
-    console.error("Failed TTS message:", message.content);
-    await message.reply(`TTS validation failed: ${getErrorMessage(error)}`);
+    await replyToTtsMessage(
+      message,
+      `TTS validation failed: ${getErrorMessage(error)}`,
+    );
   }
 }

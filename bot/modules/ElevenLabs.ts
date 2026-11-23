@@ -63,12 +63,20 @@ class ElevenLabs {
     const dictionary = await this.getDefaultDictionaryLocator();
 
     return this.client.textToSpeech
-      .convert(voiceId, {
-        text,
-        modelId: modelType,
-        outputFormat: "mp3_44100_128",
-        pronunciationDictionaryLocators: [dictionary],
-      })
+      .convert(
+        voiceId,
+        {
+          text,
+          modelId: modelType,
+          outputFormat: "mp3_44100_128",
+          pronunciationDictionaryLocators: [dictionary],
+        },
+        {
+          timeoutInSeconds: 60,
+          maxRetries: 0,
+          abortSignal: AbortSignal.timeout(60_000),
+        },
+      )
       .withRawResponse();
   }
 

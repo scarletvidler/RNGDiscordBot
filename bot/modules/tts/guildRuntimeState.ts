@@ -1,8 +1,8 @@
 import {
-  DBGetGuildRuntimeState,
   type DBGuildRuntimeState,
   type DBGuildWithSettings,
 } from "../../../supabase/models/guilds.ts";
+import { getGuildTokenState } from "../../../supabase/models/guildTokens.ts";
 
 export const GUILD_RUNTIME_CACHE_TTL_MS = 60 * 1_000;
 
@@ -13,14 +13,39 @@ type RuntimeRefresh = {
 
 type RuntimeStateFetcher = (
   guildId: string,
-) => Promise<DBGuildRuntimeState | null>;
+) => Promise<(DBGuildRuntimeState & { reserved_tokens?: number }) | null>;
 
 const runtimeRefreshes = new Map<string, RuntimeRefresh>();
+
+export function invalidateGuildRuntimeState(guildId: string): void {
+  runtimeRefreshes.delete(guildId);
+}
+
+export function applyGuildTokenState(
+  guild: DBGuildWithSettings,
+  state: DBGuildRuntimeState & { reserved_tokens?: number },
+): void {
+  invalidateGuildRuntimeState(guild.id);
+  updateGuildTokenState(guild, state);
+}
+
+function updateGuildTokenState(
+  guild: DBGuildWithSettings,
+  state: DBGuildRuntimeState & { reserved_tokens?: number },
+): void {
+  guild.has_active_subscription = state.has_active_subscription;
+  guild.settings.logging.token_limit = state.token_limit;
+  guild.settings.logging.token_total_usage = state.token_total_usage;
+  guild.settings.logging.token_balance = Math.max(
+    state.token_limit - state.token_total_usage - (state.reserved_tokens ?? 0),
+    0,
+  );
+}
 
 export async function refreshGuildRuntimeState(
   guild: DBGuildWithSettings,
   now = Date.now(),
-  fetchRuntimeState: RuntimeStateFetcher = DBGetGuildRuntimeState,
+  fetchRuntimeState: RuntimeStateFetcher = getGuildTokenState,
 ): Promise<void> {
   const refresh = runtimeRefreshes.get(guild.id) ?? { refreshedAt: 0 };
   runtimeRefreshes.set(guild.id, refresh);
@@ -34,14 +59,10 @@ export async function refreshGuildRuntimeState(
       throw new Error(`Guild ${guild.id} not found in database`);
     }
 
-    guild.has_active_subscription = databaseGuild.has_active_subscription;
-    guild.settings.logging.token_limit = databaseGuild.token_limit;
-    guild.settings.logging.token_total_usage =
-      databaseGuild.token_total_usage;
-    guild.settings.logging.token_balance = Math.max(
-      databaseGuild.token_limit - databaseGuild.token_total_usage,
-      0,
-    );
+    // A purchase may have invalidated this read while it was in flight.
+    if (runtimeRefreshes.get(guild.id) !== refresh) return;
+
+    updateGuildTokenState(guild, databaseGuild);
     refresh.refreshedAt = now;
   })().finally(() => {
     refresh.inFlight = undefined;

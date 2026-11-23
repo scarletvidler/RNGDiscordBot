@@ -1,6 +1,5 @@
 import { Message, TextChannel } from "discord.js";
-import { TTSModels, type ExtendedClient } from "../../types.ts";
-import { DEFAULTS, isTTSModel } from "../../config/defaults.ts";
+import type { ExtendedClient } from "../../types.ts";
 import { insertGuildChatLog } from "../../../supabase/models/chatLogs.ts";
 import { upsertGuildMember } from "../../../supabase/models/users.ts";
 import {
@@ -9,7 +8,14 @@ import {
 } from "../../../supabase/models/guilds.ts";
 import { shouldSendUsageMessage, usageMessage } from "../supportMessages.ts";
 import VoiceInstance from "../voice/VoiceInstance.ts";
-import convertToSpeech from "./convertToSpeech.ts";
+import { prepareSpeech } from "./convertToSpeech.ts";
+import { generateSpeech } from "./generateSpeech.ts";
+import { getGuildPlanAccess } from "../planAccess.ts";
+import { applyGuildTokenState } from "./guildRuntimeState.ts";
+import {
+  getGuildTokenState,
+  type GuildTokenState,
+} from "../../../supabase/models/guildTokens.ts";
 import allowedMessage from "../../helpers/allowedMessage.ts";
 import { canLerchePerformAction } from "../permissions/index.ts";
 import { getCleanDisplayName } from "../../helpers/getClean.ts";
@@ -29,7 +35,6 @@ export class TTSInstance {
   private guild: DBGuildWithSettings;
   private client: ExtendedClient;
   private voice: DBVoiceUser | DBVoiceRole | null = null;
-  private provider: string;
 
   constructor(
     message: Message<true>,
@@ -37,9 +42,6 @@ export class TTSInstance {
     client: ExtendedClient,
   ) {
     this.message = message;
-    this.provider = isTTSModel(guild.settings.tts.tts_model)
-      ? guild.settings.tts.tts_model
-      : DEFAULTS.defaultModel;
     this.guild = guild;
     this.channel = message.channel as TextChannel;
     this.client = client;
@@ -118,10 +120,35 @@ export class TTSInstance {
         }
 
         await this._setVoiceData();
-        this._setVoiceProvider(this.voice);
-
-        const { audio, playedMessage, tokensUsed } =
-          await this.getConvertedTTSMessage(this.message);
+        const tokenState = await getGuildTokenState(this.guild.id);
+        if (!tokenState) throw new Error("Guild token state was not found");
+        const access = await getGuildPlanAccess(
+          this.client.application!.id,
+          this.guild.id,
+          tokenState,
+        );
+        const prepared = await prepareSpeech(
+          this.message,
+          this.voice,
+          this.guild.settings.tts,
+          access,
+        );
+        if (!prepared.text) {
+          await this.reply?.edit(
+            "There is no text to read after removing voice tags.",
+          );
+          return;
+        }
+        const generated = await generateSpeech(
+          this.guild.id,
+          this.message.id,
+          prepared,
+        );
+        if (!generated) return;
+        const { audio, playedMessage } = generated.speech;
+        const previousTotalUsage =
+          this.guild.settings.logging.token_total_usage;
+        applyGuildTokenState(this.guild, generated.state);
         voiceInstance.player.playSoundFile(audio);
         voiceInstance.resetIdleCountdown();
 
@@ -140,7 +167,7 @@ https://top.gg/bot/1511773768438251660#reviews`,
         }
         this.logMessageDetails(playedMessage);
         await this.logMessageToSupabase(playedMessage);
-        await this.updateUsage(tokensUsed);
+        await this.sendUsageUpdate(previousTotalUsage, generated.state);
       } else {
         console.warn("User is not in a voice channel. Cannot play TTS.");
         this.reply?.edit(
@@ -243,29 +270,6 @@ https://top.gg/bot/1511773768438251660#reviews`,
     return false;
   }
 
-  _setVoiceProvider(voice: DBVoiceUser | DBVoiceRole | null) {
-    if (voice && voice.voice_provider) {
-      this.provider = voice.voice_provider;
-    } else {
-      this.provider =
-        this.guild.settings.tts.tts_model ?? TTSModels.ElevenLabsV3;
-    }
-  }
-
-  async getConvertedTTSMessage(
-    message: Message<true>,
-  ): Promise<{ audio: any; playedMessage: string; tokensUsed: number }> {
-    const { audio, playedMessage, tokensUsed } = await convertToSpeech(
-      message,
-      this.voice,
-      this.provider,
-    );
-    console.log(
-      `Audio stream received from ${this.provider} with ${tokensUsed} tokens used.`,
-    );
-    return { audio, playedMessage, tokensUsed };
-  }
-
   // TODO: MOVE TO GUILD CLASS
   getMessageCount(): number {
     try {
@@ -315,32 +319,19 @@ https://top.gg/bot/1511773768438251660#reviews`,
     return { operationAllowed, reason };
   }
 
-  async updateUsage(tokensUsed: number): Promise<void> {
+  async sendUsageUpdate(
+    previousTotalUsage: number,
+    state: GuildTokenState,
+  ): Promise<void> {
     try {
-      const previousTotalUsage = this.guild.settings.logging!.token_total_usage;
-      const nextTotalUsage = previousTotalUsage + tokensUsed;
-      const newBalance = Math.max(
-        this.guild.settings.logging!.token_limit - nextTotalUsage,
-        0,
-      );
-
-      this.guild.settings.logging!.token_balance = newBalance;
-      this.guild.settings.logging!.token_total_usage = nextTotalUsage;
-
-      await DBupdateGuild({
-        id: this.guild.id,
-        token_balance: this.guild.settings.logging!.token_balance,
-        token_total_usage: this.guild.settings.logging!.token_total_usage,
-      });
-
+      const nextTotalUsage = state.token_total_usage;
       if (
         shouldSendUsageMessage(previousTotalUsage, nextTotalUsage, this.guild)
       ) {
         await this.channel.send(usageMessage(nextTotalUsage, this.guild));
       }
     } catch (error) {
-      console.error("Error updating usage:", error);
-      throw new Error("Failed to update usage.");
+      console.error("Could not send the token usage notice");
     }
   }
 

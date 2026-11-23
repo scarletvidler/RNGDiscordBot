@@ -151,7 +151,11 @@ export default class VoiceInstance {
 
   setVoicePlayer(connection: VoiceConnection): VoicePlayer {
     if (this.player === null || this.player === undefined) {
-      this.player = new VoicePlayer({ idleTimeout: this.idleTimeout });
+      this.player = new VoicePlayer({
+        idleTimeout: this.idleTimeout,
+        shouldPlayDisconnectSound: () =>
+          this.DBGuild.settings.tts.leave_message_enabled !== false,
+      });
     }
 
     this.player.setIdleTimeoutDuration(this.idleTimeout);
@@ -208,6 +212,7 @@ export default class VoiceInstance {
 
     if (
       options?.playDisconnectSound &&
+      this.DBGuild.settings.tts.leave_message_enabled !== false &&
       this.connection.state.status !== VoiceConnectionStatus.Destroyed &&
       this.connection.state.status !== VoiceConnectionStatus.Disconnected
     ) {

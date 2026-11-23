@@ -14,7 +14,7 @@ import { startTopGgStatsReporter } from "./modules/topGgStats.ts";
 import {
   startDiscordMonetization,
   stopDiscordMonetization,
-} from "./modules/monetization/runtime.ts";
+} from "./modules/monetization.ts";
 
 console.log(`Starting Lerche Discord Bot v${botVersion}`);
 
@@ -100,9 +100,9 @@ export async function startBot(): Promise<void> {
   ClientInstance.once("clientReady", async () => {
     console.log(`🤖 Logged in as ${ClientInstance.user?.tag}`);
     startTopGgStatsReporter(ClientInstance);
-    await startDiscordMonetization(ClientInstance);
 
     const guildIds = await startGuilds(ClientInstance);
+    startDiscordMonetization(ClientInstance);
     registerSlashCommands(
       ClientInstance,
       process.env.CLIENT_ID!,
@@ -134,7 +134,7 @@ export async function startBot(): Promise<void> {
 export async function stopBot(): Promise<void> {
   const drained = keyedQueue.stop();
   try {
-    await stopDiscordMonetization(ClientInstance);
+    await stopDiscordMonetization();
   } finally {
     // Accepted tasks may still need the database and Discord client.
     await drained;

@@ -2,6 +2,7 @@ import { SlashCommandBuilder } from "discord.js";
 import { BotCommand, TTSModels } from "../types.ts";
 import ElevenLabs from "../modules/ElevenLabs.ts";
 import FishAudio from "../modules/FishAudio.ts";
+import { getGuildPlanAccess } from "../modules/planAccess.ts";
 import {
   DBUpsertGuildTTSSettings,
   syncGuildTTSSettingsWithDB,
@@ -42,6 +43,29 @@ const command: BotCommand = {
     const selectedModel = interaction.options.getString("model", true);
     if (!isTTSModel(selectedModel)) {
       await interaction.editReply("That TTS model is not supported.");
+      return;
+    }
+
+    const access = await getGuildPlanAccess(
+      interaction.applicationId,
+      extendedGuild.id,
+    );
+    if (
+      selectedModel !== TTSModels.ElevenLabsFlashV2_5 &&
+      !access.higherVoiceModules
+    ) {
+      await interaction.editReply(
+        "This server needs Higher Voice Modules to use that model. Standard speech uses ElevenLabs Flash v2.5.",
+      );
+      return;
+    }
+    if (
+      interaction.options.getString("voice-id")?.trim() &&
+      !access.voiceSelection
+    ) {
+      await interaction.editReply(
+        "This server needs voice selection to choose a custom voice.",
+      );
       return;
     }
 

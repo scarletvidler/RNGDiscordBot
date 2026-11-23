@@ -1,101 +1,140 @@
 import type { Message } from "discord.js";
-import { Readable } from "stream";
-import ClientInstance from "../ClientInstance.ts";
+import { Readable } from "node:stream";
 import ElevenLabs from "../ElevenLabs.ts";
+import FishAudio from "../FishAudio.ts";
 import streamToBuffer from "../../helpers/streamToBuffer.ts";
 import validateMessageContent from "./validate.ts";
-import { DBVoiceRole, DBVoiceUser } from "../../../supabase/models/voice.ts";
-import FishAudio from "../FishAudio.ts";
-import { TTSModels } from "../../types.ts";
-import { DEFAULTS, TTS_MODELS, isTTSModel } from "../../config/defaults.ts";
+import type {
+  DBVoiceRole,
+  DBVoiceUser,
+} from "../../../supabase/models/voice.ts";
+import type { DBGuildTtsSettings } from "../../../supabase/models/guilds.ts";
+import type { TokenRate } from "../../../supabase/models/tokenRates.ts";
+import type { TTSModels } from "../../types.ts";
+import { TTS_MODELS } from "../../config/defaults.ts";
+import type { PlanAccess } from "../planAccess.ts";
+import { getSpeechOptions, stripEmotionTags } from "./speechFeatures.ts";
+import {
+  estimateTokens,
+  getActualTokens,
+  getModelTokenRate,
+} from "./tokenCost.ts";
 
-export default async function convertToSpeech(
+export interface PreparedSpeech {
+  text: string;
+  model: TTSModels;
+  voiceId: string;
+  rate: TokenRate;
+  estimatedTokens: number;
+}
+
+export interface ConvertedSpeech {
+  audio: Readable;
+  playedMessage: string;
+  tokensUsed: number;
+}
+
+export class SpeechGenerationError extends Error {
+  constructor(public readonly canReleaseReservation: boolean) {
+    super("The speech provider could not complete this request");
+  }
+}
+
+function wasRequestRejected(error: unknown): boolean {
+  if (!error || typeof error !== "object" || !("statusCode" in error)) {
+    return false;
+  }
+  const status = error.statusCode;
+  return (
+    typeof status === "number" &&
+    status >= 400 &&
+    status < 500 &&
+    status !== 408
+  );
+}
+
+export async function prepareSpeech(
   message: Message<boolean>,
   voice: DBVoiceUser | DBVoiceRole | null,
-  modelType: string = DEFAULTS.defaultModel,
-): Promise<{ audio: Readable; playedMessage: string; tokensUsed: number }> {
-  const guildSettings = ClientInstance.installedGuilds.find(
-    (guild) => guild.id === message.guildId,
-  )?.settings.tts;
-  let voiceId = guildSettings?.default_voice_id;
+  settings: DBGuildTtsSettings,
+  access: PlanAccess,
+): Promise<PreparedSpeech> {
+  const { model, voiceId } = getSpeechOptions(settings, voice, access);
+  let text = validateMessageContent(message);
+  if (!access.emotionTags) text = stripEmotionTags(text);
+  const rate = await getModelTokenRate(model);
+  return {
+    text,
+    model,
+    voiceId,
+    rate,
+    estimatedTokens: estimateTokens(text, rate),
+  };
+}
 
-  if (voice) {
-    voiceId = voice.voice_id;
-  }
-
-  if (!voiceId) {
-    throw new Error("No voiceId configured for this guild.");
-  }
-
-  const text = validateMessageContent(message);
-
-  const model = isTTSModel(modelType) ? modelType : DEFAULTS.defaultModel;
-  return TTS_MODELS[model].provider === "fish"
-    ? convertToSpeechWithFishAI(voiceId, text, model)
-    : convertToSpeechWithElevenLabs(voiceId, text, model);
+export default async function convertToSpeech(
+  speech: PreparedSpeech,
+): Promise<ConvertedSpeech> {
+  return TTS_MODELS[speech.model].provider === "fish"
+    ? convertToSpeechWithFishAI(speech)
+    : convertToSpeechWithElevenLabs(speech);
 }
 
 export async function convertToSpeechWithElevenLabs(
-  voiceId: string,
-  text: string,
-  modelType: string = "eleven_v3",
-): Promise<{ audio: Readable; playedMessage: string; tokensUsed: number }> {
+  speech: PreparedSpeech,
+): Promise<ConvertedSpeech> {
   const elevenlabs = ElevenLabs.getInstance();
   try {
     const { data, rawResponse } = await elevenlabs.convertTextToSpeech(
-      voiceId,
-      text,
-      modelType,
+      speech.voiceId,
+      speech.text,
+      speech.model,
     );
-    if (!data) {
-      console.error(
-        `ElevenLabs returned no audio stream for voice ${voiceId} (status ${rawResponse.status}).`,
-      );
-      throw new Error(
-        `ElevenLabs returned no audio stream for voice ${voiceId} (status ${rawResponse.status}).`,
-      );
-    }
-    const content = await streamToBuffer(data);
-    const tokensUsed = rawResponse.headers.get("character-cost") ?? 0; // Example calculation, replace with actual token usage logic
+    if (!data) throw new Error("ElevenLabs returned no audio stream");
 
-    // convert the buffer to a Readable stream
-    const audio = Readable.from([content]);
-    return { audio, playedMessage: text, tokensUsed: Number(tokensUsed) };
+    const content = await streamToBuffer(data);
+    if (!content.length) throw new Error("ElevenLabs returned empty audio");
+    const tokensUsed = getActualTokens(
+      speech.text,
+      rawResponse.headers,
+      speech.rate,
+    );
+    return {
+      audio: Readable.from([content]),
+      playedMessage: speech.text,
+      tokensUsed,
+    };
   } catch (error) {
-    console.error("❌ Error converting text to speech:", error);
-    console.error(`Text Attempted: ${text}`);
-    throw error;
+    // Provider errors can include the submitted text or request credentials.
+    throw new SpeechGenerationError(wasRequestRejected(error));
   }
 }
 
 export async function convertToSpeechWithFishAI(
-  voiceId: string,
-  text: string,
-  modelType: TTSModels,
-): Promise<{ audio: Readable; playedMessage: string; tokensUsed: number }> {
+  speech: PreparedSpeech,
+): Promise<ConvertedSpeech> {
   const fishAudio = FishAudio.getInstance();
   try {
     const { data, rawResponse } = await fishAudio.convertTextToSpeech(
-      voiceId,
-      text,
-      modelType,
+      speech.voiceId,
+      speech.text,
+      speech.model,
     );
-    if (!data) {
-      console.error(
-        `FishAudio returned no audio stream for voice ${voiceId} (status ${rawResponse.status}).`,
-      );
-      throw new Error(
-        `FishAudio returned no audio stream for voice ${voiceId} (status ${rawResponse.status}).`,
-      );
-    }
+    if (!data) throw new Error("Fish Audio returned no audio stream");
+
     const content = await streamToBuffer(data);
-    const tokensUsed = rawResponse.headers.get("character-cost") ?? 0; // Example calculation, replace with actual token usage logic
-    // convert the buffer to a Readable stream
-    const audio = Readable.from([content]);
-    return { audio, playedMessage: text, tokensUsed: Number(tokensUsed) };
+    if (!content.length) throw new Error("Fish Audio returned empty audio");
+    const tokensUsed = getActualTokens(
+      speech.text,
+      rawResponse.headers,
+      speech.rate,
+    );
+    return {
+      audio: Readable.from([content]),
+      playedMessage: speech.text,
+      tokensUsed,
+    };
   } catch (error) {
-    console.error("❌ Error converting text to speech:", error);
-    console.error(`Text Attempted: ${text}`);
-    throw error;
+    throw new SpeechGenerationError(wasRequestRejected(error));
   }
 }

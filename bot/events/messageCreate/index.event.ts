@@ -4,12 +4,14 @@ import { tryHandleAnnouncement } from "./announcement.ts";
 import { isProcessableGuildMessage } from "./guards.ts";
 import { handleTtsMessage } from "./tts.ts";
 import allowedMessage from "../../helpers/allowedMessage.ts";
+import { canGuildUseLerche } from "../../modules/guildAccess.ts";
 
 const event: BotEvent<[Message<boolean>, ExtendedClient]> = {
   type: "messageCreate",
   execute: async (message, client) => {
     try {
       if (!isProcessableGuildMessage(message)) return;
+      if (!(await canGuildUseLerche(message.guildId, client))) return;
       if (await tryHandleAnnouncement(message, client)) return;
 
       const allowed = await allowedMessage(message);

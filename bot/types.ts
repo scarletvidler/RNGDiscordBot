@@ -29,6 +29,7 @@ export interface BotCommand {
   data: SlashCommandOptionsOnlyBuilder;
   requirements?: {
     userPermissions?: string[];
+    guildFeatures?: string[];
   };
   execute(
     interaction: ChatInputCommandInteraction,

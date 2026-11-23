@@ -2,12 +2,93 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
-import {
-  createMonetizationModels,
-  type EntitlementSnapshot,
-  type MonetizationRpcClient,
-  type SubscriptionSnapshot,
+import type {
+  RecordFilter,
+  SubscriptionRecord,
+  OneTimePurchaseRecord,
 } from "../../supabase/models/monetization.ts";
+
+interface SubscriptionSnapshot {
+  applicationId: string;
+  id: string;
+  userId: string;
+  skuIds: string[];
+  entitlementIds: string[];
+  renewalSkuIds: string[] | null;
+  status: number;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  canceledAt: string | null;
+  createdAt: string;
+  observedAt: string;
+  deleted: boolean;
+}
+interface EntitlementSnapshot {
+  applicationId: string;
+  id: string;
+  skuId: string;
+  userId: string | null;
+  guildId: string | null;
+  type: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  consumed: boolean;
+  deleted: boolean;
+  createdAt: string;
+  observedAt: string;
+}
+interface SkuSnapshot {
+  applicationId: string;
+  id: string;
+  name: string;
+  type: number;
+  flags: number;
+  observedAt: string;
+}
+interface MonetizationRpcClient {
+  rpc(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<{ data: unknown; error: null }>;
+}
+
+// SQL lifecycle tests call the real transactional functions directly. Production
+// mapping and shared-client behavior are covered in monetizationConnection.test.ts.
+function createSqlStore(client: MonetizationRpcClient) {
+  async function read<T>(kind: string, filter: RecordFilter): Promise<T[]> {
+    return (
+      await client.rpc("monetization_read_records", {
+        kind,
+        app: filter.applicationId,
+        usr: filter.userId ?? null,
+        guild: filter.guildId ?? null,
+        after_id: filter.after ?? null,
+        page_size: filter.limit ?? 100,
+      })
+    ).data as T[];
+  }
+  return {
+    upsertSkus: (records: SkuSnapshot[]) =>
+      client.rpc("monetization_upsert_skus", { records }),
+    applySubscription: (r: SubscriptionSnapshot) =>
+      client.rpc("monetization_apply_subscription", { r }),
+    applyEntitlement: (r: EntitlementSnapshot) =>
+      client.rpc("monetization_apply_entitlement", { r }),
+    async listKnownPurchasers(app: string) {
+      return (
+        await client.rpc("monetization_known_purchasers", {
+          app,
+          after_id: null,
+          page_size: 100,
+        })
+      ).data as string[];
+    },
+    listSubscriptions: (filter: RecordFilter) =>
+      read<SubscriptionRecord>("subscriptions", filter),
+    listOneTimePurchases: (filter: RecordFilter) =>
+      read<OneTimePurchaseRecord>("one_time_purchases", filter),
+  };
+}
 
 const app = "100";
 const first = "2026-11-07T10:00:00.000Z";
@@ -101,7 +182,7 @@ test("shared Supabase RPCs enforce lifecycle, identities and role boundaries", a
     ),
   );
   await applySharedConnectionMigration(db);
-  const store = createMonetizationModels(rpcClient(db));
+  const store = createSqlStore(rpcClient(db));
   async function role(name: string): Promise<void> {
     await db.exec(`set role ${name}`);
   }
@@ -441,7 +522,7 @@ test("financial cleanup and shared-connection migration preserve existing subscr
   await db.exec(
     "insert into monetization.login_applications values (session_user, '100');",
   );
-  let store = createMonetizationModels(rpcClient(db, true));
+  let store = createSqlStore(rpcClient(db, true));
   await store.upsertSkus([
     {
       applicationId: app,
@@ -481,7 +562,7 @@ test("financial cleanup and shared-connection migration preserve existing subscr
   );
   await applySharedConnectionMigration(db);
   await db.exec("set role service_role");
-  store = createMonetizationModels(rpcClient(db));
+  store = createSqlStore(rpcClient(db));
   const [sub] = await store.listSubscriptions({ applicationId: app });
   const [purchase] = await store.listOneTimePurchases({ applicationId: app });
   assert.equal(sub.id, "500");

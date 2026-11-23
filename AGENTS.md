@@ -54,6 +54,12 @@ Help develop and maintain Lerche, the Discord text-to-speech bot in this reposit
 - For bugs, establish the failure and root cause before fixing it. Add a regression test when practical; never weaken tests to obtain a passing result.
 - Use subagents for substantial independent research, testing, or review when available. Give each a specific goal, relevant context, file ownership, and expected verification. Review their actual work before accepting it; avoid overlapping edits and unnecessary delegation for small tasks.
 
+## Write user-facing how-to guides
+
+- Every file in `docs/how-to/` must use a numbered filename, such as `09-why-are-we-banned.md`. Keep the numbering consistent with the existing guides.
+- All how-to titles and content must be written for Lerche's end users. Explain behavior, commands, settings, and useful next steps in plain language.
+- Never put maintainer-only instructions in `docs/how-to/`, including database changes, migrations, deployment steps, implementation details, or internal debugging procedures. Keep those in appropriate documentation elsewhere under `docs/` or alongside the relevant code.
+
 ## Protect Lerche's behavior
 
 Apply the checks relevant to the change:

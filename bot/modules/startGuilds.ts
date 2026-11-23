@@ -6,6 +6,7 @@ import {
   getOrCreateDBGuild,
 } from "../../supabase/models/guilds.ts";
 import type { DBGuildWithSettings } from "../../supabase/models/guilds.ts";
+import { refreshGuildFeatures } from "./featureCheck.ts";
 
 export default async function startGuilds(
   client: ExtendedClient,
@@ -68,6 +69,15 @@ export async function setUpExtendedGuild(
       // Preserve cached users because they are populated lazily at runtime.
       extendedGuild.users = client.installedGuilds[existingGuildIndex].users;
       client.installedGuilds[existingGuildIndex] = extendedGuild;
+    }
+
+    const applicationId = client.application?.id ?? client.user?.id;
+    try {
+      if (!applicationId) throw new Error("Discord application is not ready");
+      await refreshGuildFeatures(applicationId, guild.id);
+    } catch {
+      // Keep the guild installed; feature checks deny access until a read succeeds.
+      console.error(`[features] Could not load features for guild ${guild.id}`);
     }
 
     return extendedGuild;

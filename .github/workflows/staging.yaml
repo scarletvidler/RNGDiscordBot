@@ -23,4 +23,4 @@ jobs:
           version: 3.1.0
 
       - run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
-      - run: supabase db push --yes --remote
+      - run: supabase db push --yes --remote --include-all

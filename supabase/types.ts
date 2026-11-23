@@ -172,6 +172,7 @@ export type Database = {
           default_voice_id: string
           guild_id: string
           idle_timeout_seconds: number
+          leave_message_enabled: boolean
           listen_role_id: string | null
           replies_enabled: boolean
           room_prefix_enabled: boolean
@@ -189,6 +190,7 @@ export type Database = {
           default_voice_id?: string
           guild_id: string
           idle_timeout_seconds?: number
+          leave_message_enabled?: boolean
           listen_role_id?: string | null
           replies_enabled?: boolean
           room_prefix_enabled?: boolean
@@ -206,6 +208,7 @@ export type Database = {
           default_voice_id?: string
           guild_id?: string
           idle_timeout_seconds?: number
+          leave_message_enabled?: boolean
           listen_role_id?: string | null
           replies_enabled?: boolean
           room_prefix_enabled?: boolean
@@ -269,6 +272,7 @@ export type Database = {
       guilds: {
         Row: {
           created_at: string
+          is_banned: boolean
           has_active_subscription: boolean
           id: string
           joined_at: string
@@ -283,6 +287,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          is_banned?: boolean
           has_active_subscription?: boolean
           id: string
           joined_at?: string
@@ -297,6 +302,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          is_banned?: boolean
           has_active_subscription?: boolean
           id?: string
           joined_at?: string
@@ -447,6 +453,113 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      monetization_reconcile_fulfillment: {
+        Args: { app: string; entitlement: string }
+        Returns: Json
+      }
+      monetization_fulfillment_entitlements: {
+        Args: { app: string; after_id?: string; page_size?: number }
+        Returns: Json
+      }
+      monetization_fulfillment_failure: {
+        Args: {
+          app: string
+          entitlement: string
+          operation: string
+          error_code: string
+        }
+        Returns: undefined
+      }
+      monetization_complete_noop_fulfillment: {
+        Args: { app: string; entitlement: string }
+        Returns: Json
+      }
+      monetization_grant_tokens: {
+        Args: { app: string; entitlement: string }
+        Returns: Json
+      }
+      monetization_grant_plan: {
+        Args: { app: string; entitlement: string }
+        Returns: Json
+      }
+      monetization_remove_plan: {
+        Args: { app: string; entitlement: string }
+        Returns: Json
+      }
+      monetization_get_guild_token_state: {
+        Args: { guild: string }
+        Returns: Json
+      }
+      monetization_reserve_guild_tokens: {
+        Args: { guild: string; operation: string; quantity: number }
+        Returns: Json
+      }
+      monetization_settle_guild_tokens: {
+        Args: { guild: string; operation: string; quantity: number }
+        Returns: Json
+      }
+      monetization_release_guild_tokens: {
+        Args: { guild: string; operation: string }
+        Returns: Json
+      }
+      monetization_redeem_topup: {
+        Args: { app: string; entitlement: string; buyer: string; guild: string }
+        Returns: Json
+      }
+      monetization_get_subscription_entitlements: {
+        Args: { app: string; subscription: string }
+        Returns: Json
+      }
+      monetization_pending_consumptions: {
+        Args: { app: string; after_id?: string | null; page_size?: number }
+        Returns: Json
+      }
+      monetization_record_consumed_purchase: {
+        Args: { app: string; entitlement: string }
+        Returns: undefined
+      }
+      monetization_get_sku: {
+        Args: { app: string; sku: string }
+        Returns: Json
+      }
+      monetization_get_token_rate: {
+        Args: { provider_name: string; model_name: string }
+        Returns: Json
+      }
+      monetization_remove_tokens: {
+        Args: { app: string; entitlement: string }
+        Returns: Json
+      }
+      monetization_grant_features: {
+        Args: { app: string; entitlement: string }
+        Returns: Json
+      }
+      monetization_remove_features: {
+        Args: { app: string; entitlement: string }
+        Returns: Json
+      }
+      monetization_get_granted_features: {
+        Args: { app: string; target_type: string; target_id: string }
+        Returns: Json
+      }
+      monetization_upsert_sku_action: { Args: { r: Json }; Returns: Json }
+      monetization_get_sku_action: {
+        Args: { app: string; sku: string }
+        Returns: Json
+      }
+      monetization_create_purchase_fulfillment: {
+        Args: {
+          app: string
+          entitlement: string
+          target_type?: string | null
+          target_id?: string | null
+        }
+        Returns: Json
+      }
+      monetization_get_purchase_fulfillment: {
+        Args: { app: string; entitlement: string }
+        Returns: Json
+      }
       monetization_upsert_skus: { Args: { records: Json }; Returns: undefined }
       monetization_apply_subscription: {
         Args: { r: Json }

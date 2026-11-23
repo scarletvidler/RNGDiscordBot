@@ -1,11 +1,17 @@
 import type { Subscription } from "discord.js";
 import type { BotEvent, ExtendedClient } from "../../types.ts";
-import { recordSubscriptionEvent } from "../../modules/monetization/runtime.ts";
+import { recordSubscription } from "../../modules/monetization.ts";
 
 const event: BotEvent<[Subscription, ExtendedClient]> = {
   type: "subscriptionDelete",
   execute: async (value, client) => {
-    await recordSubscriptionEvent(client, value, true);
+    try {
+      await recordSubscription(client, value, true);
+    } catch {
+      console.error(
+        "[monetization] subscriptionDelete failed; recovery will retry",
+      );
+    }
   },
 };
 export default event;

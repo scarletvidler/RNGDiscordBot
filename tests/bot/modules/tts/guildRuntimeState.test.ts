@@ -6,6 +6,7 @@ import type {
 } from "../../../../supabase/models/guilds.ts";
 import {
   GUILD_RUNTIME_CACHE_TTL_MS,
+  invalidateGuildRuntimeState,
   refreshGuildRuntimeState,
 } from "../../../../bot/modules/tts/guildRuntimeState.ts";
 
@@ -55,6 +56,31 @@ test("caches guild runtime data for one minute", async () => {
     fetchRuntimeState,
   );
   assert.equal(fetchCount, 2);
+});
+
+test("a purchase invalidation prevents an older read overwriting the new allowance", async () => {
+  const guild = createGuild("runtime-purchase-race");
+  let release!: (value: DBGuildRuntimeState) => void;
+  const oldRead = refreshGuildRuntimeState(
+    guild,
+    300_000,
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  invalidateGuildRuntimeState(guild.id);
+  const fresh = {
+    id: guild.id,
+    has_active_subscription: false,
+    token_limit: 15000,
+    token_total_usage: 1000,
+  };
+  await refreshGuildRuntimeState(guild, 300_001, async () => fresh);
+  release({ ...fresh, token_limit: 5000 });
+  await oldRead;
+  assert.equal(guild.settings.logging.token_limit, 15000);
+  assert.equal(guild.settings.logging.token_balance, 14000);
 });
 
 test("deduplicates simultaneous guild refreshes", async () => {

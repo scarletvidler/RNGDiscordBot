@@ -32,10 +32,7 @@ class FishAudio {
     text: string,
     modelParam: TTSModels,
   ): Promise<AudioWithRawResponse> {
-    let model = FishAudioModels.FishProFree;
-    if (modelParam === TTSModels.FishPro) {
-      model = FishAudioModels.FishProFree;
-    }
+    const model = FishAudioModels.FishPro;
 
     console.log(`Model used: ${model}, user input was ${modelParam}`);
 
@@ -51,6 +48,11 @@ class FishAudio {
         // The API supports this backend even though the published SDK's
         // Backends union has not caught up yet.
         model as Backends,
+        {
+          timeoutInSeconds: 60,
+          maxRetries: 0,
+          abortSignal: AbortSignal.timeout(60_000),
+        },
       )
       .withRawResponse();
   }

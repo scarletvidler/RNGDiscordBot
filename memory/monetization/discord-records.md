@@ -3,21 +3,22 @@
 - ID: discord-monetization-records
 - Domain: monetization
 - Status: in-progress
-- Updated: 2026-11-12
+- Updated: 2026-11-23
 
 ## Decisions
 
-- User-confirmed scope: records for both user and guild purchases. Premium benefits, token grants, and consumable fulfillment are outside this feature.
+- User-confirmed scope: record both user and guild purchases while keeping benefits guild-only. Guild subscriptions and user-purchased consumable redemption are covered by [SKU fulfillment](sku-fulfillment.md).
 - User correction on 2026-11-07: store no financial data. Remove payments, amounts, currencies, and the finance-import path; this supersedes the earlier financial-record design and future-source proposal.
-- Trust lifecycle payloads received through the Discord client as authoritative subscription/one-time purchase records. Persist them directly rather than independently re-verifying each event through REST; retain list-based recovery for missed events.
-- Preserve product identity/history and user or guild beneficiary links. Keep purchaser and beneficiary identities distinct when Discord does not identify a purchaser.
+- Trust lifecycle payloads received through the Discord client as authoritative subscription/one-time purchase records; retain list-based recovery for missed events. Preserve product history and beneficiary links without conflating purchaser and beneficiary when Discord does not identify a purchaser.
 - On 2026-11-12, the user replaced the dedicated database login/application binding approach with shared Supabase access. The current access and ingestion requirements are in [monetization preferences](../../PREFERENCES.md#monetization); retain record-integrity safeguards and the [security preference](../../PREFERENCES.md#security).
 - User-confirmed on 2026-11-09: queue ownership belongs to the bot process, initialized by `startBot` and drained during bot shutdown. Monetization only submits namespaced work to the shared helper; other features opt in rather than routing every event through it. See [event handling and recovery](../../docs/discord-monetization-records.md#event-handling-and-recovery).
+- On 2026-11-12, the user approved applying the simplification. Retain transactional SQL beneath plain model functions: independent table upserts would lose atomic multi-table consistency and stale-update/deletion safeguards.
+- Multi-statement migrations requiring atomicity must declare explicit transactions with the pinned CLI; whole-file PGlite execution can hide a missing boundary. Follow [migration deployment guidance](../../supabase/README.md#migration-deployment).
 
 ## Current state
 
-- Production LercheBot (`njxtsserdzxwkemjnauf`) has the private lifecycle-only schema and guild cascade relationships applied on 2026-11-09, with no financial storage. On 2026-11-12, the user-authorized [shared Supabase migration](../../supabase/migrations/20261112000000_shared_supabase_monetization.sql) was applied; its five public RPCs were verified callable by `service_role` and denied to `anon`/`authenticated`. The corresponding bot code has not been deployed. See [Discord monetization records](../../docs/discord-monetization-records.md) for architecture and setup.
+- Production LercheBot (`njxtsserdzxwkemjnauf`) has the consolidated purchase schema and, as verified on 2026-11-23, the previously missing guild-ban migration plus plan-allowance and token-rate migrations. The production migration dry run is up to date; new tables are private with RLS and RPC privileges remain service-only. The guild-ban rollout blocker is resolved. See [record schema](../../docs/discord-monetization-records.md#stored-records) and [fulfillment state](../../docs/fulfillment-actions.md#stored-configuration-and-results).
 
 ## Open decisions and future intentions
 
-- Deploy the corresponding bot code and validate shared Supabase access and live Discord recording/recovery under current environment authorization; recovery of the reported production donation remains unverified. Dedicated login/application binding provisioning is superseded. These notes do not authorize deployment or live actions.
+- Database rollout does not deploy the bot. Bot deployment and live Discord recording/recovery validation remain outstanding; product activation and fulfillment validation are tracked in [SKU fulfillment](sku-fulfillment.md#open-decisions-and-future-intentions).

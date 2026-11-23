@@ -20,8 +20,16 @@ export default class VoicePlayer {
   audioInstance: AudioPlayer;
   soundQueue: AudioResource[];
   timerChecker: NodeJS.Timeout | null;
+  shouldPlayDisconnectSound: () => boolean;
 
-  constructor(options: { idleTimeout?: number } = {}) {
+  constructor(
+    options: {
+      idleTimeout?: number;
+      shouldPlayDisconnectSound?: () => boolean;
+    } = {},
+  ) {
+    this.shouldPlayDisconnectSound =
+      options.shouldPlayDisconnectSound ?? (() => true);
     this.timeOfCreation = Date.now();
     this.idleTimeout = options.idleTimeout || 600; // default to 10 minutes if not provided (in seconds)
     this.idleTimer = this.timeOfCreation;
@@ -52,7 +60,9 @@ export default class VoicePlayer {
     this.timerChecker = setInterval(() => {
       if (this.hasIdledTooLong && this.isStopped && !this.isDisconnecting) {
         this.isDisconnecting = true;
-        const asset = this.getSoundAsset("disconnect.ogg");
+        const asset = this.shouldPlayDisconnectSound()
+          ? this.getSoundAsset("disconnect.ogg")
+          : null;
         const disconnect = () => {
           if (
             this.connection != null &&

@@ -1,55 +1,14 @@
+import {
+  SKUType,
+  type Entitlement,
+  type SKU,
+  type Subscription,
+} from "discord.js";
 import { getSupabaseAdmin } from "../client.ts";
-import type { Database, Json } from "../types.ts";
 
-export interface SkuSnapshot {
-  applicationId: string;
-  id: string;
-  name: string;
-  type: 2 | 3 | 5;
-  flags: number;
-  observedAt: string;
-}
-export interface SubscriptionSnapshot {
-  applicationId: string;
-  id: string;
-  userId: string;
-  skuIds: string[];
-  entitlementIds: string[];
-  renewalSkuIds: string[] | null;
-  status: 0 | 1 | 2;
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  canceledAt: string | null;
-  createdAt: string;
-  observedAt: string;
-  deleted: boolean;
-}
-export interface EntitlementSnapshot {
-  applicationId: string;
-  id: string;
-  skuId: string;
-  userId: string | null;
-  guildId: string | null;
-  type: number;
-  startsAt: string | null;
-  endsAt: string | null;
-  consumed: boolean;
-  deleted: boolean;
-  createdAt: string;
-  observedAt: string;
-}
-export interface MonetizationStore {
-  upsertSkus(skus: SkuSnapshot[]): Promise<void>;
-  applySubscription(snapshot: SubscriptionSnapshot): Promise<void>;
-  applyEntitlement(snapshot: EntitlementSnapshot): Promise<void>;
-  listKnownPurchasers(
-    applicationId: string,
-    after?: string,
-    limit?: number,
-  ): Promise<string[]>;
-}
-
-/** The private schema is deliberately outside the Supabase Data API schema types. */
+// Private-schema records are not part of the generated Supabase Data API types.
+// Subscription and one-time RPC projections both read monetization.discord_purchases.
+// Keep their existing response contracts for callers across the table migration.
 export interface PurchaseRecord {
   application_id: string;
   id: string;
@@ -60,6 +19,7 @@ export interface PurchaseRecord {
   observed_at: string;
   deleted: boolean;
 }
+
 export interface SubscriptionRecord extends PurchaseRecord {
   status: 0 | 1 | 2;
   current_period_start: string;
@@ -69,6 +29,7 @@ export interface SubscriptionRecord extends PurchaseRecord {
   renewal_sku_ids: string[] | null;
   items: Array<{ sku_id: string; title: string; is_current: boolean }>;
 }
+
 export interface OneTimePurchaseRecord extends PurchaseRecord {
   entitlement_id: string;
   sku_id: string;
@@ -77,6 +38,7 @@ export interface OneTimePurchaseRecord extends PurchaseRecord {
   kind: "durable" | "consumable";
   consumed: boolean;
 }
+
 export interface RecordFilter {
   applicationId: string;
   userId?: string;
@@ -84,168 +46,208 @@ export interface RecordFilter {
   after?: string;
   limit?: number;
 }
-export interface MonetizationReader {
-  listSubscriptions(filter: RecordFilter): Promise<SubscriptionRecord[]>;
-  listOneTimePurchases(filter: RecordFilter): Promise<OneTimePurchaseRecord[]>;
-}
-type RpcFunctions = Database["public"]["Functions"];
-export type MonetizationRpcName = keyof RpcFunctions;
-export interface MonetizationRpcClient {
-  rpc(
-    name: MonetizationRpcName,
-    args: RpcFunctions[MonetizationRpcName]["Args"],
-  ): PromiseLike<{ data: unknown; error: unknown }>;
+
+function createdAt(id: string): string {
+  return new Date(Number((BigInt(id) >> 22n) + 1420070400000n)).toISOString();
 }
 
-const snowflake = /^[0-9]{1,20}$/;
-function id(value: string): void {
-  if (!snowflake.test(value)) throw new Error("Invalid Discord identifier");
-}
-function timestamp(value: string | null): void {
-  if (
-    value !== null &&
-    (!/^\d{4}-\d\d-\d\dT/.test(value) || !Number.isFinite(Date.parse(value)))
-  ) {
-    throw new Error("Invalid timestamp");
+export async function upsertMonetizationSkus(
+  applicationId: string,
+  skus: readonly SKU[],
+  observedAt: string,
+): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  if (skus.some((sku) => sku.applicationId !== applicationId)) {
+    throw new Error("SKU belongs to another application");
+  }
+
+  const records = skus
+    .filter((sku) => sku.type !== SKUType.SubscriptionGroup)
+    .map((sku) => ({
+      applicationId,
+      id: sku.id,
+      name: sku.name,
+      type: sku.type,
+      flags: sku.flags.bitfield,
+      observedAt,
+    }));
+  for (let offset = 0; offset < records.length; offset += 100) {
+    const { error } = await supabase
+      .rpc("monetization_upsert_skus", {
+        records: records.slice(offset, offset + 100),
+      })
+      .abortSignal(AbortSignal.timeout(12_000));
+
+    if (error) throw error;
   }
 }
-function page(after: string | undefined, limit: number): void {
-  if (after !== undefined && (after.length > 128 || after.length === 0))
-    throw new Error("Invalid cursor");
-  if (!Number.isInteger(limit) || limit < 1 || limit > 100)
-    throw new Error("Invalid page size");
-}
-function base(value: {
-  applicationId: string;
-  id: string;
-  observedAt: string;
-}): void {
-  id(value.applicationId);
-  id(value.id);
-  timestamp(value.observedAt);
-}
-/** Injectable RPC boundary keeps automated tests off live Supabase. */
-export function createMonetizationModels(
-  client: MonetizationRpcClient,
-): MonetizationStore & MonetizationReader {
-  async function call<T>(
-    name: MonetizationRpcName,
-    args: RpcFunctions[MonetizationRpcName]["Args"],
-  ): Promise<T> {
-    const response = await client.rpc(name, args);
-    if (response.error) throw response.error;
-    return response.data as T;
+
+export async function upsertEntitlement(
+  applicationId: string,
+  value: Pick<
+    Entitlement,
+    | "id"
+    | "applicationId"
+    | "skuId"
+    | "userId"
+    | "guildId"
+    | "type"
+    | "startsTimestamp"
+    | "endsTimestamp"
+    | "consumed"
+    | "deleted"
+  >,
+  observedAt: string,
+  deleted = false,
+): Promise<void> {
+  if (value.applicationId !== applicationId) {
+    throw new Error("Entitlement belongs to another application");
   }
-  async function read<T>(kind: string, filter: RecordFilter): Promise<T[]> {
-    id(filter.applicationId);
-    if (filter.userId) id(filter.userId);
-    if (filter.guildId) id(filter.guildId);
-    page(filter.after, filter.limit ?? 100);
-    return call<T[]>("monetization_read_records", {
-      kind,
+  if (!value.userId && !value.guildId) {
+    throw new Error("Entitlement requires a beneficiary");
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  const { error } = await supabase
+    .rpc("monetization_apply_entitlement", {
+      r: {
+        applicationId,
+        id: value.id,
+        skuId: value.skuId,
+        userId: value.userId ?? null,
+        guildId: value.guildId ?? null,
+        type: value.type,
+        startsAt:
+          value.startsTimestamp == null
+            ? null
+            : new Date(value.startsTimestamp).toISOString(),
+        endsAt:
+          value.endsTimestamp == null
+            ? null
+            : new Date(value.endsTimestamp).toISOString(),
+        consumed: value.consumed ?? false,
+        deleted: deleted || value.deleted,
+        createdAt: createdAt(value.id),
+        observedAt,
+      },
+    })
+    .abortSignal(AbortSignal.timeout(12_000));
+
+  if (error) throw error;
+}
+
+export async function upsertSubscription(
+  applicationId: string,
+  value: Pick<
+    Subscription,
+    | "id"
+    | "userId"
+    | "skuIds"
+    | "entitlementIds"
+    | "renewalSkuIds"
+    | "status"
+    | "currentPeriodStartTimestamp"
+    | "currentPeriodEndTimestamp"
+    | "canceledTimestamp"
+  >,
+  observedAt: string,
+  deleted = false,
+): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  const { error } = await supabase
+    .rpc("monetization_apply_subscription", {
+      r: {
+        applicationId,
+        id: value.id,
+        userId: value.userId,
+        skuIds: value.skuIds,
+        entitlementIds: value.entitlementIds,
+        renewalSkuIds: value.renewalSkuIds,
+        status: value.status,
+        currentPeriodStart: new Date(
+          value.currentPeriodStartTimestamp,
+        ).toISOString(),
+        currentPeriodEnd: new Date(
+          value.currentPeriodEndTimestamp,
+        ).toISOString(),
+        canceledAt:
+          value.canceledTimestamp == null
+            ? null
+            : new Date(value.canceledTimestamp).toISOString(),
+        createdAt: createdAt(value.id),
+        observedAt,
+        deleted,
+      },
+    })
+    .abortSignal(AbortSignal.timeout(12_000));
+
+  if (error) throw error;
+}
+
+export async function getKnownPurchasers(
+  applicationId: string,
+  after?: string,
+  limit = 100,
+): Promise<string[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  const { data, error } = await supabase
+    .rpc("monetization_known_purchasers", {
+      app: applicationId,
+      after_id: after ?? null,
+      page_size: limit,
+    })
+    .abortSignal(AbortSignal.timeout(12_000));
+
+  if (error) throw error;
+  return data as string[];
+}
+
+export async function getSubscriptions(
+  filter: RecordFilter,
+): Promise<SubscriptionRecord[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  const { data, error } = await supabase
+    .rpc("monetization_read_records", {
+      kind: "subscriptions",
       app: filter.applicationId,
       usr: filter.userId ?? null,
       guild: filter.guildId ?? null,
       after_id: filter.after ?? null,
       page_size: filter.limit ?? 100,
-    });
-  }
-  return {
-    async upsertSkus(skus) {
-      if (skus.length > 100) throw new Error("SKU batch exceeds limit");
-      for (const sku of skus) {
-        base(sku);
-        if (
-          ![2, 3, 5].includes(sku.type) ||
-          !sku.name.trim() ||
-          sku.name.length > 512 ||
-          !Number.isSafeInteger(sku.flags) ||
-          sku.flags < 0
-        )
-          throw new Error("Invalid SKU");
-      }
-      await call("monetization_upsert_skus", {
-        records: skus as unknown as Json,
-      });
-    },
-    async applySubscription(snapshot) {
-      base(snapshot);
-      id(snapshot.userId);
-      if (
-        ![0, 1, 2].includes(snapshot.status) ||
-        snapshot.skuIds.length === 0 ||
-        snapshot.skuIds.length > 100
-      )
-        throw new Error("Invalid subscription");
-      for (const value of [
-        ...snapshot.skuIds,
-        ...snapshot.entitlementIds,
-        ...(snapshot.renewalSkuIds ?? []),
-      ])
-        id(value);
-      for (const value of [
-        snapshot.currentPeriodStart,
-        snapshot.currentPeriodEnd,
-        snapshot.canceledAt,
-        snapshot.createdAt,
-      ])
-        timestamp(value);
-      if (
-        Date.parse(snapshot.currentPeriodEnd) <
-        Date.parse(snapshot.currentPeriodStart)
-      )
-        throw new Error("Invalid subscription period");
-      await call("monetization_apply_subscription", {
-        r: snapshot as unknown as Json,
-      });
-    },
-    async applyEntitlement(snapshot) {
-      base(snapshot);
-      id(snapshot.skuId);
-      if (snapshot.userId !== null) id(snapshot.userId);
-      if (snapshot.guildId !== null) id(snapshot.guildId);
-      if (snapshot.userId === null && snapshot.guildId === null)
-        throw new Error("Entitlement requires a beneficiary");
-      if (
-        !Number.isInteger(snapshot.type) ||
-        snapshot.type < 1 ||
-        snapshot.type > 255
-      )
-        throw new Error("Invalid entitlement type");
-      for (const value of [
-        snapshot.startsAt,
-        snapshot.endsAt,
-        snapshot.createdAt,
-      ])
-        timestamp(value);
-      await call("monetization_apply_entitlement", {
-        r: snapshot as unknown as Json,
-      });
-    },
-    async listKnownPurchasers(applicationId, after, limit = 100) {
-      id(applicationId);
-      page(after, limit);
-      return call("monetization_known_purchasers", {
-        app: applicationId,
-        after_id: after ?? null,
-        page_size: limit,
-      });
-    },
-    listSubscriptions: (filter) =>
-      read<SubscriptionRecord>("subscriptions", filter),
-    listOneTimePurchases: (filter) =>
-      read<OneTimePurchaseRecord>("one_time_purchases", filter),
-  };
+    })
+    .abortSignal(AbortSignal.timeout(12_000));
+
+  if (error) throw error;
+  return data as unknown as SubscriptionRecord[];
 }
 
-/** Reuse the same server-side Supabase client and credentials as all other models. */
-export function createMonetizationStore(): MonetizationStore &
-  MonetizationReader {
-  const client = getSupabaseAdmin();
-  if (!client)
-    throw new Error("Supabase is not configured for monetization records");
-  return createMonetizationModels({
-    rpc: (name, args) =>
-      client.rpc(name, args).abortSignal(AbortSignal.timeout(12_000)),
-  });
+export async function getOneTimePurchases(
+  filter: RecordFilter,
+): Promise<OneTimePurchaseRecord[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  const { data, error } = await supabase
+    .rpc("monetization_read_records", {
+      kind: "one_time_purchases",
+      app: filter.applicationId,
+      usr: filter.userId ?? null,
+      guild: filter.guildId ?? null,
+      after_id: filter.after ?? null,
+      page_size: filter.limit ?? 100,
+    })
+    .abortSignal(AbortSignal.timeout(12_000));
+
+  if (error) throw error;
+  return data as unknown as OneTimePurchaseRecord[];
 }

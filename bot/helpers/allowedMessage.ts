@@ -16,6 +16,7 @@ export default async function allowedMessage(
     message.guild,
     [
       PermissionName.SendMessages,
+      PermissionName.ReadMessageHistory,
       PermissionName.ViewChannel,
       PermissionName.EmbedLinks,
       PermissionName.AttachFiles,
