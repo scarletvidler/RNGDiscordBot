@@ -12,7 +12,7 @@ export const DEFAULTS = {
   ownerId: "122548971737579520",
   ttsChannelName: "lerche-tts",
   idleTimeoutSeconds: 600,
-  defaultModel: TTSModels.ElevenLabsV3,
+  defaultModel: TTSModels.ElevenLabsFlashV2_5,
   voiceIds: {
     elevenlabs: "cgSgspJ2msm6clMCkdW9",
     fish: "9a9cf47702da476aa4629e2506d4a857",

@@ -22,7 +22,7 @@ export async function sendWelcomeMessage(guild: Guild): Promise<void> {
 
     guild.systemChannel
       .send(
-        "Hello! Thanks for inviting me to your server. An administrator can run `/tts-install` to choose who may use TTS, how messages trigger it, the TTS channel, and the default voice and model. If you need help, visit https://discord.gg/NZWJvdsMKn",
+        "Hello! Thanks for inviting me to your server. An administrator can run `/tts-install` to choose who may use TTS, how messages trigger it, the TTS channel, and the default voice and model. New servers receive a small starter allowance of **1,000 Lerche Tokens** to try Lerche, with **ElevenLabs Flash v2.5** as the default model. Voice generation costs money, so the free allowance is limited. Lerche warns you at 100 tokens remaining and pauses TTS when they run out. If you need help, visit https://discord.gg/NZWJvdsMKn",
       )
       .catch((error) => {
         console.error(
@@ -45,7 +45,7 @@ export async function sendWelcomeMessageToOwner(
   if (!user) return false;
   try {
     await user.send(
-      `Hello! Thanks for inviting me to **${guild.name}**. Run \`/tts-install\` in the server to complete TTS setup. If you need help, visit https://discord.gg/NZWJvdsMKn`,
+      `Hello! Thanks for inviting me to **${guild.name}**. Run \`/tts-install\` in the server to complete TTS setup. New servers receive a small starter allowance of **1,000 Lerche Tokens** to try Lerche, with **ElevenLabs Flash v2.5** as the default model. Voice generation costs money, so the free allowance is limited. Lerche warns you at 100 tokens remaining and pauses TTS when they run out. If you need help, visit https://discord.gg/NZWJvdsMKn`,
     );
     return true;
   } catch (error) {

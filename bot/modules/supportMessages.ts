@@ -1,8 +1,7 @@
 import { EmbedBuilder, type MessageCreateOptions } from "discord.js";
 import { DBGuildWithSettings } from "../../supabase/models/guilds.ts";
 
-export const TOKEN_WARNING_START = 2000;
-export const TOKEN_WARNING_INTERVAL = 1000;
+export const TOKEN_WARNING_START = 100;
 const SUPPORT_GIF_URL = "https://c.tenor.com/Q70pTPV9w6YAAAAC/tenor.gif";
 
 export function usageMessage(
@@ -15,17 +14,11 @@ export function usageMessage(
     .setColor(0xffb347)
     .setTitle("Lerche Usage Notice")
     .setDescription(
-      `**🛑 Please note the following:**
-- Lerche will stop processing TTS once **${allowance.toLocaleString()} total tokens** have been used.
-- The bot is still in early development, and all costs are currently coming directly from my bank account.
-- I simply cannot cover these costs alone, If you really love the bot and want to keep using her, please reach out to me on Discord at **o._rosie_.o**.
-- I have a Patreon at https://www.patreon.com/cw/LercheTTS where you can support the bot's development and get more tokens monthly,
-- I am sorry about this, and I do plan to add other ways to help when I can.
+      `Your server has **${remainingTokens.toLocaleString()} Lerche Tokens remaining**. TTS pauses when your tokens run out.
 
-**‼️ Please note:**
-This message was introduced on **15 July 2026**. Any usage before that date will **not** be counted toward the total, because I do not think that would be fair.
+New servers receive a small starter allowance of **1,000 Lerche Tokens** to try Lerche. Voice generation costs money, so this free allowance is limited.
 
-If you really love the bot and want to keep using her, please reach out to me on Discord at **o._rosie_.o**. I have a Buy Me a Coffee link and can provide a temporary token allowance. (just the amount it costs me)`,
+Use \`/info-token-count\` to check your server's balance. For help getting more tokens, use \`/help\` or visit https://www.patreon.com/cw/LercheTTS.`,
     )
     .addFields(
       {
@@ -48,21 +41,16 @@ export function usageLimitReachedMessage(
   guild: DBGuildWithSettings,
 ): MessageCreateOptions {
   const totalUsage = guild.settings.logging.token_total_usage;
-  const allowance = guild.settings.logging.token_limit;
   const embed = new EmbedBuilder()
     .setColor(0xe74c3c)
     .setTitle("Lerche TTS Paused")
     .setDescription(
       [
-        `Lerche has reached the mandatory **${allowance.toLocaleString()} token limit** and must stop processing TTS messages.`,
+        "Your server has run out of Lerche Tokens, so TTS is paused.",
         "",
-        "The bot is still in early development, and all current running costs are coming directly from my bank account.",
-        "I simply cannot cover these costs alone, so a **small Patreon subscription for power users** will be introduced soon.",
+        "New servers receive a small starter allowance of **1,000 Lerche Tokens** to try Lerche. Voice generation costs money, so this free allowance is limited.",
         "",
-        "If you really love the bot and want to keep using her, please reach out to me on Discord at `o._rosie_.o`.",
-        "I have a Patreon at https://www.patreon.com/cw/LercheTTS where you can support the bot's development and get more tokens monthly",
-        "",
-        "I am sorry about this, and I do plan to add other ways to help when I can.",
+        "Use `/info-token-count` to check your server's balance. For help getting more tokens, use `/help` or visit https://www.patreon.com/cw/LercheTTS.",
       ].join("\n"),
     )
     .addFields({
@@ -83,20 +71,10 @@ export function shouldSendUsageMessage(
   const allowance = guild.settings.logging.token_limit;
   const warningThreshold = allowance - TOKEN_WARNING_START;
 
-  // Do not send anything until usage has reached the first warning point.
-  if (nextTotalUsage < warningThreshold) {
-    return false;
-  }
-
-  // Turn raw token totals into 1000-token buckets:
-  // 2000-2999 => 2, 3000-3999 => 3, and so on.
-  const previousThreshold = Math.floor(
-    previousTotalUsage / TOKEN_WARNING_INTERVAL,
+  // Warn once when crossing into the final 100 tokens, including large messages.
+  return (
+    previousTotalUsage < warningThreshold && nextTotalUsage >= warningThreshold
   );
-  const nextThreshold = Math.floor(nextTotalUsage / TOKEN_WARNING_INTERVAL);
-
-  // Send a warning only when usage crosses into the next bucket.
-  return nextThreshold > previousThreshold;
 }
 
 export function hasReachedUsageLimit(guild: DBGuildWithSettings): boolean {
