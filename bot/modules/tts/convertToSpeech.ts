@@ -135,6 +135,15 @@ export async function convertToSpeechWithFishAI(
       tokensUsed,
     };
   } catch (error) {
+    // Log only the provider's status and response, never the submitted text.
+    const e = error as { statusCode?: number; body?: unknown; name?: string };
+    console.error("Fish TTS failed", {
+      status: e?.statusCode,
+      name: e?.name,
+      body: e?.body,
+      model: speech.model,
+      voiceId: speech.voiceId,
+    });
     throw new SpeechGenerationError(wasRequestRejected(error));
   }
 }
